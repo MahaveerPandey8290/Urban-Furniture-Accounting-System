@@ -1,0 +1,622 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  ACCOUNTANT
+  CONTACT
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  REJECTED
+  SUSPENDED
+}
+
+enum ContactType {
+  CUSTOMER
+  VENDOR
+  BOTH
+}
+
+enum ProductType {
+  GOODS
+  SERVICE
+  COMBO
+}
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  BANK
+  CAPITAL
+  CASH
+  INCOME
+  EXPENSE
+  OTHER_EXPENSE
+}
+
+enum AccountGroup {
+  BALANCE_SHEET
+  PROFIT_AND_LOSS
+}
+
+enum JournalType {
+  SALES
+  PURCHASE
+  BANK
+  CASH
+  MISC
+}
+
+enum DocumentStatus {
+  DRAFT
+  CONFIRMED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  NOT_PAID
+  PARTIAL
+  PAID
+}
+
+enum EntryStatus {
+  DRAFT
+  POSTED
+  CANCELLED
+}
+
+enum BudgetStatus {
+  DRAFT
+  CONFIRMED
+  REVISED
+  CANCELLED
+}
+
+enum AnalyticType {
+  INCOME
+  EXPENSE
+}
+
+enum PaymentType {
+  SEND
+  RECEIVE
+}
+
+enum PaymentMethod {
+  CASH
+  BANK
+}
+
+enum DocumentType {
+  CUSTOMER_INVOICE
+  VENDOR_BILL
+}
+
+model Company {
+  id                    Int      @id @default(autoincrement())
+  name                  String
+  legalName             String?
+  logoUrl               String?
+  addressLine           String?
+  city                  String?
+  state                 String?
+  country               String?
+  pincode               String?
+  currency              String   @default("INR")
+  fiscalYearStartMonth  Int      @default(4)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  users                 User[]
+  contacts              Contact[]
+  productCategories     ProductCategory[]
+  products              Product[]
+  accounts              Account[]
+  taxes                 Tax[]
+  journals              Journal[]
+  documentSequences     DocumentSequence[]
+  journalEntries        JournalEntry[]
+  purchaseOrders        PurchaseOrder[]
+  salesOrders           SalesOrder[]
+  invoices              Invoice[]
+  payments              Payment[]
+  analyticAccounts      AnalyticAccount[]
+  budgets               Budget[]
+}
+
+model User {
+  id                   Int      @id @default(autoincrement())
+  companyId            Int      @default(1)
+  name                 String
+  loginId              String   @unique
+  email                String   @unique
+  passwordHash         String
+  role                 Role
+  status               UserStatus @default(PENDING)
+  contactId            Int?
+  mustChangePassword   Boolean  @default(false)
+  failedLoginAttempts  Int      @default(0)
+  lockedUntil          DateTime?
+  lastLoginAt          DateTime?
+  approvedById         Int?
+  approvedAt           DateTime?
+  rejectionReason      String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  company              Company  @relation(fields: [companyId], references: [id])
+  contact              Contact? @relation(fields: [contactId], references: [id])
+  approvedBy           User?    @relation("ApprovalRelation", fields: [approvedById], references: [id])
+  approvedUsers        User[]   @relation("ApprovalRelation")
+  passwordHistory      PasswordHistory[]
+  refreshTokens        RefreshToken[]
+  passwordResetTokens  PasswordResetToken[]
+  journalEntriesPosted JournalEntry[]
+  purchaseOrders       PurchaseOrder[]
+  salesOrders          SalesOrder[]
+  invoices             Invoice[]
+  payments             Payment[]
+  budgets              Budget[]
+}
+
+model PasswordHistory {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  passwordHash String
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RefreshToken {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  tokenHash   String   @unique
+  familyId    String
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  replacedById Int?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PasswordResetToken {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  tokenHash   String   @unique
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Contact {
+  id                  Int      @id @default(autoincrement())
+  companyId           Int      @default(1)
+  name                String
+  type                ContactType
+  email               String?
+  mobile              String?
+  street              String?
+  city                String?
+  state               String?
+  country             String?
+  pincode             String?
+  profileImageUrl     String?
+  receivableAccountId Int?
+  payableAccountId    Int?
+  isArchived          Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  company             Company  @relation(fields: [companyId], references: [id])
+  receivableAccount   Account? @relation("ContactReceivable", fields: [receivableAccountId], references: [id])
+  payableAccount      Account? @relation("ContactPayable", fields: [payableAccountId], references: [id])
+  users               User[]
+  journalEntries      JournalEntry[]
+  journalItems        JournalItem[]
+  purchaseOrders      PurchaseOrder[] @relation("POVendor")
+  salesOrders         SalesOrder[] @relation("SOCustomer")
+  invoices            Invoice[]
+  payments            Payment[]
+  budgets             Budget[] @relation("BudgetResponsible")
+
+  @@unique([companyId, email])
+}
+
+model ProductCategory {
+  id          Int      @id @default(autoincrement())
+  companyId   Int      @default(1)
+  name        String
+  isArchived  Boolean  @default(false)
+  products    Product[]
+  company     Company  @relation(fields: [companyId], references: [id])
+}
+
+model Product {
+  id                Int      @id @default(autoincrement())
+  companyId         Int      @default(1)
+  name              String
+  type              ProductType @default(GOODS)
+  categoryId        Int?
+  salesPrice        Decimal  @db.Decimal(18,4) @default(0)
+  cost              Decimal  @db.Decimal(18,4) @default(0)
+  imageUrl          String?
+  salesAccountId    Int?
+  purchaseAccountId Int?
+  salesTaxId        Int?
+  purchaseTaxId     Int?
+  isArchived        Boolean  @default(false)
+
+  company           Company  @relation(fields: [companyId], references: [id])
+  category          ProductCategory? @relation(fields: [categoryId], references: [id])
+  salesAccount      Account? @relation("ProductSalesAccount", fields: [salesAccountId], references: [id])
+  purchaseAccount   Account? @relation("ProductPurchaseAccount", fields: [purchaseAccountId], references: [id])
+  salesTax          Tax?     @relation("ProductSalesTax", fields: [salesTaxId], references: [id])
+  purchaseTax       Tax?     @relation("ProductPurchaseTax", fields: [purchaseTaxId], references: [id])
+  purchaseOrderLines PurchaseOrderLine[]
+  salesOrderLines   SalesOrderLine[]
+  invoiceLines      InvoiceLine[]
+}
+
+model Account {
+  id          Int      @id @default(autoincrement())
+  companyId   Int      @default(1)
+  code        String
+  name        String
+  type        AccountType
+  group       AccountGroup
+  parentId    Int?
+  isArchived  Boolean  @default(false)
+
+  parent      Account?  @relation("AccountHierarchy", fields: [parentId], references: [id])
+  children    Account[] @relation("AccountHierarchy")
+  company     Company   @relation(fields: [companyId], references: [id])
+  contactReceivables Contact[] @relation("ContactReceivable")
+  contactPayables Contact[] @relation("ContactPayable")
+  productSalesAccounts Product[] @relation("ProductSalesAccount")
+  productPurchaseAccounts Product[] @relation("ProductPurchaseAccount")
+  taxes       Tax[]
+  journalDefaults Journal[]
+  journalItems JournalItem[]
+  invoiceLines InvoiceLine[]
+
+  @@unique([companyId, code])
+  @@unique([companyId, name])
+}
+
+model Tax {
+  id          Int      @id @default(autoincrement())
+  companyId   Int      @default(1)
+  name        String
+  rate        Decimal  @db.Decimal(18,4) @default(0)
+  scope       String   @default("BOTH")
+  accountId   Int?
+  isArchived  Boolean  @default(false)
+
+  account     Account? @relation(fields: [accountId], references: [id])
+  company     Company  @relation(fields: [companyId], references: [id])
+  productSalesTaxes Product[] @relation("ProductSalesTax")
+  productPurchaseTaxes Product[] @relation("ProductPurchaseTax")
+  journalItems JournalItem[]
+  purchaseOrderLines PurchaseOrderLine[]
+  salesOrderLines SalesOrderLine[]
+  invoiceLines InvoiceLine[]
+}
+
+model Journal {
+  id              Int      @id @default(autoincrement())
+  companyId       Int      @default(1)
+  name            String
+  code            String
+  type            JournalType
+  defaultAccountId Int?
+  sequencePrefix  String
+  isArchived      Boolean  @default(false)
+
+  defaultAccount  Account? @relation(fields: [defaultAccountId], references: [id])
+  company         Company  @relation(fields: [companyId], references: [id])
+  entries         JournalEntry[]
+  sequences       DocumentSequence[]
+  payments        Payment[]
+}
+
+model DocumentSequence {
+  id          Int      @id @default(autoincrement())
+  companyId   Int      @default(1)
+  journalId   Int
+  year        Int
+  nextNumber  Int      @default(1)
+
+  journal     Journal  @relation(fields: [journalId], references: [id])
+  company     Company  @relation(fields: [companyId], references: [id])
+
+  @@unique([companyId, journalId, year])
+}
+
+model JournalEntry {
+  id            Int      @id @default(autoincrement())
+  companyId     Int      @default(1)
+  journalId     Int
+  number        String
+  entryDate     DateTime
+  reference     String?
+  narration     String?
+  status        EntryStatus @default(DRAFT)
+  partnerId     Int?
+  sourceType    String?
+  sourceId      Int?
+  reversalOfId  Int?     @unique
+  reversedById  Int?     @unique
+  totalDebit    Decimal  @db.Decimal(18,4) @default(0)
+  totalCredit   Decimal  @db.Decimal(18,4) @default(0)
+  postedById    Int?
+  postedAt      DateTime?
+  createdAt     DateTime @default(now())
+
+  journal       Journal  @relation(fields: [journalId], references: [id])
+  partner       Contact? @relation(fields: [partnerId], references: [id])
+  postedBy      User?    @relation(fields: [postedById], references: [id])
+  items         JournalItem[]
+  reversalOf    JournalEntry? @relation("EntryReversal", fields: [reversalOfId], references: [id])
+  reversedBy    JournalEntry? @relation("EntryReversal")
+  company       Company  @relation(fields: [companyId], references: [id])
+  invoice       Invoice?
+  payment       Payment?
+
+  @@unique([companyId, journalId, number])
+  @@index([companyId, entryDate, status])
+}
+
+model JournalItem {
+  id                Int      @id @default(autoincrement())
+  entryId           Int
+  accountId         Int
+  partnerId         Int?
+  label             String?
+  debit             Decimal  @db.Decimal(18,4) @default(0)
+  credit            Decimal  @db.Decimal(18,4) @default(0)
+  productId         Int?
+  quantity          Decimal? @db.Decimal(18,4)
+  unitPrice         Decimal? @db.Decimal(18,4)
+  analyticAccountId Int?
+  taxId             Int?
+  sequence          Int      @default(0)
+
+  entry             JournalEntry @relation(fields: [entryId], references: [id])
+  account           Account  @relation(fields: [accountId], references: [id])
+  partner           Contact? @relation(fields: [partnerId], references: [id])
+  analyticAccount   AnalyticAccount? @relation(fields: [analyticAccountId], references: [id])
+  tax               Tax?     @relation(fields: [taxId], references: [id])
+
+  @@index([accountId, entryId])
+  @@index([analyticAccountId])
+}
+
+model PurchaseOrder {
+  id             Int      @id @default(autoincrement())
+  companyId      Int
+  number         String
+  vendorId       Int
+  orderDate      DateTime
+  status         DocumentStatus @default(DRAFT)
+  untaxedTotal   Decimal  @db.Decimal(18,4) @default(0)
+  taxTotal       Decimal  @db.Decimal(18,4) @default(0)
+  grandTotal     Decimal  @db.Decimal(18,4) @default(0)
+  billId         Int?
+  createdById    Int
+
+  vendor         Contact  @relation("POVendor", fields: [vendorId], references: [id])
+  bill           Invoice? @relation(fields: [billId], references: [id])
+  createdBy      User     @relation(fields: [createdById], references: [id])
+  lines          PurchaseOrderLine[]
+  company        Company  @relation(fields: [companyId], references: [id])
+}
+
+model PurchaseOrderLine {
+  id                Int      @id @default(autoincrement())
+  purchaseOrderId   Int
+  sequence          Int
+  productId         Int
+  analyticAccountId Int?
+  quantity          Decimal  @db.Decimal(18,4)
+  unitPrice         Decimal  @db.Decimal(18,4)
+  taxId             Int?
+  lineTotal         Decimal  @db.Decimal(18,4)
+
+  order             PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  product           Product  @relation(fields: [productId], references: [id])
+  analyticAccount   AnalyticAccount? @relation(fields: [analyticAccountId], references: [id])
+  tax               Tax?     @relation(fields: [taxId], references: [id])
+}
+
+model SalesOrder {
+  id             Int      @id @default(autoincrement())
+  companyId      Int
+  number         String
+  customerId     Int
+  orderDate      DateTime
+  status         DocumentStatus @default(DRAFT)
+  untaxedTotal   Decimal  @db.Decimal(18,4) @default(0)
+  taxTotal       Decimal  @db.Decimal(18,4) @default(0)
+  grandTotal     Decimal  @db.Decimal(18,4) @default(0)
+  invoiceId      Int?
+  createdById    Int
+
+  customer       Contact  @relation("SOCustomer", fields: [customerId], references: [id])
+  invoice        Invoice? @relation(fields: [invoiceId], references: [id])
+  createdBy      User     @relation(fields: [createdById], references: [id])
+  lines          SalesOrderLine[]
+  company        Company  @relation(fields: [companyId], references: [id])
+}
+
+model SalesOrderLine {
+  id                Int      @id @default(autoincrement())
+  salesOrderId      Int
+  sequence          Int
+  productId         Int
+  analyticAccountId Int?
+  quantity          Decimal  @db.Decimal(18,4)
+  unitPrice         Decimal  @db.Decimal(18,4)
+  taxId             Int?
+  lineTotal         Decimal  @db.Decimal(18,4)
+
+  order             SalesOrder @relation(fields: [salesOrderId], references: [id])
+  product           Product  @relation(fields: [productId], references: [id])
+  analyticAccount   AnalyticAccount? @relation(fields: [analyticAccountId], references: [id])
+  tax               Tax?     @relation(fields: [taxId], references: [id])
+}
+
+model Invoice {
+  id              Int      @id @default(autoincrement())
+  companyId       Int
+  documentType    DocumentType
+  number          String
+  reference       String?
+  partnerId       Int
+  invoiceDate     DateTime
+  dueDate         DateTime
+  status          DocumentStatus @default(DRAFT)
+  paymentStatus   PaymentStatus @default(NOT_PAID)
+  untaxedTotal    Decimal  @db.Decimal(18,4) @default(0)
+  taxTotal        Decimal  @db.Decimal(18,4) @default(0)
+  grandTotal      Decimal  @db.Decimal(18,4) @default(0)
+  paidViaCash     Decimal  @db.Decimal(18,4) @default(0)
+  paidViaBank     Decimal  @db.Decimal(18,4) @default(0)
+  amountDue       Decimal  @db.Decimal(18,4) @default(0)
+  journalEntryId  Int?     @unique
+  sourceOrderId   Int?
+  createdById     Int
+
+  partner         Contact  @relation(fields: [partnerId], references: [id])
+  journalEntry    JournalEntry? @relation(fields: [journalEntryId], references: [id])
+  lines           InvoiceLine[]
+  payments        Payment[]
+  company         Company  @relation(fields: [companyId], references: [id])
+  createdBy       User     @relation(fields: [createdById], references: [id])
+  purchaseOrders  PurchaseOrder[]
+  salesOrders     SalesOrder[]
+
+  @@unique([companyId, number])
+  @@index([companyId, partnerId, paymentStatus])
+}
+
+model InvoiceLine {
+  id                Int      @id @default(autoincrement())
+  invoiceId         Int
+  sequence          Int
+  productId         Int
+  accountId         Int
+  analyticAccountId Int?
+  quantity          Decimal  @db.Decimal(18,4)
+  unitPrice         Decimal  @db.Decimal(18,4)
+  taxId             Int
+  untaxedAmount     Decimal  @db.Decimal(18,4)
+  taxAmount         Decimal  @db.Decimal(18,4)
+  lineTotal         Decimal  @db.Decimal(18,4)
+
+  invoice           Invoice  @relation(fields: [invoiceId], references: [id])
+  product           Product  @relation(fields: [productId], references: [id])
+  account           Account  @relation(fields: [accountId], references: [id])
+  analyticAccount   AnalyticAccount? @relation(fields: [analyticAccountId], references: [id])
+  tax               Tax      @relation(fields: [taxId], references: [id])
+}
+
+model Payment {
+  id              Int      @id @default(autoincrement())
+  companyId       Int
+  number          String
+  paymentType     PaymentType
+  partnerId       Int
+  invoiceId       Int
+  paymentDate     DateTime
+  amount          Decimal  @db.Decimal(18,4)
+  paymentMethod   PaymentMethod
+  journalId       Int
+  note            String?
+  status          DocumentStatus @default(DRAFT)
+  journalEntryId  Int?     @unique
+  idempotencyKey  String?  @unique
+  createdById     Int
+
+  partner         Contact  @relation(fields: [partnerId], references: [id])
+  invoice         Invoice  @relation(fields: [invoiceId], references: [id])
+  journal         Journal  @relation(fields: [journalId], references: [id])
+  journalEntry    JournalEntry? @relation(fields: [journalEntryId], references: [id])
+  createdBy       User     @relation(fields: [createdById], references: [id])
+  company         Company  @relation(fields: [companyId], references: [id])
+
+  @@index([companyId, invoiceId])
+}
+
+model AnalyticAccount {
+  id              Int      @id @default(autoincrement())
+  companyId       Int
+  name            String
+  type            AnalyticType
+  isArchived      Boolean  @default(false)
+
+  company         Company  @relation(fields: [companyId], references: [id])
+  budgetLines     BudgetLine[]
+  journalItems    JournalItem[]
+  purchaseOrderLines PurchaseOrderLine[]
+  salesOrderLines SalesOrderLine[]
+  invoiceLines    InvoiceLine[]
+
+  @@unique([companyId, name])
+}
+
+model Budget {
+  id              Int      @id @default(autoincrement())
+  companyId       Int
+  name            String
+  startDate       DateTime
+  endDate         DateTime
+  responsibleId   Int
+  status          BudgetStatus @default(DRAFT)
+  revisionOfId    Int?     @unique
+  revisedWithId   Int?     @unique
+  createdById     Int
+
+  lines           BudgetLine[]
+  responsible     Contact  @relation("BudgetResponsible", fields: [responsibleId], references: [id])
+  revisionOf      Budget?  @relation("BudgetRevision", fields: [revisionOfId], references: [id])
+  revisedWith     Budget?  @relation("BudgetRevision")
+  createdBy       User     @relation(fields: [createdById], references: [id])
+  company         Company  @relation(fields: [companyId], references: [id])
+}
+
+model BudgetLine {
+  id                Int      @id @default(autoincrement())
+  budgetId          Int
+  analyticAccountId Int
+  type              AnalyticType
+  committedAmount   Decimal  @db.Decimal(18,4)
+
+  budget            Budget   @relation(fields: [budgetId], references: [id])
+  analyticAccount   AnalyticAccount @relation(fields: [analyticAccountId], references: [id])
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  companyId   Int
+  userId      Int?
+  entity      String
+  entityId    String
+  action      String
+  before      Json?
+  after       Json?
+  ipAddress   String?
+  requestId   String?
+  createdAt   DateTime @default(now())
+
+  @@index([companyId, entity, entityId])
+}
