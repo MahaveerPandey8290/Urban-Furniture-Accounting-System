@@ -1,11 +1,23 @@
 import { Outlet } from "react-router-dom";
+import Sidebar from "./Sidebar";
+import Navbar from "./Navbar";
 
 function AdminLayout() {
   return (
-    <div>
-      <h1>Urban Furniture Admin</h1>
+    <div className="admin-layout">
 
-      <Outlet />
+      <Sidebar />
+
+      <div className="main-section">
+
+        <Navbar />
+
+        <main className="page-content">
+          <Outlet />
+        </main>
+
+      </div>
+
     </div>
   );
 }
