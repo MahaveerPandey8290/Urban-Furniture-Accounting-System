@@ -36,7 +36,7 @@ export function validate<T extends ZodSchema>(
     }
     // Replace with parsed data — Zod may strip unknown keys (stripUnknown)
     // and apply transforms/defaults. This is intentional field whitelisting.
-    (req as Record<string, unknown>)[target] = result.data;
+    (req as unknown as Record<string, unknown>)[target] = result.data;
     next();
   };
 }

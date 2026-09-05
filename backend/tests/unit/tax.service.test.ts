@@ -8,7 +8,6 @@
 
 import { describe, it, expect } from 'vitest';
 import { TaxService } from '../../src/core/tax.service.js';
-import Decimal from 'decimal.js-light';
 
 describe('TaxService.computeLine', () => {
   it('computes 0% tax correctly (No Tax)', () => {

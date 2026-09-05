@@ -7,6 +7,20 @@ import logger from '../config/logger.js';
 // Module routes — imported as they are built in later passes
 import authRoutes from '../modules/auth/auth.routes.js';
 import userRoutes from '../modules/users/users.routes.js';
+import purchaseOrderRoutes from '../modules/purchase-orders/purchase-orders.routes.js';
+import salesOrderRoutes from '../modules/sales-orders/sales-orders.routes.js';
+import invoiceRoutes from '../modules/invoices/invoices.routes.js';
+import paymentRoutes from '../modules/payments/payments.routes.js';
+import journalEntryRoutes from '../modules/journal-entries/journal-entries.routes.js';
+import budgetRoutes from '../modules/budgets/budgets.routes.js';
+import contactsRouter from '../modules/contacts/routes.js';
+import productCategoriesRouter from '../modules/product-categories/routes.js';
+import productsRouter from '../modules/products/routes.js';
+import accountsRouter from '../modules/accounts/routes.js';
+import taxesRouter from '../modules/taxes/routes.js';
+import journalsRouter from '../modules/journals/routes.js';
+import analyticAccountsRouter from '../modules/analytic-accounts/routes.js';
+import reportsRouter from '../modules/reports/reports.routes.js';
 
 const router = Router();
 
@@ -93,5 +107,19 @@ router.get('/docs.json', (_req, res) => {
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
+router.use('/purchase-orders', purchaseOrderRoutes);
+router.use('/sales-orders', salesOrderRoutes);
+router.use('/invoices', invoiceRoutes);
+router.use('/payments', paymentRoutes);
+router.use('/journal-entries', journalEntryRoutes);
+router.use('/budgets', budgetRoutes);
+router.use('/contacts', contactsRouter);
+router.use('/product-categories', productCategoriesRouter);
+router.use('/products', productsRouter);
+router.use('/accounts', accountsRouter);
+router.use('/taxes', taxesRouter);
+router.use('/journals', journalsRouter);
+router.use('/analytic-accounts', analyticAccountsRouter);
+router.use('/reports', reportsRouter);
 
 export default router;

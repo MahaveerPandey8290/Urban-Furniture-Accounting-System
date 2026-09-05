@@ -1,50 +1,250 @@
 import { Routes, Route } from "react-router-dom";
 
+// =========================
+// Admin
+// =========================
 import AdminLayout from "../components/layout/AdminLayout";
 
-import Dashboard from "../pages/admin/Dashboard";
-import Users from "../pages/admin/Users";
-import Contacts from "../pages/admin/Contacts";
-import Products from "../pages/admin/Products";
-import ChartOfAccounts from "../pages/admin/ChartOfAccounts";
-import Journal from "../pages/admin/Journals";
-import PurchaseOrders from "../pages/admin/PurchaseOrders";
-import VendorBills from "../pages/admin/VendorBills";
-import SalesOrders from "../pages/admin/SalesOrders";
+import AdminDashboard from "../pages/admin/Dashboard";
+import AdminUsers from "../pages/admin/Users";
+import AdminContacts from "../pages/admin/Contacts";
+import AdminProducts from "../pages/admin/Products";
+import AdminChartOfAccounts from "../pages/admin/ChartOfAccounts";
+import AdminJournals from "../pages/admin/Journals";
+import AdminPurchaseOrders from "../pages/admin/PurchaseOrders";
+import AdminVendorBills from "../pages/admin/VendorBills";
+import AdminSalesOrders from "../pages/admin/SalesOrders";
+
+// =========================
+// Authentication
+// =========================
+import Login from "../pages/auth/Login";
+import Signup from "../pages/auth/Signup";
+
+// =========================
+// Accountant / Invoicing User
+// =========================
+import AccountantLayout from "../components/layout/AccountantLayout";
+
+import AccountantDashboard from "../pages/invoicing_user/Dashboard";
+import AccountantSalesOrders from "../pages/invoicing_user/SalesOrders";
+import SaleInvoices from "../pages/invoicing_user/SaleInvoices";
+import Invoices from "../pages/invoicing_user/Invoices";
+import Bills from "../pages/invoicing_user/Bills";
+
+import AccountantPurchaseOrders from "../pages/invoicing_user/PurchaseOrders";
+
+import AccountantContacts from "../pages/invoicing_user/Contacts";
+import AccountantProducts from "../pages/invoicing_user/Products";
+import AccountantChartOfAccounts from "../pages/invoicing_user/ChartOfAccounts";
+import AccountantJournals from "../pages/invoicing_user/Journals";
+import JournalEntries from "../pages/invoicing_user/JournalEntries";
+
+import BalanceSheet from "../pages/invoicing_user/BalanceSheet";
+import ProfitAndLoss from "../pages/invoicing_user/ProfitAndLoss";
+import BudgetReport from "../pages/invoicing_user/BudgetReport";
+
 
 function AppRoutes() {
   return (
-    <Routes>
-      <Route path="/admin" element={<AdminLayout />}>
-        <Route index element={<Dashboard />} />
+      <Routes>
 
-        <Route path="users" element={<Users />} />
+        {/* =========================
+            AUTHENTICATION
+            ========================= */}
 
-        <Route path="contacts" element={<Contacts />} />
+        <Route path="/" element={<Login />} />
 
-        <Route path="products" element={<Products />} />
+        <Route path="/login" element={<Login />} />
 
-        <Route path="accounts" element={<ChartOfAccounts />} />
+        <Route path="/signup" element={<Signup />} />
 
-        <Route path="journals" element={<Journal />} />
+
+        {/* =========================
+            ADMIN SECTION
+            ========================= */}
+
+        <Route path="/admin" element={<AdminLayout />}>
+
+          {/* Dashboard */}
+          <Route
+            index
+            element={<AdminDashboard />}
+          />
+
+          {/* Users */}
+          <Route
+            path="users"
+            element={<AdminUsers />}
+          />
+
+          {/* Contacts */}
+          <Route
+            path="contacts"
+            element={<AdminContacts />}
+          />
+
+          {/* Products */}
+          <Route
+            path="products"
+            element={<AdminProducts />}
+          />
+
+          {/* Chart of Accounts */}
+          <Route
+            path="accounts"
+            element={<AdminChartOfAccounts />}
+          />
+
+          {/* Journals */}
+          <Route
+            path="journals"
+            element={<AdminJournals />}
+          />
+
+          {/* Purchase Orders */}
+          <Route
+            path="purchase-orders"
+            element={<AdminPurchaseOrders />}
+          />
+
+          {/* Vendor Bills */}
+          <Route
+            path="vendor-bills"
+            element={<AdminVendorBills />}
+          />
+
+          {/* Sales Orders */}
+          <Route
+            path="sales-orders"
+            element={<AdminSalesOrders />}
+          />
+
+        </Route>
+
+        ...
+        {/* =========================
+            ACCOUNTANT / INVOICING USER
+            ========================= */}
 
         <Route
-  path="purchase-orders"
-  element={<PurchaseOrders />}
-/>
+          path="/invoicing_user"
+          element={<AccountantLayout />}
+        >
 
-<Route
-  path="vendor-bills"
-  element={<VendorBills />}
-/>
+          {/* Dashboard */}
+          <Route
+            index
+            element={<AccountantDashboard />}
+          />
 
-<Route
-  path="sales-orders"
-  element={<SalesOrders />}
-/>
+          {/* =========================
+              SALES
+              ========================= */}
 
-      </Route>
-    </Routes>
+          <Route
+            path="sales-orders"
+            element={<AccountantSalesOrders />}
+          />
+
+          <Route
+            path="sale-invoices"
+            element={<SaleInvoices />}
+          />
+
+          <Route
+            path="invoices"
+            element={<Invoices />}
+          />
+
+          <Route
+            path="bills"
+            element={<Bills />}
+          />
+
+          {/* Aliases */}
+          <Route
+            path="customer-bills"
+            element={<Bills />}
+          />
+
+          <Route
+            path="sales-bills"
+            element={<Bills />}
+          />
+
+          <Route
+            path="sales"
+            element={<Bills />}
+          />
+
+          {/* =========================
+              PURCHASE
+              ========================= */}
+
+          <Route
+            path="purchase-orders"
+            element={<AccountantPurchaseOrders />}
+          />
+
+          {/* =========================
+              ACCOUNT
+              ========================= */}
+
+          <Route
+            path="contacts"
+            element={<AccountantContacts />}
+          />
+
+          <Route
+            path="products"
+            element={<AccountantProducts />}
+          />
+
+          <Route
+            path="chart-of-accounts"
+            element={<AccountantChartOfAccounts />}
+          />
+
+          <Route
+            path="journals"
+            element={<AccountantJournals />}
+          />
+
+          <Route
+            path="journal-entries"
+            element={<JournalEntries />}
+          />
+
+          {/* =========================
+              REPORTS
+              ========================= */}
+
+          <Route
+            path="balance-sheet"
+            element={<BalanceSheet />}
+          />
+
+          <Route
+            path="profit-and-loss"
+            element={<ProfitAndLoss />}
+          />
+
+          <Route
+            path="budget-reports"
+            element={<BudgetReport />}
+          />
+
+          <Route
+            path="reports"
+            element={<BudgetReport />}
+          />
+
+        </Route>
+</Routes>
+        
+
+
   );
 }
 

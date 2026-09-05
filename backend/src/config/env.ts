@@ -1,5 +1,5 @@
+import 'dotenv/config';
 import { z } from 'zod';
-
 /**
  * Zod-validated environment configuration.
  *
@@ -52,7 +52,7 @@ const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
   // Use console.error here only — logger is not yet available
-  console.error('❌ Invalid environment variables:');
+  console.error('[Configuration Error] Invalid environment variables:');
   console.error(JSON.stringify(parsed.error.flatten().fieldErrors, null, 2));
   process.exit(1);
 }
@@ -64,7 +64,7 @@ const data = parsed.data;
 if (data.NODE_ENV === 'production') {
   if (!data.SEED_ADMIN_LOGIN_ID || !data.SEED_ADMIN_PASSWORD) {
     console.error(
-      '❌ SEED_ADMIN_LOGIN_ID and SEED_ADMIN_PASSWORD are required in production. ' +
+      '[Configuration Error] SEED_ADMIN_LOGIN_ID and SEED_ADMIN_PASSWORD are required in production. ' +
       'Without them, no admin user can be created and the system cannot be accessed.'
     );
     process.exit(1);

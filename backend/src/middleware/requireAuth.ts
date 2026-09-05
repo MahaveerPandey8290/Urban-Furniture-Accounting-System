@@ -25,7 +25,7 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction): v
   const token = authHeader.slice(7); // Remove "Bearer "
 
   try {
-    const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET) as AuthContext;
+    const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET) as unknown as AuthContext;
     req.user = decoded;
     req.companyId = decoded.companyId;
     next();

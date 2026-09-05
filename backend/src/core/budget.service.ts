@@ -1,5 +1,4 @@
-import { Decimal } from 'decimal.js-light';
-import { round2 } from './money.js';
+import { Decimal, round2 } from './money.js';
 import type { PrismaTransactionClient, BudgetWarning } from '../types/index.js';
 
 export interface BudgetLineInput {
