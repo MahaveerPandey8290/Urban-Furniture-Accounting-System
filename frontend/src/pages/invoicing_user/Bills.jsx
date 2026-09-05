@@ -82,7 +82,8 @@ function Bills() {
       setSelectedBill(null);
       setSearchParams({});
     } else {
-      navigate("/invoicing_user");
+      const isPathAdmin = window.location.pathname.startsWith("/admin");
+      navigate(isPathAdmin ? "/admin" : "/invoicing_user");
     }
   };
 
@@ -189,7 +190,12 @@ function Bills() {
 
   // Navigate to linked PO
   const handleOpenPO = (poNum) => {
-    navigate(`/invoicing_user/purchase-orders?poNumber=${poNum}`);
+    const isPathAdmin = window.location.pathname.startsWith("/admin");
+    navigate(
+      isPathAdmin
+        ? `/admin/purchase-orders?poNumber=${poNum}`
+        : `/invoicing_user/purchase-orders?poNumber=${poNum}`
+    );
   };
 
   // Delete Vendor Bill

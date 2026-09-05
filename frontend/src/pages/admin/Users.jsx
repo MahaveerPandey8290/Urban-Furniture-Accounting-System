@@ -258,89 +258,68 @@ function Users() {
       <div className="space-y-6">
 
         {/* PAGE HEADER */}
-        <div className="flex items-center justify-between">
-
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#e7e3da]">
           <div>
-            <p className="text-sm text-[#716B63]">
-              Master Data
-            </p>
-
-            <h1 className="mt-1 text-3xl font-semibold text-[#30261F]">
-              Users
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#211D19] tracking-tight">
+              Users Management
             </h1>
-
-            <p className="mt-2 text-sm text-[#716B63]">
-              Manage users who access the accounting system.
+            <p className="mt-0.5 text-sm text-[#716B63]">
+              Manage user credentials, permissions, and roles accessing the accounting system.
             </p>
           </div>
 
           <button
             onClick={openAddModal}
-            className="flex items-center gap-2 rounded-lg bg-[#403329] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#30261F]"
+            className="inline-flex items-center gap-2 rounded-xl bg-[#342921] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#251d17] shadow-xs cursor-pointer"
           >
-            <Plus size={18} />
-            Add User
+            <Plus size={16} />
+            <span>Add User</span>
           </button>
-
         </div>
 
         {/* USERS TABLE */}
-        <div className="overflow-hidden rounded-xl border border-[#DDD7CE] bg-[#FBFAF7]">
-
+        <div className="overflow-hidden rounded-2xl border border-[#e7e3da] bg-white shadow-2xs">
           {/* SEARCH */}
-          <div className="flex items-center justify-between border-b border-[#DDD7CE] p-5">
-
-            <div className="flex h-11 w-[360px] items-center gap-3 rounded-lg border border-[#DDD7CE] bg-white px-4">
-
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#e7e3da] p-4 sm:p-5 bg-[#faf8f4]/60">
+            <div className="flex h-10 w-full sm:w-[320px] items-center gap-2.5 rounded-xl border border-[#cfc6b6] bg-white px-3.5 shadow-2xs focus-within:border-[#342921] transition">
               <Search
-                size={18}
+                size={16}
                 className="text-[#716B63]"
               />
-
               <input
                 type="text"
                 placeholder="Search users..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-transparent text-sm outline-none placeholder:text-[#9B958D]"
+                className="w-full bg-transparent text-sm text-[#211D19] outline-none placeholder:text-[#9B958D]"
               />
-
             </div>
 
-            <p className="text-sm text-[#716B63]">
-              {filteredUsers.length} users
+            <p className="text-xs font-semibold text-[#716B63]">
+              Showing {filteredUsers.length} users
             </p>
-
           </div>
 
           {/* TABLE */}
           <div className="overflow-x-auto">
-
             <table className="w-full">
-
               <thead>
-                <tr className="border-b border-[#DDD7CE] text-left">
-
-                  <th className="px-6 py-4 text-xs font-medium uppercase tracking-wide text-[#716B63]">
+                <tr className="border-b border-[#e7e3da] bg-[#faf8f4]/80 text-left">
+                  <th className="px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-[#716B63]">
                     User
                   </th>
-
-                  <th className="px-6 py-4 text-xs font-medium uppercase tracking-wide text-[#716B63]">
+                  <th className="px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-[#716B63]">
                     Login ID
                   </th>
-
-                  <th className="px-6 py-4 text-xs font-medium uppercase tracking-wide text-[#716B63]">
+                  <th className="px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-[#716B63]">
                     Role
                   </th>
-
-                  <th className="px-6 py-4 text-xs font-medium uppercase tracking-wide text-[#716B63]">
+                  <th className="px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-[#716B63]">
                     Status
                   </th>
-
-                  <th className="px-6 py-4 text-right text-xs font-medium uppercase tracking-wide text-[#716B63]">
+                  <th className="px-6 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-[#716B63]">
                     Actions
                   </th>
-
                 </tr>
               </thead>
 
@@ -350,84 +329,67 @@ function Users() {
 
                   <tr
                     key={user.id}
-                    className="border-b border-[#E8E3DB] transition hover:bg-[#F5F2EC]"
+                    className="border-b border-[#e7e3da] transition hover:bg-[#faf8f4]"
                   >
 
                     {/* USER */}
-                    <td className="px-6 py-5">
-
+                    <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E9E2D6] text-sm font-medium text-[#403329]">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#e7e3da] text-xs font-bold text-[#342921]">
                           {user.name.charAt(0)}
                         </div>
-
                         <div>
-
-                          <p className="text-sm font-medium text-[#30261F]">
+                          <p className="text-sm font-semibold text-[#211D19]">
                             {user.name}
                           </p>
-
-                          <p className="mt-1 text-xs text-[#716B63]">
+                          <p className="text-xs text-[#716B63]">
                             {user.email}
                           </p>
-
                         </div>
-
                       </div>
-
                     </td>
 
                     {/* LOGIN ID */}
-                    <td className="px-6 py-5 text-sm text-[#403329]">
+                    <td className="px-6 py-4 text-sm font-medium text-[#342921]">
                       {user.loginId}
                     </td>
 
                     {/* ROLE */}
-                    <td className="px-6 py-5">
-
-                      <span className="rounded-full bg-[#E9E2D6] px-3 py-1.5 text-xs font-medium text-[#403329]">
+                    <td className="px-6 py-4">
+                      <span className="rounded-full bg-[#f4f1ea] border border-[#e7e3da] px-3 py-1 text-xs font-semibold text-[#342921]">
                         {user.role}
                       </span>
-
                     </td>
 
                     {/* STATUS */}
-                    <td className="px-6 py-5">
-
+                    <td className="px-6 py-4">
                       <span
-                        className={`inline-flex items-center gap-2 text-xs font-medium ${
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                           user.status === "Active"
-                            ? "text-[#56705A]"
-                            : "text-[#9A665A]"
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            : "bg-amber-50 text-amber-700 border border-amber-200"
                         }`}
                       >
-
                         <span
-                          className={`h-2 w-2 rounded-full ${
+                          className={`h-1.5 w-1.5 rounded-full ${
                             user.status === "Active"
-                              ? "bg-[#56705A]"
-                              : "bg-[#9A665A]"
+                              ? "bg-emerald-500"
+                              : "bg-amber-500"
                           }`}
                         />
-
                         {user.status}
-
                       </span>
-
                     </td>
 
                     {/* ACTIONS */}
-                    <td className="px-6 py-5">
-
-                      <div className="flex justify-end gap-2">
-
+                    <td className="px-6 py-4">
+                      <div className="flex justify-end gap-1.5">
                         <button
                           onClick={() => openEditModal(user)}
                           title="Edit user"
-                          className="rounded-lg p-2 text-[#716B63] transition hover:bg-[#E9E2D6] hover:text-[#30261F]"
+                          className="rounded-lg p-2 text-[#716B63] transition hover:bg-[#f4f1ea] hover:text-[#211D19] cursor-pointer"
                         >
-                          <Pencil size={17} />
+                          <Pencil size={15} />
                         </button>
 
                         <button
@@ -437,49 +399,39 @@ function Users() {
                               ? "Deactivate user"
                               : "Activate user"
                           }
-                          className="rounded-lg p-2 text-[#716B63] transition hover:bg-[#E9E2D6] hover:text-[#30261F]"
+                          className="rounded-lg p-2 text-[#716B63] transition hover:bg-[#f4f1ea] hover:text-[#211D19] cursor-pointer"
                         >
                           {user.status === "Active" ? (
-                            <UserX size={17} />
+                            <UserX size={15} />
                           ) : (
-                            <UserCheck size={17} />
+                            <UserCheck size={15} />
                           )}
                         </button>
 
                         <button
                           onClick={() => deleteUser(user.id)}
                           title="Delete user"
-                          className="rounded-lg p-2 text-[#9A665A] transition hover:bg-[#F0DFDA]"
+                          className="rounded-lg p-2 text-rose-600 transition hover:bg-rose-50 cursor-pointer"
                         >
-                          <Trash2 size={17} />
+                          <Trash2 size={15} />
                         </button>
-
                       </div>
-
                     </td>
-
                   </tr>
-
                 ))}
-
               </tbody>
-
             </table>
-
           </div>
 
           {/* EMPTY */}
           {filteredUsers.length === 0 && (
             <div className="px-6 py-16 text-center">
-
-              <p className="text-sm font-medium text-[#30261F]">
+              <p className="text-sm font-semibold text-[#211D19]">
                 No users found
               </p>
-
               <p className="mt-1 text-sm text-[#716B63]">
                 Try searching with a different name or email.
               </p>
-
             </div>
           )}
 
@@ -488,52 +440,37 @@ function Users() {
       </div>
 
       {/* ================= ADD / EDIT USER MODAL ================= */}
-
       {isModalOpen && (
-
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4">
-
-          <div className="max-h-[90vh] w-full max-w-[620px] overflow-y-auto rounded-2xl bg-[#FBFAF7] shadow-2xl">
-
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]">
+          <div className="max-h-[90vh] w-full max-w-[600px] overflow-y-auto rounded-2xl bg-white border border-[#e7e3da] shadow-2xl">
             {/* MODAL HEADER */}
-            <div className="flex items-center justify-between border-b border-[#DDD7CE] px-7 py-6">
-
+            <div className="flex items-center justify-between border-b border-[#e7e3da] px-6 py-5 bg-[#faf8f4]/60">
               <div>
-
-                <h2 className="text-2xl font-semibold text-[#30261F]">
+                <h2 className="text-xl font-bold text-[#211D19]">
                   {editingUser ? "Edit User" : "Add User"}
                 </h2>
-
-                <p className="mt-1 text-sm text-[#716B63]">
+                <p className="mt-0.5 text-xs text-[#716B63]">
                   {editingUser
-                    ? "Update user information."
-                    : "Create a new user."}
+                    ? "Update user information and access role."
+                    : "Create a new user account with credentials."}
                 </p>
-
               </div>
 
               <button
                 onClick={closeModal}
-                className="rounded-lg p-2 text-[#716B63] transition hover:bg-[#E9E2D6]"
+                className="rounded-lg p-2 text-[#716B63] transition hover:bg-[#f4f1ea] hover:text-[#211D19] cursor-pointer"
               >
-                <X size={21} />
+                <X size={18} />
               </button>
-
             </div>
 
             {/* FORM */}
-            <form
-              onSubmit={handleSubmit}
-              className="space-y-5 px-7 py-6"
-            >
-
+            <form onSubmit={handleSubmit} className="space-y-4 px-6 py-5">
               {/* FULL NAME */}
               <div>
-
-                <label className="mb-2 block text-sm font-medium text-[#30261F]">
+                <label className="mb-1.5 block text-xs font-semibold text-[#211D19]">
                   Full Name
                 </label>
-
                 <input
                   type="text"
                   name="name"
@@ -541,18 +478,15 @@ function Users() {
                   onChange={handleChange}
                   placeholder="Enter full name"
                   required
-                  className="h-12 w-full rounded-lg border border-[#DDD7CE] bg-white px-4 text-sm outline-none transition focus:border-[#806A55]"
+                  className="h-10 w-full rounded-xl border border-[#cfc6b6] bg-white px-3.5 text-sm text-[#211D19] outline-none transition focus:border-[#342921]"
                 />
-
               </div>
 
               {/* LOGIN ID */}
               <div>
-
-                <label className="mb-2 block text-sm font-medium text-[#30261F]">
+                <label className="mb-1.5 block text-xs font-semibold text-[#211D19]">
                   Login ID
                 </label>
-
                 <input
                   type="text"
                   name="loginId"
@@ -562,22 +496,18 @@ function Users() {
                   minLength={6}
                   maxLength={12}
                   required
-                  className="h-12 w-full rounded-lg border border-[#DDD7CE] bg-white px-4 text-sm outline-none transition focus:border-[#806A55]"
+                  className="h-10 w-full rounded-xl border border-[#cfc6b6] bg-white px-3.5 text-sm text-[#211D19] outline-none transition focus:border-[#342921]"
                 />
-
-                <p className="mt-1.5 text-xs text-[#8B837A]">
+                <p className="mt-1 text-[11px] text-[#716B63]">
                   Login ID must be between 6–12 characters.
                 </p>
-
               </div>
 
               {/* EMAIL */}
               <div>
-
-                <label className="mb-2 block text-sm font-medium text-[#30261F]">
+                <label className="mb-1.5 block text-xs font-semibold text-[#211D19]">
                   Email ID
                 </label>
-
                 <input
                   type="email"
                   name="email"
@@ -585,79 +515,59 @@ function Users() {
                   onChange={handleChange}
                   placeholder="Enter email address"
                   required
-                  className="h-12 w-full rounded-lg border border-[#DDD7CE] bg-white px-4 text-sm outline-none transition focus:border-[#806A55]"
+                  className="h-10 w-full rounded-xl border border-[#cfc6b6] bg-white px-3.5 text-sm text-[#211D19] outline-none transition focus:border-[#342921]"
                 />
-
               </div>
 
               {/* ROLE */}
               <div>
-
-                <label className="mb-3 block text-sm font-medium text-[#30261F]">
+                <label className="mb-2 block text-xs font-semibold text-[#211D19]">
                   Role
                 </label>
-
-                <div className="flex flex-wrap gap-6">
-
-                  {/* ADMINISTRATOR */}
-                  <label className="flex cursor-pointer items-center gap-2 text-sm text-[#403329]">
-
+                <div className="flex flex-wrap gap-5">
+                  <label className="flex cursor-pointer items-center gap-2 text-sm text-[#211D19]">
                     <input
                       type="radio"
                       name="role"
                       value="Administrator"
                       checked={formData.role === "Administrator"}
                       onChange={handleChange}
-                      className="h-4 w-4 accent-[#403329]"
+                      className="h-4 w-4 accent-[#342921]"
                     />
-
                     Administrator
-
                   </label>
 
-                  {/* CUSTOMER */}
-                  <label className="flex cursor-pointer items-center gap-2 text-sm text-[#403329]">
-
+                  <label className="flex cursor-pointer items-center gap-2 text-sm text-[#211D19]">
                     <input
                       type="radio"
                       name="role"
                       value="Customer"
                       checked={formData.role === "Customer"}
                       onChange={handleChange}
-                      className="h-4 w-4 accent-[#403329]"
+                      className="h-4 w-4 accent-[#342921]"
                     />
-
                     Customer
-
                   </label>
 
-                  {/* VENDOR */}
-                  <label className="flex cursor-pointer items-center gap-2 text-sm text-[#403329]">
-
+                  <label className="flex cursor-pointer items-center gap-2 text-sm text-[#211D19]">
                     <input
                       type="radio"
                       name="role"
                       value="Vendor"
                       checked={formData.role === "Vendor"}
                       onChange={handleChange}
-                      className="h-4 w-4 accent-[#403329]"
+                      className="h-4 w-4 accent-[#342921]"
                     />
-
                     Vendor
-
                   </label>
-
                 </div>
-
               </div>
 
               {/* PASSWORD */}
               <div>
-
-                <label className="mb-2 block text-sm font-medium text-[#30261F]">
+                <label className="mb-1.5 block text-xs font-semibold text-[#211D19]">
                   Password
                 </label>
-
                 <input
                   type="password"
                   name="password"
@@ -665,27 +575,22 @@ function Users() {
                   onChange={handleChange}
                   placeholder={
                     editingUser
-                      ? "Enter new password"
+                      ? "Enter new password (leave blank to keep current)"
                       : "Enter password"
                   }
                   required={!editingUser}
-                  className="h-12 w-full rounded-lg border border-[#DDD7CE] bg-white px-4 text-sm outline-none transition focus:border-[#806A55]"
+                  className="h-10 w-full rounded-xl border border-[#cfc6b6] bg-white px-3.5 text-sm text-[#211D19] outline-none transition focus:border-[#342921]"
                 />
-
-                <p className="mt-1.5 text-xs text-[#8B837A]">
-                  More than 8 characters with uppercase, lowercase and
-                  special character.
+                <p className="mt-1 text-[11px] text-[#716B63]">
+                  More than 8 characters with uppercase, lowercase and special character.
                 </p>
-
               </div>
 
               {/* RE-ENTER PASSWORD */}
               <div>
-
-                <label className="mb-2 block text-sm font-medium text-[#30261F]">
+                <label className="mb-1.5 block text-xs font-semibold text-[#211D19]">
                   Re-enter Password
                 </label>
-
                 <input
                   type="password"
                   name="confirmPassword"
@@ -693,44 +598,37 @@ function Users() {
                   onChange={handleChange}
                   placeholder="Re-enter password"
                   required={!editingUser}
-                  className="h-12 w-full rounded-lg border border-[#DDD7CE] bg-white px-4 text-sm outline-none transition focus:border-[#806A55]"
+                  className="h-10 w-full rounded-xl border border-[#cfc6b6] bg-white px-3.5 text-sm text-[#211D19] outline-none transition focus:border-[#342921]"
                 />
-
               </div>
 
               {/* ERROR */}
               {error && (
-                <div className="rounded-lg border border-[#D8B9B0] bg-[#F7EDEA] px-4 py-3 text-sm text-[#8A4F43]">
+                <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs font-semibold text-rose-700">
                   {error}
                 </div>
               )}
 
               {/* BUTTONS */}
-              <div className="flex justify-end gap-3 border-t border-[#DDD7CE] pt-5">
-
+              <div className="flex justify-end gap-3 border-t border-[#e7e3da] pt-4">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="rounded-lg border border-[#DDD7CE] px-5 py-2.5 text-sm font-medium text-[#403329] transition hover:bg-[#E9E2D6]"
+                  className="rounded-xl border border-[#cfc6b6] px-4 py-2 text-sm font-semibold text-[#716B63] transition hover:bg-[#f7f6f2] cursor-pointer"
                 >
                   Cancel
                 </button>
 
                 <button
                   type="submit"
-                  className="rounded-lg bg-[#403329] px-6 py-2.5 text-sm font-medium text-white transition hover:bg-[#30261F]"
+                  className="rounded-xl bg-[#342921] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#251d17] shadow-xs cursor-pointer"
                 >
-                  {editingUser ? "Save Changes" : "Create"}
+                  {editingUser ? "Save Changes" : "Create User"}
                 </button>
-
               </div>
-
             </form>
-
           </div>
-
         </div>
-
       )}
 
     </>

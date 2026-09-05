@@ -138,7 +138,8 @@ function Contacts() {
       setCurrentView(previousBrowseView);
       setEditingContact(null);
     } else {
-      navigate("/invoicing_user");
+      const isPathAdmin = window.location.pathname.startsWith("/admin");
+      navigate(isPathAdmin ? "/admin" : "/invoicing_user");
     }
   };
 

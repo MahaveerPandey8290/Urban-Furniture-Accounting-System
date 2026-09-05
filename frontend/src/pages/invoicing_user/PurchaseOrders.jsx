@@ -80,7 +80,8 @@ function PurchaseOrders() {
       setSelectedPO(null);
       setSearchParams({});
     } else {
-      navigate("/invoicing_user");
+      const isPathAdmin = window.location.pathname.startsWith("/admin");
+      navigate(isPathAdmin ? "/admin" : "/invoicing_user");
     }
   };
 
@@ -196,7 +197,12 @@ function PurchaseOrders() {
     }
 
     // Navigate to Vendor Bills with this bill open in form view!
-    navigate(`/invoicing_user/bills?billNumber=${targetBill.billNumber}`);
+    const isPathAdmin = window.location.pathname.startsWith("/admin");
+    navigate(
+      isPathAdmin
+        ? `/admin/vendor-bills?billNumber=${targetBill.billNumber}`
+        : `/invoicing_user/bills?billNumber=${targetBill.billNumber}`
+    );
   };
 
   // Delete Purchase Order

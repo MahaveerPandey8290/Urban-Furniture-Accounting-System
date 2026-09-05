@@ -103,6 +103,15 @@ function AppRoutes() {
         {/* Customer Invoices */}
         <Route path="customer-invoices" element={<AdminCustomerInvoices />} />
         <Route path="invoices" element={<AdminCustomerInvoices />} />
+        <Route path="sale-invoices" element={<AdminCustomerInvoices />} />
+
+        {/* Route Aliases for Sub-navigation */}
+        <Route path="bills" element={<AdminVendorBills />} />
+        <Route path="budget-reports" element={<AdminBudgets />} />
+        <Route path="chart-of-accounts" element={<AdminChartOfAccounts />} />
+        <Route path="journal-entries" element={<JournalEntries />} />
+        <Route path="balance-sheet" element={<BalanceSheet />} />
+        <Route path="profit-and-loss" element={<ProfitAndLoss />} />
       </Route>
 
 

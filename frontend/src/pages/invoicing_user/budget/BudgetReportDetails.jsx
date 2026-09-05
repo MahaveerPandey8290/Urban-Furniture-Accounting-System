@@ -188,9 +188,31 @@ export function BudgetReportDetails({
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200 min-w-0" id="original-budget-overview">
-      {/* Top Navigation & Action Row */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#e7e3da] pb-5">
+    <div className="space-y-6 animate-in fade-in duration-200 min-w-0 print:space-y-4 print:p-0 print:m-0 print:bg-white" id="original-budget-overview">
+      {/* ================= PRINT-ONLY REPORT HEADER: URBAN FURNITURE ================= */}
+      <div className="hidden print:block mb-6 pb-6 border-b-2 border-stone-800 bg-white">
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-black uppercase">
+              URBAN FURNITURE
+            </h1>
+            <p className="text-sm font-semibold text-stone-700 tracking-wider uppercase mt-1">
+              Budget Performance & Financial Variance Report
+            </p>
+            <p className="text-xs text-stone-500 mt-0.5">
+              Industrial Design & Quality Wooden Furnishings • Corporate Accounting
+            </p>
+          </div>
+          <div className="text-right text-xs text-stone-700 space-y-1">
+            <p className="font-bold text-stone-900 text-sm">Budget: {budget.name}</p>
+            <p>Generated: {new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</p>
+            <p>Status: <strong className="text-stone-900">{budget.status}</strong></p>
+          </div>
+        </div>
+      </div>
+
+      {/* Top Navigation & Action Row - hidden in print */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#e7e3da] pb-5 print:hidden">
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -280,7 +302,7 @@ export function BudgetReportDetails({
       {showRevisionSection && (
         <div
           id="revised-budget-section"
-          className="bg-gradient-to-br from-[#faf7f2] via-white to-[#fbf9f5] border-2 border-[#342921]/30 rounded-2xl p-5 sm:p-6 shadow-md transition-all duration-300 animate-in fade-in"
+          className="bg-gradient-to-br from-[#faf7f2] via-white to-[#fbf9f5] border-2 border-[#342921]/30 rounded-2xl p-5 sm:p-6 shadow-md transition-all duration-300 animate-in fade-in print:hidden"
         >
           {/* Section Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 mb-4 border-b border-[#e7e3da]">

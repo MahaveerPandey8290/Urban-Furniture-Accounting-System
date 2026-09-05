@@ -1,28 +1,131 @@
-import { Outlet } from "react-router-dom";
-
-import Sidebar from "./Sidebar";
-import Navbar from "./Navbar";
+import { useState } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
+import { User, LogOut, Menu, X } from "lucide-react";
+import { AdminSidebarContent } from "./Sidebar";
+import loginFurniture from "../../assets/login-furniture.png";
 
 function AdminLayout() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    navigate("/login");
+  };
+
+  const toggleSidebar = () => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setMobileOpen((prev) => !prev);
+    } else {
+      setDesktopSidebarOpen((prev) => !prev);
+    }
+  };
+
+  const sidebarStyle = {
+    backgroundImage: `linear-gradient(to bottom, rgba(36, 30, 24, 0.92), rgba(30, 24, 18, 0.88), rgba(20, 16, 12, 0.94)), url(${loginFurniture})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+  };
+
   return (
-    <div className="min-h-screen bg-[#F5F2EC]">
+    <div className="min-h-screen bg-[#f7f6f2] flex text-[#24201a] overflow-x-hidden w-full max-w-[100vw] print:bg-white">
+      {/* ================= FIXED DESKTOP SIDEBAR ================= */}
+      <aside
+        className={`hidden md:flex flex-col justify-between fixed left-0 top-0 bottom-0 w-[270px] bg-[#241e18] text-white overflow-y-auto border-r border-[#1a1511] z-30 px-4 py-6 transition-all duration-300 ease-in-out print:hidden ${
+          desktopSidebarOpen
+            ? "translate-x-0 opacity-100"
+            : "-translate-x-full opacity-0 pointer-events-none"
+        }`}
+        style={sidebarStyle}
+      >
+        <AdminSidebarContent onNavigate={() => {}} onLogout={handleLogout} />
+      </aside>
 
-      {/* Sidebar */}
-      <Sidebar />
+      {/* ================= MOBILE DRAWER BACKDROP ================= */}
+      {mobileOpen && (
+        <div
+          onClick={() => setMobileOpen(false)}
+          className="fixed inset-0 z-40 bg-black/50 md:hidden backdrop-blur-xs print:hidden"
+        />
+      )}
 
-      {/* Main Section */}
-      <div className="ml-[280px] min-h-screen">
-
-        {/* Navbar */}
-        <Navbar />
-
-        {/* Page Content */}
-        <main className="min-h-[calc(100vh-76px)] overflow-y-auto p-8">
-          <Outlet />
-        </main>
-
+      {/* ================= MOBILE SLIDE-OVER SIDEBAR ================= */}
+      <div
+        className={`fixed left-0 top-0 bottom-0 w-[280px] bg-[#241e18] text-white z-50 transform transition-transform duration-200 ease-in-out md:hidden flex flex-col justify-between px-4 py-6 overflow-y-auto print:hidden ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+        style={sidebarStyle}
+      >
+        <div className="flex items-center justify-between pb-3 mb-2 border-b border-white/10">
+          <span className="text-xs font-semibold text-amber-100/90 tracking-wider uppercase">
+            Admin Navigation
+          </span>
+          <button
+            type="button"
+            onClick={() => setMobileOpen(false)}
+            className="text-white/70 hover:text-white p-1 cursor-pointer"
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <AdminSidebarContent
+          onNavigate={() => setMobileOpen(false)}
+          onLogout={handleLogout}
+        />
       </div>
 
+      {/* ================= MAIN CONTENT AREA ================= */}
+      <div
+        className={`flex-1 min-w-0 max-w-full min-h-screen flex flex-col transition-all duration-300 ease-in-out print:m-0 print:p-0 ${
+          desktopSidebarOpen ? "md:ml-[270px]" : "md:ml-0"
+        }`}
+      >
+        {/* Top Header Bar - Matching invoicing_user Rich Wood Finish */}
+        <header className="sticky top-0 z-20 h-16 bg-gradient-to-r from-[#2a1a0f] via-[#382315] to-[#26170d] border-b border-[#432a1a] px-4 sm:px-8 flex items-center justify-between shadow-[0_4px_16px_rgba(0,0,0,0.22)] text-[#f7f1ea] print:hidden">
+          {/* Hamburger button (3 lines) to toggle sidebar */}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              className="w-10 h-10 rounded-xl border border-[#482d1b] bg-[#362113] text-white hover:bg-[#482d1b] hover:border-[#5a3922] flex items-center justify-center cursor-pointer transition shadow-xs group"
+              title={desktopSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+              aria-label="Toggle sidebar"
+            >
+              <Menu size={20} className="group-hover:scale-105 transition-transform" />
+            </button>
+          </div>
+
+          {/* Right: Administrator Information & Logout */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl border border-[#482d1b] bg-[#362113]/95 text-left shadow-xs">
+              <div className="w-8 h-8 rounded-full bg-[#482d1b] text-white flex items-center justify-center font-medium text-xs border border-white/25 shadow-xs">
+                <User size={16} className="text-white" />
+              </div>
+              <div className="hidden sm:flex items-center pr-1">
+                <span className="text-sm font-semibold text-white leading-tight">
+                  Administrator
+                </span>
+              </div>
+            </div>
+
+            {/* Logout icon inside box without text */}
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="w-10 h-10 rounded-xl border border-[#482d1b] bg-[#362113] text-white hover:bg-[#482d1b] hover:border-[#5a3922] transition cursor-pointer shadow-xs flex items-center justify-center group"
+              title="Logout"
+              aria-label="Logout"
+            >
+              <LogOut size={16} className="text-white group-hover:translate-x-0.5 transition-transform" />
+            </button>
+          </div>
+        </header>
+
+        {/* Workspace content */}
+        <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }

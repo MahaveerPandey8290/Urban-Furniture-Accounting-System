@@ -99,7 +99,8 @@ function SalesOrdersMaster() {
       setEditingOrder(null);
       setSearchParams({});
     } else {
-      navigate("/invoicing_user");
+      const isPathAdmin = window.location.pathname.startsWith("/admin");
+      navigate(isPathAdmin ? "/admin" : "/invoicing_user");
     }
   };
 
@@ -194,7 +195,12 @@ function SalesOrdersMaster() {
     showToast(`Invoice ${newInvoiceNo} generated from Sales Order ${confirmedSO.soNumber}!`);
 
     // Navigate to Customer Invoice screen with the new invoice opened
-    navigate(`/invoicing_user/sale-invoices?invoiceId=${newInvoice.id}`);
+    const isPathAdmin = window.location.pathname.startsWith("/admin");
+    navigate(
+      isPathAdmin
+        ? `/admin/customer-invoices?invoiceId=${newInvoice.id}`
+        : `/invoicing_user/sale-invoices?invoiceId=${newInvoice.id}`
+    );
   };
 
   const filteredOrders = useMemo(() => {
@@ -240,7 +246,10 @@ function SalesOrdersMaster() {
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={() => navigate("/invoicing_user")}
+                onClick={() => {
+                  const isPathAdmin = window.location.pathname.startsWith("/admin");
+                  navigate(isPathAdmin ? "/admin" : "/invoicing_user");
+                }}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-[#e7e3da] bg-white text-[#716B63] hover:text-[#211D19] hover:bg-[#faf8f4] text-sm font-medium transition cursor-pointer shadow-xs"
                 title="Back to Dashboard"
               >

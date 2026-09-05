@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { Printer, X, CheckCircle, AlertCircle, Clock } from "lucide-react";
+import { Printer, X, CheckCircle, AlertCircle, Clock, ArrowLeft } from "lucide-react";
 import { formatCurrency, formatDate } from "../../../utils/formatters";
 
 function PrintableInvoiceModal({ invoice, payments = [], onClose }) {
@@ -43,17 +43,26 @@ function PrintableInvoiceModal({ invoice, payments = [], onClose }) {
       <div className="bg-white rounded-2xl border border-[#e7e3da] max-w-2xl w-full shadow-2xl overflow-hidden my-6 print:border-none print:shadow-none print:max-w-none print:m-0">
 
         {/* Action Header - hidden in print */}
-        <div className="p-4 border-b border-[#f0ece4] flex items-center justify-between bg-[#faf8f4] print:hidden">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-[#716B63] uppercase tracking-wider">
-              Document Preview
+        <div className="p-4 border-b border-[#f0ece4] flex items-center justify-between bg-[#faf8f4] print:hidden gap-3">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#dcd6ca] bg-white text-[#342921] hover:text-[#18130f] hover:bg-[#faf8f4] text-xs font-semibold transition cursor-pointer shadow-2xs group"
+              title="Go back to Invoice"
+            >
+              <ArrowLeft size={15} className="group-hover:-translate-x-0.5 transition-transform" />
+              <span>Back</span>
+            </button>
+            <span className="text-xs font-semibold text-[#716B63] uppercase tracking-wider hidden sm:inline">
+              Invoice Print Preview
             </span>
           </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={handlePrint}
-              className="inline-flex items-center gap-2 px-4.5 py-2 rounded-lg bg-[#342921] text-white text-sm font-medium hover:bg-[#231b15] transition cursor-pointer shadow-xs"
+              className="inline-flex items-center gap-2 px-4.5 py-2 rounded-xl bg-[#342921] text-white text-sm font-semibold hover:bg-[#251d17] transition cursor-pointer shadow-xs"
             >
               <Printer size={16} />
               <span>Print Document</span>
@@ -62,6 +71,7 @@ function PrintableInvoiceModal({ invoice, payments = [], onClose }) {
               type="button"
               onClick={onClose}
               className="p-2 rounded-lg text-[#716B63] hover:text-[#211D19] hover:bg-[#f0ece4] transition cursor-pointer"
+              title="Close preview"
             >
               <X size={18} />
             </button>
@@ -247,6 +257,26 @@ function PrintableInvoiceModal({ invoice, payments = [], onClose }) {
             </div>
           </div>
 
+        </div>
+
+        {/* Modal Footer with Back & Print button - hidden in print */}
+        <div className="p-4 border-t border-[#f0ece4] bg-[#faf8f4] flex items-center justify-between print:hidden">
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#dcd6ca] bg-white text-[#342921] hover:text-[#18130f] hover:bg-[#f5f1ea] text-xs font-semibold transition cursor-pointer shadow-2xs group"
+          >
+            <ArrowLeft size={15} className="group-hover:-translate-x-0.5 transition-transform" />
+            <span>Back to Invoice</span>
+          </button>
+          <button
+            type="button"
+            onClick={handlePrint}
+            className="inline-flex items-center gap-2 px-4.5 py-2 rounded-xl bg-[#342921] hover:bg-[#251d17] text-white text-xs font-semibold transition cursor-pointer shadow-xs"
+          >
+            <Printer size={15} />
+            <span>Print Document</span>
+          </button>
         </div>
 
       </div>
