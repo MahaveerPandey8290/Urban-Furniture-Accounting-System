@@ -1,1142 +1,1053 @@
-import { useState } from "react";
-
+import React, { useState } from "react";
 import {
   Plus,
-  Check,
+  Search,
   Archive,
-  Home,
   ArrowLeft,
   X,
-  Filter,
-  ArrowDownLeft,
-  ArrowUpRight,
-  Wallet,
-  CreditCard,
-  User,
+  ChevronDown,
 } from "lucide-react";
 
 function ChartOfAccounts() {
-  const [showForm, setShowForm] = useState(false);
-  const [selectedAccount, setSelectedAccount] = useState(null);
+  // =========================
+  // ACCOUNT TYPES
+  // =========================
 
-  // New Account
-  const [accountName, setAccountName] = useState("");
-  const [accountType, setAccountType] = useState("");
-
-  // =========================================
-  // ACCOUNT FILTERS
-  // =========================================
-
-  const [accountTransactionFilter, setAccountTransactionFilter] =
-    useState("All");
-
-  const [accountDateFilter, setAccountDateFilter] = useState("");
-
-  const [accountAmountFilter, setAccountAmountFilter] = useState("");
-
-  // Accounts
-  const [accounts, setAccounts] = useState([
-    {
-      name: "Cash",
-      type: "Asset",
-      balance: 85000,
-    },
-    {
-      name: "Bank",
-      type: "Asset",
-      balance: 245000,
-    },
-    {
-      name: "Debtors",
-      type: "Asset",
-      balance: 125000,
-    },
-    {
-      name: "Creditors",
-      type: "Liability",
-      balance: 78000,
-    },
-    {
-      name: "Sales Income",
-      type: "Income",
-      balance: 450000,
-    },
-    {
-      name: "Purchase Expense",
-      type: "Expense",
-      balance: 275000,
-    },
-  ]);
-
-  // Account types
   const accountTypes = [
-    "Asset",
-    "Liability",
-    "Expense",
-    "Income",
-    "Capital",
+    {
+      heading: "Balance Sheet",
+      options: [
+        "Asset",
+        "Liability",
+        "Bank",
+        "Capital",
+        "Cash",
+      ],
+    },
+    {
+      heading: "Profit and Loss",
+      options: [
+        "Income",
+        "Expenses",
+        "Other Expenses",
+      ],
+    },
   ];
 
-  // =========================================
-  // SAMPLE TRANSACTIONS
-  // =========================================
+  // =========================
+  // DEFAULT ACCOUNTS
+  // =========================
 
-  const transactions = [
+  const [accounts, setAccounts] = useState([
     {
       id: 1,
-      date: "05 Sep 2026",
-      party: "Raj Furniture",
-      partyType: "Customer",
-      description: "Sales Invoice #INV-001",
-      transactionType: "Received",
-      category: "Received",
-      debit: 25000,
-      credit: 0,
-      account: "Cash",
+      name: "Bank A/c",
+      type: "Asset",
+      status: "Active",
     },
     {
       id: 2,
-      date: "04 Sep 2026",
-      party: "Urban Interiors",
-      partyType: "Customer",
-      description: "Sales Invoice #INV-002",
-      transactionType: "Received",
-      category: "Received",
-      debit: 18000,
-      credit: 0,
-      account: "Bank",
+      name: "Purchases Expense A/c",
+      type: "Expenses",
+      status: "Active",
     },
     {
       id: 3,
-      date: "03 Sep 2026",
-      party: "ABC Wood Suppliers",
-      partyType: "Vendor",
-      description: "Purchase Bill #PUR-021",
-      transactionType: "Paid",
-      category: "Paid",
-      debit: 35000,
-      credit: 0,
-      account: "Bank",
+      name: "Debtors A/c",
+      type: "Asset",
+      status: "Active",
     },
     {
       id: 4,
-      date: "02 Sep 2026",
-      party: "Modern Home",
-      partyType: "Customer",
-      description: "Payment received",
-      transactionType: "Received",
-      category: "Received",
-      debit: 15000,
-      credit: 0,
-      account: "Cash",
+      name: "Creditors A/c",
+      type: "Liability",
+      status: "Active",
     },
     {
       id: 5,
-      date: "01 Sep 2026",
-      party: "WoodCraft Suppliers",
-      partyType: "Vendor",
-      description: "Vendor payment",
-      transactionType: "Paid",
-      category: "Paid",
-      debit: 22000,
-      credit: 0,
-      account: "Bank",
+      name: "Sales Income A/c",
+      type: "Income",
+      status: "Active",
     },
-
-    // Debtors
     {
       id: 6,
-      date: "31 Aug 2026",
-      party: "Modern Home",
-      partyType: "Customer",
-      description: "Outstanding sales invoice #INV-003",
-      transactionType: "Receivable",
-      category: "Receivable",
-      debit: 30000,
-      credit: 0,
-      account: "Debtors",
+      name: "Cash A/c",
+      type: "Cash",
+      status: "Active",
     },
     {
       id: 7,
-      date: "30 Aug 2026",
-      party: "Raj Furniture",
-      partyType: "Customer",
-      description: "Payment received from customer",
-      transactionType: "Received",
-      category: "Received",
-      debit: 15000,
-      credit: 0,
-      account: "Debtors",
+      name: "Other Expense A/c",
+      type: "Other Expenses",
+      status: "Active",
     },
+  ]);
 
-    // Creditors
-    {
-      id: 8,
-      date: "29 Aug 2026",
-      party: "ABC Wood Suppliers",
-      partyType: "Vendor",
-      description: "Outstanding purchase bill #PUR-022",
-      transactionType: "Payable",
-      category: "Payable",
-      debit: 0,
-      credit: 40000,
-      account: "Creditors",
-    },
-    {
-      id: 9,
-      date: "28 Aug 2026",
-      party: "WoodCraft Suppliers",
-      partyType: "Vendor",
-      description: "Payment made to vendor",
-      transactionType: "Paid",
-      category: "Paid",
-      debit: 22000,
-      credit: 0,
-      account: "Creditors",
-    },
+  // =========================
+  // STATES
+  // =========================
 
-    // Sales Income
-    {
-      id: 10,
-      date: "27 Aug 2026",
-      party: "Urban Interiors",
-      partyType: "Customer",
-      description: "Sales Invoice #INV-004",
-      transactionType: "Sales",
-      category: "Sales",
-      debit: 0,
-      credit: 50000,
-      account: "Sales Income",
-    },
-    {
-      id: 11,
-      date: "26 Aug 2026",
-      party: "Modern Home",
-      partyType: "Customer",
-      description: "Sales return #SR-001",
-      transactionType: "Sales Return",
-      category: "Sales Return",
-      debit: 5000,
-      credit: 0,
-      account: "Sales Income",
-    },
+  const [search, setSearch] = useState("");
 
-    // Purchase Expense
-    {
-      id: 12,
-      date: "25 Aug 2026",
-      party: "ABC Wood Suppliers",
-      partyType: "Vendor",
-      description: "Purchase Bill #PUR-023",
-      transactionType: "Purchase",
-      category: "Purchase",
-      debit: 45000,
-      credit: 0,
-      account: "Purchase Expense",
-    },
-    {
-      id: 13,
-      date: "24 Aug 2026",
-      party: "WoodCraft Suppliers",
-      partyType: "Vendor",
-      description: "Purchase return #PR-001",
-      transactionType: "Purchase Return",
-      category: "Purchase Return",
-      debit: 0,
-      credit: 7000,
-      account: "Purchase Expense",
-    },
-  ];
+  const [showArchived, setShowArchived] = useState(false);
 
-  // =========================================
-  // ACCOUNT FILTER CONFIGURATION
-  // =========================================
+  const [showModal, setShowModal] = useState(false);
 
-  const getFilterOptions = (accountName) => {
-    switch (accountName) {
-      case "Debtors":
-        return ["All", "Receivable", "Received"];
+  const [accountName, setAccountName] = useState("");
 
-      case "Creditors":
-        return ["All", "Payable", "Paid"];
+  const [accountType, setAccountType] = useState("");
 
-      case "Sales Income":
-        return ["All", "Sales", "Sales Return"];
+  const [error, setError] = useState("");
 
-      case "Purchase Expense":
-        return ["All", "Purchase", "Purchase Return"];
+  // =========================
+  // ADD NEW ACCOUNT
+  // =========================
 
-      default:
-        return [];
+  const handleAddAccount = (e) => {
+    e.preventDefault();
+
+    setError("");
+
+    if (!accountName.trim()) {
+      setError("Please enter account name.");
+      return;
     }
-  };
 
-  // =========================================
-  // CREATE NEW ACCOUNT
-  // =========================================
-
-  const handleCreate = () => {
-    if (!accountName.trim() || !accountType) {
+    if (!accountType) {
+      setError("Please select account type.");
       return;
     }
 
     const newAccount = {
+      id: Date.now(),
       name: accountName.trim(),
       type: accountType,
-      balance: 0,
+      status: "Active",
     };
 
-    setAccounts([...accounts, newAccount]);
+    setAccounts((prev) => [...prev, newAccount]);
 
+    // Reset form
     setAccountName("");
     setAccountType("");
-    setShowForm(false);
+
+    // Close modal
+    setShowModal(false);
   };
 
-  // =========================================
-  // RESET FILTERS
-  // =========================================
+  // =========================
+  // ARCHIVE ACCOUNT
+  // =========================
 
-  const resetAccountFilters = () => {
-    setAccountTransactionFilter("All");
-    setAccountDateFilter("");
-    setAccountAmountFilter("");
-  };
-
-  // =========================================
-  // SELECT ACCOUNT
-  // =========================================
-
-  const handleAccountSelect = (account) => {
-    setSelectedAccount(account);
-
-    // Every account starts with All
-    // and no date/amount filters.
-    resetAccountFilters();
-  };
-
-  // =========================================
-  // GET TRANSACTIONS FOR SELECTED ACCOUNT
-  // =========================================
-
-  const getAccountTransactions = () => {
-    if (!selectedAccount) {
-      return [];
-    }
-
-    let result = transactions.filter(
-      (transaction) =>
-        transaction.account === selectedAccount.name
+  const handleArchive = (id) => {
+    setAccounts((prev) =>
+      prev.map((account) =>
+        account.id === id
+          ? {
+              ...account,
+              status: "Archived",
+            }
+          : account
+      )
     );
-
-    // =========================================
-    // ACCOUNT-SPECIFIC TRANSACTION FILTER
-    // =========================================
-
-    if (
-      selectedAccount.name !== "Cash" &&
-      selectedAccount.name !== "Bank" &&
-      accountTransactionFilter !== "All"
-    ) {
-      result = result.filter(
-        (transaction) =>
-          transaction.category === accountTransactionFilter
-      );
-    }
-
-    // =========================================
-    // DATE FILTER
-    // =========================================
-
-    if (accountDateFilter) {
-      result = result.filter((transaction) =>
-        transaction.date
-          .toLowerCase()
-          .includes(accountDateFilter.toLowerCase())
-      );
-      debugger
-    }
-
-    // =========================================
-    // AMOUNT FILTER
-    // =========================================
-
-    if (accountAmountFilter) {
-      result = result.filter((transaction) => {
-        const amount = Math.max(
-          transaction.debit,
-          transaction.credit
-        );
-
-        return amount >= Number(accountAmountFilter);
-      });
-    }
-
-    return result;
   };
 
-  const selectedTransactions = getAccountTransactions();
+  // =========================
+  // FILTER ACCOUNTS
+  // =========================
 
-  // =========================================
-  // SUMMARY
-  // =========================================
+  const filteredAccounts = accounts.filter((account) => {
+    const matchesSearch =
+      account.name
+        .toLowerCase()
+        .includes(search.toLowerCase()) ||
+      account.type
+        .toLowerCase()
+        .includes(search.toLowerCase());
 
-  const totalDebit = selectedTransactions.reduce(
-    (total, transaction) =>
-      total + transaction.debit,
-    0
-  );
+    const matchesArchive = showArchived
+      ? account.status === "Archived"
+      : account.status === "Active";
 
-  const totalCredit = selectedTransactions.reduce(
-    (total, transaction) =>
-      total + transaction.credit,
-    0
-  );
+    return matchesSearch && matchesArchive;
+  });
 
-  // Get filters for selected account
-  const selectedFilterOptions = selectedAccount
-    ? getFilterOptions(selectedAccount.name)
-    : [];
+  const archivedCount = accounts.filter(
+    (account) => account.status === "Archived"
+  ).length;
 
-  const hasAccountSpecificFilters =
-    selectedFilterOptions.length > 0;
+  // =========================
+  // TYPE BADGE CLASS
+  // =========================
+
+  const getTypeClass = (type) => {
+    switch (type) {
+      case "Asset":
+        return "asset";
+
+      case "Liability":
+        return "liability";
+
+      case "Bank":
+        return "bank";
+
+      case "Capital":
+        return "capital";
+
+      case "Cash":
+        return "cash";
+
+      case "Income":
+        return "income";
+
+      case "Expenses":
+        return "expenses";
+
+      case "Other Expenses":
+        return "other-expenses";
+
+      default:
+        return "";
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-[#f4f1eb] p-6 md:p-8">
+    <div className="chart-page">
 
-      {/* =========================================
-          HEADER
-      ========================================= */}
+      {/* =========================
+          PAGE HEADER
+      ========================= */}
 
-      <div className="mb-6 flex items-center justify-between">
-
+      <div className="page-header">
         <div>
-          <h1 className="text-3xl font-semibold text-[#30251e]">
-            Chart of Accounts
-          </h1>
+          <div className="breadcrumb">
+            <span>Account</span>
+            <span>/</span>
+            <strong>Chart of Accounts</strong>
+          </div>
 
-          <p className="mt-1 text-sm text-[#756b63]">
-            Manage your pre-configured ledger accounts.
-          </p>
+          <h1>Chart of Accounts</h1>
         </div>
+      </div>
+
+      {/* =========================
+          TOOLBAR
+      ========================= */}
+
+      <div className="toolbar">
 
         <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 rounded-lg bg-[#49392f] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#5b483b]"
+          className="new-btn"
+          onClick={() => {
+            setError("");
+            setAccountName("");
+            setAccountType("");
+            setShowModal(true);
+          }}
         >
-          <Plus size={18} />
+          <Plus size={20} />
           New
         </button>
 
-      </div>
-
-      {/* =========================================
-          ACTION BAR
-      ========================================= */}
-
-      <div className="mb-5 flex flex-wrap gap-2">
-
         <button
-          className="flex items-center gap-2 rounded-md border border-[#cfc5ba] bg-white px-4 py-2 text-sm text-[#40352e] transition hover:bg-[#eee8df]"
+          className={`archive-btn ${
+            showArchived ? "active-archive" : ""
+          }`}
+          onClick={() => setShowArchived(!showArchived)}
         >
-          <Check size={16} />
-          Confirm
+          <Archive size={18} />
+          Archived ({archivedCount})
         </button>
 
-        <button
-          className="flex items-center gap-2 rounded-md border border-[#cfc5ba] bg-white px-4 py-2 text-sm text-[#40352e] transition hover:bg-[#eee8df]"
-        >
-          <Archive size={16} />
-          Archive
-        </button>
-
-        <button
-          onClick={() => setSelectedAccount(null)}
-          className="ml-auto flex items-center gap-2 rounded-md border border-[#cfc5ba] bg-white px-4 py-2 text-sm text-[#40352e] transition hover:bg-[#eee8df]"
-        >
-          <Home size={16} />
-          Home
-        </button>
-
-        {selectedAccount && (
-          <button
-            onClick={() => {
-              setSelectedAccount(null);
-              resetAccountFilters();
-            }}
-            className="flex items-center gap-2 rounded-md border border-[#cfc5ba] bg-white px-4 py-2 text-sm text-[#40352e] transition hover:bg-[#eee8df]"
-          >
-            <ArrowLeft size={16} />
-            Back
-          </button>
-        )}
-
-      </div>
-
-      {/* =========================================
-          ACCOUNT DETAILS
-      ========================================= */}
-
-      {selectedAccount ? (
-
-        <div>
-
-          {/* Account heading */}
-
-          <div className="mb-6 rounded-xl border border-[#d7cec4] bg-white p-6 shadow-sm">
-
-            <div className="flex flex-wrap items-start justify-between gap-5">
-
-              <div>
-
-                <p className="mb-1 text-xs uppercase tracking-wider text-[#8a7d73]">
-                  Account
-                </p>
-
-                <h2 className="text-2xl font-semibold text-[#30251e]">
-                  {selectedAccount.name}
-                </h2>
-
-                <span className="mt-2 inline-block rounded-full bg-[#ebe4da] px-3 py-1 text-xs font-medium text-[#49392f]">
-                  {selectedAccount.type}
-                </span>
-
-              </div>
-
-              <div className="text-right">
-
-                <p className="text-xs text-[#756b63]">
-                  Current Balance
-                </p>
-
-                <p className="mt-1 text-3xl font-semibold text-[#49392f]">
-                  ₹
-                  {selectedAccount.balance.toLocaleString(
-                    "en-IN"
-                  )}
-                </p>
-
-              </div>
-
-            </div>
-
-          </div>
-
-          {/* =========================================
-              ACCOUNT-SPECIFIC FILTERS
-          ========================================= */}
-
-          {hasAccountSpecificFilters && (
-
-            <div className="mb-6 rounded-xl border border-[#d7cec4] bg-white p-5 shadow-sm">
-
-              <div className="mb-5 flex items-center gap-2">
-
-                <Filter
-                  size={18}
-                  className="text-[#49392f]"
-                />
-
-                <div>
-
-                  <h3 className="font-semibold text-[#30251e]">
-                    {selectedAccount.name} Filters
-                  </h3>
-
-                  <p className="text-xs text-[#756b63]">
-                    Filter transactions according to this
-                    account type.
-                  </p>
-
-                </div>
-
-              </div>
-
-              {/* Transaction Type */}
-
-              <div className="grid gap-4 md:grid-cols-3">
-
-                <div>
-
-                  <label className="mb-2 block text-sm font-medium text-[#30251e]">
-                    Transaction
-                  </label>
-
-                  <select
-                    value={accountTransactionFilter}
-                    onChange={(e) =>
-                      setAccountTransactionFilter(
-                        e.target.value
-                      )
-                    }
-                    className="w-full rounded-lg border border-[#d6ccc1] bg-white px-4 py-3 text-sm outline-none focus:border-[#49392f] focus:ring-1 focus:ring-[#49392f]"
-                  >
-
-                    {selectedFilterOptions.map(
-                      (filter) => (
-                        <option
-                          key={filter}
-                          value={filter}
-                        >
-                          {filter}
-                        </option>
-                      )
-                    )}
-
-                  </select>
-
-                </div>
-
-                {/* Date */}
-
-                <div>
-
-                  <label className="mb-2 block text-sm font-medium text-[#30251e]">
-                    Date
-                  </label>
-
-                  <input
-                    type="text"
-                    value={accountDateFilter}
-                    onChange={(e) =>
-                      setAccountDateFilter(
-                        e.target.value
-                      )
-                    }
-                    placeholder="e.g. 05 Sep"
-                    className="w-full rounded-lg border border-[#d6ccc1] bg-white px-4 py-3 text-sm outline-none focus:border-[#49392f] focus:ring-1 focus:ring-[#49392f]"
-                  />
-
-                </div>
-
-                {/* Amount */}
-
-                <div>
-
-                  <label className="mb-2 block text-sm font-medium text-[#30251e]">
-                    Minimum Amount
-                  </label>
-
-                  <input
-                    type="number"
-                    value={accountAmountFilter}
-                    onChange={(e) =>
-                      setAccountAmountFilter(
-                        e.target.value
-                      )
-                    }
-                    placeholder="₹ Amount"
-                    className="w-full rounded-lg border border-[#d6ccc1] bg-white px-4 py-3 text-sm outline-none focus:border-[#49392f] focus:ring-1 focus:ring-[#49392f]"
-                  />
-
-                </div>
-
-              </div>
-
-              <button
-                onClick={resetAccountFilters}
-                className="mt-4 rounded-lg border border-[#cfc5ba] px-4 py-2 text-sm font-medium text-[#49392f] transition hover:bg-[#eee8df]"
-              >
-                Reset Filters
-              </button>
-
-            </div>
-
-          )}
-
-          {/* =========================================
-              CASH / BANK
-              NO TRANSACTION FILTERS
-          ========================================= */}
-
-          {(selectedAccount.name === "Cash" ||
-            selectedAccount.name === "Bank") && (
-
-            <div className="mb-6 rounded-xl border border-[#d7cec4] bg-white p-5 shadow-sm">
-
-              <div className="flex items-center gap-2">
-
-                {selectedAccount.name === "Cash" ? (
-                  <Wallet
-                    size={18}
-                    className="text-[#49392f]"
-                  />
-                ) : (
-                  <CreditCard
-                    size={18}
-                    className="text-[#49392f]"
-                  />
-                )}
-
-                <div>
-
-                  <h3 className="font-semibold text-[#30251e]">
-                    {selectedAccount.name} Transactions
-                  </h3>
-
-                  <p className="text-xs text-[#756b63]">
-                    All {selectedAccount.name.toLowerCase()}{" "}
-                    transactions are shown here. No
-                    transaction-type filter is required.
-                  </p>
-
-                </div>
-
-              </div>
-
-            </div>
-
-          )}
-
-          {/* =========================================
-              SUMMARY
-          ========================================= */}
-
-          <div className="mb-6 grid gap-4 md:grid-cols-3">
-
-            {/* Total Debit */}
-
-            <div className="rounded-xl border border-[#d7cec4] bg-white p-5">
-
-              <div className="mb-3 flex items-center gap-2 text-[#756b63]">
-
-                <ArrowDownLeft size={18} />
-
-                <span className="text-sm">
-                  Total Debit
-                </span>
-
-              </div>
-
-              <p className="text-2xl font-semibold text-[#30251e]">
-                ₹
-                {totalDebit.toLocaleString(
-                  "en-IN"
-                )}
-              </p>
-
-            </div>
-
-            {/* Total Credit */}
-
-            <div className="rounded-xl border border-[#d7cec4] bg-white p-5">
-
-              <div className="mb-3 flex items-center gap-2 text-[#756b63]">
-
-                <ArrowUpRight size={18} />
-
-                <span className="text-sm">
-                  Total Credit
-                </span>
-
-              </div>
-
-              <p className="text-2xl font-semibold text-[#30251e]">
-                ₹
-                {totalCredit.toLocaleString(
-                  "en-IN"
-                )}
-              </p>
-
-            </div>
-
-            {/* Transactions */}
-
-            <div className="rounded-xl border border-[#d7cec4] bg-white p-5">
-
-              <div className="mb-3 flex items-center gap-2 text-[#756b63]">
-
-                <Wallet size={18} />
-
-                <span className="text-sm">
-                  Transactions
-                </span>
-
-              </div>
-
-              <p className="text-2xl font-semibold text-[#30251e]">
-                {selectedTransactions.length}
-              </p>
-
-            </div>
-
-          </div>
-
-          {/* =========================================
-              TRANSACTION HISTORY
-          ========================================= */}
-
-          <div className="overflow-hidden rounded-xl border border-[#d7cec4] bg-white shadow-sm">
-
-            <div className="border-b border-[#d7cec4] bg-[#ebe4da] px-5 py-4">
-
-              <h3 className="font-semibold text-[#49392f]">
-                Transaction History
-              </h3>
-
-            </div>
-
-            {selectedTransactions.length === 0 ? (
-
-              <div className="p-10 text-center">
-
-                <p className="text-sm text-[#756b63]">
-                  No transactions found for the
-                  selected filters.
-                </p>
-
-              </div>
-
-            ) : (
-
-              <div className="overflow-x-auto">
-
-                <table className="w-full min-w-[950px]">
-
-                  <thead className="border-b border-[#e2dbd3]">
-
-                    <tr className="text-left text-xs uppercase tracking-wider text-[#756b63]">
-
-                      <th className="px-5 py-4">
-                        Date
-                      </th>
-
-                      <th className="px-5 py-4">
-                        Party
-                      </th>
-
-                      <th className="px-5 py-4">
-                        Description
-                      </th>
-
-                      <th className="px-5 py-4">
-                        Party Type
-                      </th>
-
-                      <th className="px-5 py-4">
-                        Transaction
-                      </th>
-
-                      <th className="px-5 py-4 text-right">
-                        Debit
-                      </th>
-
-                      <th className="px-5 py-4 text-right">
-                        Credit
-                      </th>
-
-                    </tr>
-
-                  </thead>
-
-                  <tbody>
-
-                    {selectedTransactions.map(
-                      (transaction) => (
-
-                        <tr
-                          key={transaction.id}
-                          className="border-b border-[#eee8df] transition last:border-0 hover:bg-[#faf8f5]"
-                        >
-
-                          {/* Date */}
-
-                          <td className="px-5 py-4 text-sm text-[#40352e]">
-                            {transaction.date}
-                          </td>
-
-                          {/* Party */}
-
-                          <td className="px-5 py-4">
-
-                            <div className="flex items-center gap-2">
-
-                              <User
-                                size={16}
-                                className="text-[#49392f]"
-                              />
-
-                              <span className="text-sm font-medium text-[#30251e]">
-                                {transaction.party}
-                              </span>
-
-                            </div>
-
-                          </td>
-
-                          {/* Description */}
-
-                          <td className="px-5 py-4 text-sm text-[#756b63]">
-                            {transaction.description}
-                          </td>
-
-                          {/* Party Type */}
-
-                          <td className="px-5 py-4">
-
-                            <span className="rounded-full bg-[#ebe4da] px-3 py-1 text-xs text-[#49392f]">
-                              {transaction.partyType}
-                            </span>
-
-                          </td>
-
-                          {/* Transaction */}
-
-                          <td className="px-5 py-4">
-
-                            <div className="flex items-center gap-2 text-sm text-[#40352e]">
-
-                              {transaction.transactionType ===
-                                "Received" ||
-                              transaction.transactionType ===
-                                "Sales Return" ||
-                              transaction.transactionType ===
-                                "Paid" ? (
-
-                                <ArrowDownLeft
-                                  size={15}
-                                />
-
-                              ) : (
-
-                                <ArrowUpRight
-                                  size={15}
-                                />
-
-                              )}
-
-                              {transaction.transactionType}
-
-                            </div>
-
-                          </td>
-
-                          {/* Debit */}
-
-                          <td className="px-5 py-4 text-right text-sm font-medium text-[#30251e]">
-
-                            {transaction.debit > 0
-                              ? `₹${transaction.debit.toLocaleString(
-                                  "en-IN"
-                                )}`
-                              : "-"}
-
-                          </td>
-
-                          {/* Credit */}
-
-                          <td className="px-5 py-4 text-right text-sm font-medium text-[#30251e]">
-
-                            {transaction.credit > 0
-                              ? `₹${transaction.credit.toLocaleString(
-                                  "en-IN"
-                                )}`
-                              : "-"}
-
-                          </td>
-
-                        </tr>
-
-                      )
-                    )}
-
-                  </tbody>
-
-                </table>
-
-              </div>
-
-            )}
-
-          </div>
-
+        <div className="search-box">
+          <Search size={20} />
+
+          <input
+            type="text"
+            placeholder="Search accounts..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
 
-      ) : (
+        <div className="toolbar-spacer" />
 
-        /* =========================================
-           ACCOUNT LIST
-        ========================================= */
+        <button className="back-btn">
+          <ArrowLeft size={18} />
+          Back
+        </button>
+      </div>
 
-        <div className="overflow-hidden rounded-xl border border-[#d7cec4] bg-white shadow-sm">
+      {/* =========================
+          ACCOUNT TABLE
+      ========================= */}
 
-          <div className="grid grid-cols-3 border-b border-[#d7cec4] bg-[#ebe4da] px-5 py-4 text-sm font-semibold text-[#49392f]">
+      <div className="account-table">
 
-            <div>
-              Account Name
-            </div>
+        <div className="table-header">
+          <div>ACCOUNT NAME</div>
+          <div>TYPE</div>
+          <div>ACTION</div>
+        </div>
 
-            <div>
-              Type
-            </div>
-
-            <div className="text-right">
-              Balance
-            </div>
-
+        {filteredAccounts.length === 0 ? (
+          <div className="empty-state">
+            No accounts found.
           </div>
-
-          {accounts.map((account, index) => (
-
-            <button
-              key={index}
-              onClick={() =>
-                handleAccountSelect(account)
-              }
-              className="grid w-full grid-cols-3 border-b border-[#e2dbd3] px-5 py-4 text-left text-sm transition last:border-b-0 hover:bg-[#faf8f5]"
+        ) : (
+          filteredAccounts.map((account) => (
+            <div
+              className="table-row"
+              key={account.id}
             >
+              <div className="account-name">
+                <span className="bullet"></span>
 
-              <div className="font-medium text-[#d84c79]">
-                {account.name}
+                <strong>{account.name}</strong>
               </div>
-
-              <div className="text-[#d84c79]">
-                {account.type}
-              </div>
-
-              <div className="text-right font-medium text-[#49392f]">
-                ₹
-                {account.balance.toLocaleString(
-                  "en-IN"
-                )}
-              </div>
-
-            </button>
-
-          ))}
-
-        </div>
-
-      )}
-
-      {/* =========================================
-          NEW ACCOUNT MODAL
-      ========================================= */}
-
-      {showForm && (
-
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-
-          <div className="w-full max-w-lg rounded-2xl bg-[#faf8f5] shadow-2xl">
-
-            {/* Modal Header */}
-
-            <div className="flex items-start justify-between border-b border-[#ddd4ca] px-7 py-6">
 
               <div>
+                <span
+                  className={`type-badge ${getTypeClass(
+                    account.type
+                  )}`}
+                >
+                  {account.type}
+                </span>
+              </div>
 
-                <h2 className="text-2xl font-semibold text-[#30251e]">
-                  New Account
-                </h2>
+              <div className="action-cell">
+                {account.status === "Active" && (
+                  <button
+                    className="archive-action"
+                    onClick={() =>
+                      handleArchive(account.id)
+                    }
+                  >
+                    <Archive size={17} />
+                    Archive
+                  </button>
+                )}
 
-                <p className="mt-1 text-sm text-[#756b63]">
-                  Create a new ledger account.
+                {account.status === "Archived" && (
+                  <span className="archived-text">
+                    Archived
+                  </span>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* =========================
+          NEW ACCOUNT MODAL
+      ========================= */}
+
+      {showModal && (
+        <div
+          className="modal-overlay"
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            className="new-account-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+
+            {/* MODAL HEADER */}
+
+            <div className="modal-header">
+              <div>
+                <h2>New Account</h2>
+                <p>
+                  Create a new account for your chart of
+                  accounts.
                 </p>
-
               </div>
 
               <button
-                onClick={() =>
-                  setShowForm(false)
-                }
-                className="text-[#756b63] transition hover:text-[#30251e]"
+                className="close-btn"
+                onClick={() => setShowModal(false)}
               >
-                <X size={24} />
+                <X size={21} />
               </button>
-
             </div>
 
-            {/* Modal Body */}
+            {/* FORM */}
 
-            <div className="space-y-6 px-7 py-7">
+            <form onSubmit={handleAddAccount}>
 
-              {/* Account Name */}
+              {/* ACCOUNT NAME */}
 
-              <div>
-
-                <label className="mb-2 block text-sm font-medium text-[#30251e]">
+              <div className="form-group">
+                <label>
                   Account Name
+                  <span>*</span>
                 </label>
 
                 <input
                   type="text"
+                  placeholder="Enter account name"
                   value={accountName}
                   onChange={(e) =>
                     setAccountName(e.target.value)
                   }
-                  placeholder="Enter account name"
-                  className="w-full rounded-lg border border-[#d6ccc1] bg-white px-4 py-3 text-sm outline-none transition focus:border-[#49392f] focus:ring-1 focus:ring-[#49392f]"
                 />
-
               </div>
 
-              {/* Account Type */}
+              {/* ACCOUNT TYPE */}
 
-              <div>
-
-                <label className="mb-2 block text-sm font-medium text-[#30251e]">
+              <div className="form-group">
+                <label>
                   Type
+                  <span>*</span>
                 </label>
 
-                <select
-                  value={accountType}
-                  onChange={(e) =>
-                    setAccountType(e.target.value)
-                  }
-                  className="w-full rounded-lg border border-[#d6ccc1] bg-white px-4 py-3 text-sm outline-none transition focus:border-[#49392f] focus:ring-1 focus:ring-[#49392f]"
-                >
-
-                  <option value="">
-                    Select account type
-                  </option>
-
-                  {accountTypes.map((type) => (
-
-                    <option
-                      key={type}
-                      value={type}
-                    >
-                      {type}
+                <div className="select-wrapper">
+                  <select
+                    value={accountType}
+                    onChange={(e) =>
+                      setAccountType(e.target.value)
+                    }
+                  >
+                    <option value="">
+                      Select account type
                     </option>
 
-                  ))}
+                    {/* BALANCE SHEET */}
 
-                </select>
+                    <optgroup label="Balance Sheet">
+                      <option value="Asset">
+                        Asset
+                      </option>
+
+                      <option value="Liability">
+                        Liability
+                      </option>
+
+                      <option value="Bank">
+                        Bank
+                      </option>
+
+                      <option value="Capital">
+                        Capital
+                      </option>
+
+                      <option value="Cash">
+                        Cash
+                      </option>
+                    </optgroup>
+
+                    {/* PROFIT AND LOSS */}
+
+                    <optgroup label="Profit and Loss">
+                      <option value="Income">
+                        Income
+                      </option>
+
+                      <option value="Expenses">
+                        Expenses
+                      </option>
+
+                      <option value="Other Expenses">
+                        Other Expenses
+                      </option>
+                    </optgroup>
+                  </select>
+
+                  <ChevronDown
+                    size={18}
+                    className="select-icon"
+                  />
+                </div>
+              </div>
+
+              {/* DESCRIPTION */}
+
+              <div className="type-description">
+
+                {accountType === "Asset" && (
+                  <>
+                    <strong>Asset</strong>
+                    <p>
+                      Accounts representing things owned by
+                      the business.
+                    </p>
+                  </>
+                )}
+
+                {accountType === "Liability" && (
+                  <>
+                    <strong>Liability</strong>
+                    <p>
+                      Accounts representing amounts owed by
+                      the business.
+                    </p>
+                  </>
+                )}
+
+                {accountType === "Bank" && (
+                  <>
+                    <strong>Bank</strong>
+                    <p>
+                      Accounts used for bank-related
+                      transactions.
+                    </p>
+                  </>
+                )}
+
+                {accountType === "Capital" && (
+                  <>
+                    <strong>Capital</strong>
+                    <p>
+                      Accounts representing owner's capital
+                      or investment.
+                    </p>
+                  </>
+                )}
+
+                {accountType === "Cash" && (
+                  <>
+                    <strong>Cash</strong>
+                    <p>
+                      Accounts used for cash transactions.
+                    </p>
+                  </>
+                )}
+
+                {accountType === "Income" && (
+                  <>
+                    <strong>Income</strong>
+                    <p>
+                      Accounts used to record business
+                      income and revenue.
+                    </p>
+                  </>
+                )}
+
+                {accountType === "Expenses" && (
+                  <>
+                    <strong>Expenses</strong>
+                    <p>
+                      Accounts used to record normal business
+                      expenses.
+                    </p>
+                  </>
+                )}
+
+                {accountType === "Other Expenses" && (
+                  <>
+                    <strong>Other Expenses</strong>
+                    <p>
+                      Accounts used for other expenses that
+                      are not regular operating expenses.
+                    </p>
+                  </>
+                )}
+              </div>
+
+              {/* ERROR */}
+
+              {error && (
+                <div className="form-error">
+                  {error}
+                </div>
+              )}
+
+              {/* BUTTONS */}
+
+              <div className="modal-actions">
+
+                <button
+                  type="button"
+                  className="cancel-btn"
+                  onClick={() => setShowModal(false)}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  className="save-btn"
+                >
+                  Create Account
+                </button>
 
               </div>
 
-            </div>
-
-            {/* Modal Footer */}
-
-            <div className="flex justify-end gap-3 border-t border-[#ddd4ca] px-7 py-5">
-
-              <button
-                onClick={() => {
-                  setShowForm(false);
-                  setAccountName("");
-                  setAccountType("");
-                }}
-                className="rounded-lg border border-[#cfc5ba] px-5 py-2.5 text-sm font-medium text-[#49392f] transition hover:bg-[#eee8df]"
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={handleCreate}
-                className="rounded-lg bg-[#49392f] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#5b483b]"
-              >
-                Create
-              </button>
-
-            </div>
-
+            </form>
           </div>
-
         </div>
-
       )}
 
+      {/* =========================
+          STYLES
+      ========================= */}
+
+      <style>{`
+
+        * {
+          box-sizing: border-box;
+        }
+
+        .chart-page {
+          min-height: 100vh;
+          background: #f8f7f3;
+          padding: 40px;
+          color: #111;
+        }
+
+        .page-header {
+          border-bottom: 1px solid #ddd8cf;
+          padding-bottom: 25px;
+        }
+
+        .breadcrumb {
+          display: flex;
+          gap: 10px;
+          align-items: center;
+          font-size: 16px;
+          color: #777;
+          margin-bottom: 8px;
+        }
+
+        .breadcrumb strong {
+          color: #111;
+          font-weight: 500;
+        }
+
+        .page-header h1 {
+          font-size: 36px;
+          margin: 0;
+          font-weight: 700;
+        }
+
+        /* TOOLBAR */
+
+        .toolbar {
+          margin-top: 30px;
+          background: white;
+          border: 1px solid #e3ded5;
+          border-radius: 20px;
+          padding: 25px;
+          display: flex;
+          align-items: center;
+          gap: 15px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+        }
+
+        button {
+          font-family: inherit;
+        }
+
+        .new-btn {
+          height: 52px;
+          padding: 0 25px;
+          border: none;
+          border-radius: 10px;
+          background: #342820;
+          color: white;
+          font-size: 16px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          cursor: pointer;
+        }
+
+        .new-btn:hover {
+          background: #241b16;
+        }
+
+        .archive-btn,
+        .back-btn {
+          height: 52px;
+          padding: 0 22px;
+          border: 1px solid #e1dbd2;
+          background: white;
+          border-radius: 10px;
+          font-size: 16px;
+          color: #302820;
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          cursor: pointer;
+        }
+
+        .active-archive {
+          background: #342820;
+          color: white;
+        }
+
+        .search-box {
+          height: 52px;
+          width: 380px;
+          border: 1px solid #d8d0c5;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 0 15px;
+          color: #777;
+        }
+
+        .search-box input {
+          width: 100%;
+          border: none;
+          outline: none;
+          font-size: 16px;
+        }
+
+        .toolbar-spacer {
+          flex: 1;
+        }
+
+        /* TABLE */
+
+        .account-table {
+          margin-top: 30px;
+          background: white;
+          border: 1px solid #e3ded5;
+          border-radius: 20px;
+          overflow: hidden;
+        }
+
+        .table-header,
+        .table-row {
+          display: grid;
+          grid-template-columns: 1.3fr 1fr 180px;
+          align-items: center;
+        }
+
+        .table-header {
+          padding: 20px 30px;
+          background: #faf9f6;
+          color: #666;
+          font-size: 14px;
+          font-weight: 600;
+          letter-spacing: 0.5px;
+          border-bottom: 1px solid #e4ded5;
+        }
+
+        .table-row {
+          padding: 20px 30px;
+          min-height: 70px;
+          border-bottom: 1px solid #eee9e1;
+        }
+
+        .table-row:last-child {
+          border-bottom: none;
+        }
+
+        .account-name {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          font-size: 16px;
+        }
+
+        .bullet {
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: #bcb6af;
+        }
+
+        .type-badge {
+          display: inline-flex;
+          padding: 8px 15px;
+          border-radius: 20px;
+          font-size: 14px;
+          border: 1px solid;
+        }
+
+        .asset {
+          background: #eef5e9;
+          border-color: #cfdec6;
+          color: #4b693d;
+        }
+
+        .liability {
+          background: #fff0ed;
+          border-color: #efcbc4;
+          color: #a54d3e;
+        }
+
+        .bank {
+          background: #edf5f9;
+          border-color: #c9e0eb;
+          color: #36718c;
+        }
+
+        .capital {
+          background: #f3eef9;
+          border-color: #ddd0eb;
+          color: #76558d;
+        }
+
+        .cash {
+          background: #eaf6f1;
+          border-color: #cce5da;
+          color: #3d7a65;
+        }
+
+        .income {
+          background: #e9f5f1;
+          border-color: #c9e2d9;
+          color: #3b7964;
+        }
+
+        .expenses,
+        .other-expenses {
+          background: #fff1e7;
+          border-color: #efd5c0;
+          color: #a15d35;
+        }
+
+        .action-cell {
+          display: flex;
+          justify-content: flex-start;
+        }
+
+        .archive-action {
+          border: none;
+          background: transparent;
+          color: #756d65;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 15px;
+          cursor: pointer;
+        }
+
+        .archive-action:hover {
+          color: #342820;
+        }
+
+        .archived-text {
+          color: #999;
+          font-size: 14px;
+        }
+
+        .empty-state {
+          padding: 50px;
+          text-align: center;
+          color: #777;
+        }
+
+        /* MODAL */
+
+        .modal-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.45);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+          padding: 20px;
+        }
+
+        .new-account-modal {
+          width: 100%;
+          max-width: 570px;
+          background: white;
+          border-radius: 18px;
+          padding: 30px;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+
+        .modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          padding-bottom: 22px;
+          border-bottom: 1px solid #e6e0d7;
+          margin-bottom: 25px;
+        }
+
+        .modal-header h2 {
+          margin: 0 0 6px;
+          font-size: 26px;
+        }
+
+        .modal-header p {
+          margin: 0;
+          color: #777;
+          font-size: 14px;
+        }
+
+        .close-btn {
+          border: none;
+          background: #f5f3ef;
+          width: 38px;
+          height: 38px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+        }
+
+        /* FORM */
+
+        .form-group {
+          margin-bottom: 22px;
+        }
+
+        .form-group label {
+          display: block;
+          margin-bottom: 9px;
+          font-size: 15px;
+          font-weight: 600;
+        }
+
+        .form-group label span {
+          color: #c34d3d;
+          margin-left: 4px;
+        }
+
+        .form-group input,
+        .form-group select {
+          width: 100%;
+          height: 50px;
+          border: 1px solid #d8d0c5;
+          border-radius: 9px;
+          padding: 0 14px;
+          font-size: 15px;
+          outline: none;
+          background: white;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+          border-color: #342820;
+        }
+
+        .select-wrapper {
+          position: relative;
+        }
+
+        .select-wrapper select {
+          appearance: none;
+          padding-right: 45px;
+          cursor: pointer;
+        }
+
+        .select-icon {
+          position: absolute;
+          right: 15px;
+          top: 16px;
+          pointer-events: none;
+          color: #777;
+        }
+
+        /*
+          Dropdown headings:
+          Balance Sheet
+          Profit and Loss
+
+          These are optgroup labels and cannot be selected.
+        */
+
+        .type-description {
+          min-height: 65px;
+          background: #faf8f4;
+          border: 1px solid #e8e1d8;
+          border-radius: 10px;
+          padding: 12px 15px;
+          margin-bottom: 20px;
+          font-size: 14px;
+          color: #555;
+        }
+
+        .type-description:empty {
+          display: none;
+        }
+
+        .type-description strong {
+          color: #342820;
+          display: block;
+          margin-bottom: 4px;
+        }
+
+        .type-description p {
+          margin: 0;
+          line-height: 1.4;
+        }
+
+        .form-error {
+          color: #b44234;
+          background: #fff1ee;
+          border: 1px solid #efcbc4;
+          padding: 10px 13px;
+          border-radius: 8px;
+          font-size: 14px;
+          margin-bottom: 18px;
+        }
+
+        .modal-actions {
+          display: flex;
+          justify-content: flex-end;
+          gap: 12px;
+          padding-top: 10px;
+        }
+
+        .cancel-btn,
+        .save-btn {
+          height: 46px;
+          padding: 0 22px;
+          border-radius: 9px;
+          font-size: 15px;
+          cursor: pointer;
+        }
+
+        .cancel-btn {
+          background: white;
+          border: 1px solid #d8d0c5;
+          color: #342820;
+        }
+
+        .save-btn {
+          background: #342820;
+          border: 1px solid #342820;
+          color: white;
+        }
+
+        .save-btn:hover {
+          background: #241b16;
+        }
+
+        @media (max-width: 900px) {
+
+          .chart-page {
+            padding: 20px;
+          }
+
+          .toolbar {
+            flex-wrap: wrap;
+          }
+
+          .search-box {
+            width: 100%;
+          }
+
+          .toolbar-spacer {
+            display: none;
+          }
+
+          .table-header,
+          .table-row {
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+          }
+
+          .table-header div:last-child,
+          .table-row .action-cell {
+            grid-column: 1 / -1;
+          }
+        }
+
+      `}</style>
     </div>
   );
 }

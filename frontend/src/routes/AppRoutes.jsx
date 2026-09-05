@@ -1,8 +1,8 @@
 import { Routes, Route } from "react-router-dom";
 
-// =========================
-// Admin
-// =========================
+// =====================================================
+// ADMIN
+// =====================================================
 
 import AdminLayout from "../components/layout/AdminLayout";
 import AdminDashboard from "../pages/admin/Dashboard";
@@ -14,17 +14,21 @@ import AdminJournals from "../pages/admin/Journals";
 import AdminPurchaseOrders from "../pages/admin/PurchaseOrders";
 import AdminVendorBills from "../pages/admin/VendorBills";
 import AdminSalesOrders from "../pages/admin/SalesOrders";
+import AdminPayments from "../pages/admin/Payments";
+import AdminBudgets from "../pages/admin/Budgets";
+import AdminReports from "../pages/admin/Reports";
+import AdminCustomerInvoices from "../pages/admin/CustomerInvoices";
 
-// =========================
-// Authentication
-// =========================
+// =====================================================
+// AUTHENTICATION
+// =====================================================
 
 import Login from "../pages/auth/Login";
 import Signup from "../pages/auth/Signup";
 
-// =========================
-// Accountant / Invoicing User
-// =========================
+// =====================================================
+// ACCOUNTANT / INVOICING USER
+// =====================================================
 
 import AccountantLayout from "../components/layout/AccountantLayout";
 import AccountantDashboard from "../pages/invoicing_user/Dashboard";
@@ -46,18 +50,18 @@ function AppRoutes() {
   return (
     <Routes>
 
-      {/* =========================
+      {/* =================================================
           AUTHENTICATION
-          ========================= */}
+      ================================================= */}
 
       <Route path="/" element={<Login />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
 
 
-      {/* =========================
-          ADMIN SECTION
-          ========================= */}
+      {/* =================================================
+          ADMIN PANEL
+      ================================================= */}
 
       <Route path="/admin" element={<AdminLayout />}>
         {/* Dashboard */}
@@ -86,12 +90,25 @@ function AppRoutes() {
 
         {/* Sales Orders */}
         <Route path="sales-orders" element={<AdminSalesOrders />} />
+
+        {/* Payments */}
+        <Route path="payments" element={<AdminPayments />} />
+
+        {/* Budgets */}
+        <Route path="budgets" element={<AdminBudgets />} />
+
+        {/* Reports */}
+        <Route path="reports" element={<AdminReports />} />
+
+        {/* Customer Invoices */}
+        <Route path="customer-invoices" element={<AdminCustomerInvoices />} />
+        <Route path="invoices" element={<AdminCustomerInvoices />} />
       </Route>
 
 
-      {/* =========================
-          ACCOUNTANT / INVOICING USER
-          ========================= */}
+      {/* =================================================
+          ACCOUNTANT / INVOICING USER PANEL
+      ================================================= */}
 
       <Route path="/invoicing_user" element={<AccountantLayout />}>
         {/* Dashboard */}
@@ -125,9 +142,9 @@ function AppRoutes() {
       </Route>
 
 
-      {/* =========================
+      {/* =================================================
           HYPHENATED ALIAS: /invoicing-user
-          ========================= */}
+      ================================================= */}
 
       <Route path="/invoicing-user" element={<AccountantLayout />}>
         <Route index element={<AccountantDashboard />} />

@@ -1,259 +1,1049 @@
-import { useState } from "react";
-import { Plus, ArrowLeft, X } from "lucide-react";
+import { useMemo, useState } from "react";
+import {
+  Plus,
+  Search,
+  ArrowLeft,
+  ShoppingCart,
+  ShoppingBag,
+  Landmark,
+  WalletCards,
+  BookOpen,
+  X,
+  ArrowDownLeft,
+  ArrowUpRight,
+  User,
+  Package,
+  FileText,
+  CalendarDays,
+  CreditCard,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-function Journal() {
+function Journals() {
   const navigate = useNavigate();
 
-  const [showForm, setShowForm] = useState(false);
+  const [search, setSearch] = useState("");
+  const [selectedJournal, setSelectedJournal] = useState(null);
 
-  const [journalName, setJournalName] = useState("");
-  const [journalType, setJournalType] = useState("");
-  const [defaultAccount, setDefaultAccount] = useState("");
+  // =========================================================
+  // JOURNAL MASTER DATA
+  // =========================================================
 
-  // -----------------------------------------
-  // JOURNALS
-  // -----------------------------------------
-
-  const [journals, setJournals] = useState([
+  const journals = [
     {
+      id: 1,
       name: "Sales",
       type: "Sales",
+      icon: ShoppingCart,
       defaultAccount: "Sales Income A/c",
     },
     {
+      id: 2,
       name: "Purchase",
       type: "Purchase",
-      defaultAccount: "Purchase Expense A/c",
+      icon: ShoppingBag,
+      defaultAccount: "Purchases Expense A/c",
     },
     {
+      id: 3,
       name: "Bank",
       type: "Bank",
+      icon: Landmark,
       defaultAccount: "Bank A/c",
     },
     {
+      id: 4,
       name: "Cash",
       type: "Cash",
+      icon: WalletCards,
       defaultAccount: "Cash A/c",
     },
-  ]);
+  ];
 
-  // -----------------------------------------
-  // CHART OF ACCOUNTS
-  // -----------------------------------------
+  // =========================================================
+  // SAMPLE TRANSACTIONS
+  // =========================================================
+  //
+  // In the future these will come from your backend/API.
+  //
+  // Sales:
+  // Sales Order -> Customer Invoice -> Payment
+  //
+  // Purchase:
+  // Purchase Order -> Vendor Bill -> Payment
+  //
+  // Bank/Cash:
+  // Payment transactions
+  //
+  // =========================================================
 
-  const accounts = [
+  const transactions = [
+    // =========================
+    // SALES
+    // =========================
+
     {
-      name: "Cash",
-      type: "Asset",
-      displayName: "Cash A/c",
+      id: 1,
+      journal: "Sales",
+      date: "05 Sep 2026",
+      reference: "INV-001",
+      party: "Raj Furniture",
+      partyType: "Customer",
+
+      product: "Office Chair",
+      quantity: 5,
+      unitPrice: 5000,
+      total: 25000,
+
+      paymentStatus: "Paid",
+      paymentMode: "Cash",
+
+      debitAccount: "Cash A/c",
+      creditAccount: "Sales Income A/c",
+
+      debit: 25000,
+      credit: 25000,
+
+      description: "Sale of 5 Office Chairs",
     },
+
     {
-      name: "Bank",
-      type: "Asset",
-      displayName: "Bank A/c",
+      id: 2,
+      journal: "Sales",
+      date: "04 Sep 2026",
+      reference: "INV-002",
+      party: "Urban Interiors",
+      partyType: "Customer",
+
+      product: "Wooden Table",
+      quantity: 3,
+      unitPrice: 6000,
+      total: 18000,
+
+      paymentStatus: "Paid",
+      paymentMode: "Bank",
+
+      debitAccount: "Bank A/c",
+      creditAccount: "Sales Income A/c",
+
+      debit: 18000,
+      credit: 18000,
+
+      description: "Sale of 3 Wooden Tables",
     },
+
     {
-      name: "Debtors",
-      type: "Asset",
-      displayName: "Debtors A/c",
+      id: 3,
+      journal: "Sales",
+      date: "02 Sep 2026",
+      reference: "INV-003",
+      party: "Modern Home",
+      partyType: "Customer",
+
+      product: "Sofa",
+      quantity: 2,
+      unitPrice: 15000,
+      total: 30000,
+
+      paymentStatus: "Not Paid",
+      paymentMode: "Credit",
+
+      debitAccount: "Debtors A/c",
+      creditAccount: "Sales Income A/c",
+
+      debit: 30000,
+      credit: 30000,
+
+      description: "Credit sale of 2 Sofas",
     },
+
+    // =========================
+    // PURCHASE
+    // =========================
+
     {
-      name: "Creditors",
-      type: "Liability",
-      displayName: "Creditors A/c",
+      id: 4,
+      journal: "Purchase",
+      date: "03 Sep 2026",
+      reference: "PUR-021",
+      party: "ABC Wood Suppliers",
+      partyType: "Vendor",
+
+      product: "Wooden Panels",
+      quantity: 10,
+      unitPrice: 3500,
+      total: 35000,
+
+      paymentStatus: "Paid",
+      paymentMode: "Bank",
+
+      debitAccount: "Purchases Expense A/c",
+      creditAccount: "Bank A/c",
+
+      debit: 35000,
+      credit: 35000,
+
+      description: "Purchase of Wooden Panels",
     },
+
     {
-      name: "Sales Income",
-      type: "Income",
-      displayName: "Sales Income A/c",
+      id: 5,
+      journal: "Purchase",
+      date: "01 Sep 2026",
+      reference: "PUR-020",
+      party: "WoodCraft Suppliers",
+      partyType: "Vendor",
+
+      product: "Plywood Sheets",
+      quantity: 20,
+      unitPrice: 1100,
+      total: 22000,
+
+      paymentStatus: "Paid",
+      paymentMode: "Bank",
+
+      debitAccount: "Purchases Expense A/c",
+      creditAccount: "Bank A/c",
+
+      debit: 22000,
+      credit: 22000,
+
+      description: "Purchase of Plywood Sheets",
     },
+
+    // =========================
+    // BANK
+    // =========================
+
     {
-      name: "Purchase Expense",
-      type: "Expense",
-      displayName: "Purchase Expense A/c",
+      id: 6,
+      journal: "Bank",
+      date: "04 Sep 2026",
+      reference: "INV-002",
+      party: "Urban Interiors",
+      partyType: "Customer",
+
+      product: "Wooden Table",
+      quantity: 3,
+      unitPrice: 6000,
+      total: 18000,
+
+      paymentStatus: "Received",
+      paymentMode: "Bank",
+
+      debitAccount: "Bank A/c",
+      creditAccount: "Debtors A/c",
+
+      debit: 18000,
+      credit: 0,
+
+      description: "Payment received from customer",
+    },
+
+    {
+      id: 7,
+      journal: "Bank",
+      date: "03 Sep 2026",
+      reference: "PUR-021",
+      party: "ABC Wood Suppliers",
+      partyType: "Vendor",
+
+      product: "Wooden Panels",
+      quantity: 10,
+      unitPrice: 3500,
+      total: 35000,
+
+      paymentStatus: "Paid",
+      paymentMode: "Bank",
+
+      debitAccount: "Creditors A/c",
+      creditAccount: "Bank A/c",
+
+      debit: 0,
+      credit: 35000,
+
+      description: "Payment made to vendor",
+    },
+
+    {
+      id: 8,
+      journal: "Bank",
+      date: "30 Aug 2026",
+      reference: "BANK-004",
+      party: "Bank Transfer",
+      partyType: "Internal",
+
+      product: "-",
+      quantity: 0,
+      unitPrice: 0,
+      total: 10000,
+
+      paymentStatus: "Completed",
+      paymentMode: "Bank",
+
+      debitAccount: "Bank A/c",
+      creditAccount: "Cash A/c",
+
+      debit: 10000,
+      credit: 0,
+
+      description: "Cash deposited into bank",
+    },
+
+    // =========================
+    // CASH
+    // =========================
+
+    {
+      id: 9,
+      journal: "Cash",
+      date: "05 Sep 2026",
+      reference: "INV-001",
+      party: "Raj Furniture",
+      partyType: "Customer",
+
+      product: "Office Chair",
+      quantity: 5,
+      unitPrice: 5000,
+      total: 25000,
+
+      paymentStatus: "Received",
+      paymentMode: "Cash",
+
+      debitAccount: "Cash A/c",
+      creditAccount: "Debtors A/c",
+
+      debit: 25000,
+      credit: 0,
+
+      description: "Cash received from customer",
+    },
+
+    {
+      id: 10,
+      journal: "Cash",
+      date: "29 Aug 2026",
+      reference: "CASH-003",
+      party: "Office Expense",
+      partyType: "Expense",
+
+      product: "-",
+      quantity: 0,
+      unitPrice: 0,
+      total: 5000,
+
+      paymentStatus: "Paid",
+      paymentMode: "Cash",
+
+      debitAccount: "Other Expense A/c",
+      creditAccount: "Cash A/c",
+
+      debit: 5000,
+      credit: 0,
+
+      description: "Office expense paid in cash",
     },
   ];
 
-  // -----------------------------------------
-  // JOURNAL TYPES
-  // -----------------------------------------
+  // =========================================================
+  // SEARCH JOURNALS
+  // =========================================================
 
-  const journalTypes = [
-    "Sales",
-    "Purchase",
-    "Bank",
-    "Cash",
-  ];
+  const filteredJournals = useMemo(() => {
+    const value = search.toLowerCase().trim();
 
-  // -----------------------------------------
-  // DEFAULT ACCOUNT OPTIONS
-  // -----------------------------------------
+    if (!value) {
+      return journals;
+    }
 
-  const getDefaultAccounts = (type) => {
+    return journals.filter(
+      (journal) =>
+        journal.name.toLowerCase().includes(value) ||
+        journal.type.toLowerCase().includes(value) ||
+        journal.defaultAccount.toLowerCase().includes(value)
+    );
+  }, [search]);
+
+  // =========================================================
+  // JOURNAL TRANSACTIONS
+  // =========================================================
+
+  const selectedTransactions = selectedJournal
+    ? transactions.filter(
+        (transaction) =>
+          transaction.journal === selectedJournal.name
+      )
+    : [];
+
+  // =========================================================
+  // TOTALS
+  // =========================================================
+
+  const totalAmount = selectedTransactions.reduce(
+    (sum, transaction) => sum + transaction.total,
+    0
+  );
+
+  const totalDebit = selectedTransactions.reduce(
+    (sum, transaction) => sum + transaction.debit,
+    0
+  );
+
+  const totalCredit = selectedTransactions.reduce(
+    (sum, transaction) => sum + transaction.credit,
+    0
+  );
+
+  // =========================================================
+  // TYPE STYLE
+  // =========================================================
+
+  const getTypeClass = (type) => {
     switch (type) {
       case "Sales":
-        return accounts.filter(
-          (account) => account.name === "Sales Income"
-        );
+        return "bg-green-50 text-green-700 border-green-200";
 
       case "Purchase":
-        return accounts.filter(
-          (account) => account.name === "Purchase Expense"
-        );
+        return "bg-orange-50 text-orange-700 border-orange-200";
 
       case "Bank":
-        return accounts.filter(
-          (account) => account.name === "Bank"
-        );
+        return "bg-blue-50 text-blue-700 border-blue-200";
 
       case "Cash":
-        return accounts.filter(
-          (account) => account.name === "Cash"
-        );
+        return "bg-emerald-50 text-emerald-700 border-emerald-200";
 
       default:
-        return [];
+        return "bg-gray-50 text-gray-700 border-gray-200";
     }
   };
 
-  // -----------------------------------------
-  // JOURNAL TYPE CHANGE
-  // -----------------------------------------
+  // =========================================================
+  // FORMAT MONEY
+  // =========================================================
 
-  const handleTypeChange = (e) => {
-    const selectedType = e.target.value;
-
-    setJournalType(selectedType);
-
-    // Reset account whenever journal type changes
-    setDefaultAccount("");
-
-    // Automatically select the default account
-    // when there is only one valid account.
-    const availableAccounts =
-      getDefaultAccounts(selectedType);
-
-    if (availableAccounts.length === 1) {
-      setDefaultAccount(
-        availableAccounts[0].displayName
-      );
-    }
+  const formatMoney = (amount) => {
+    return `₹${amount.toLocaleString("en-IN")}`;
   };
 
-  // -----------------------------------------
-  // CREATE JOURNAL
-  // -----------------------------------------
+  // =========================================================
+  // JOURNAL DETAIL VIEW
+  // =========================================================
 
-  const handleCreateJournal = () => {
-    if (!journalName.trim()) {
-      alert("Please enter Journal Name.");
-      return;
-    }
+  if (selectedJournal) {
+    const Icon = selectedJournal.icon;
 
-    if (!journalType) {
-      alert("Please select Journal Type.");
-      return;
-    }
+    return (
+      <div className="min-h-screen bg-[#f8f7f4] px-8 py-8">
 
-    if (!defaultAccount) {
-      alert("Please select Default Account.");
-      return;
-    }
-
-    // Prevent duplicate journal names
-    const alreadyExists = journals.some(
-      (journal) =>
-        journal.name.toLowerCase() ===
-        journalName.trim().toLowerCase()
-    );
-
-    if (alreadyExists) {
-      alert("A journal with this name already exists.");
-      return;
-    }
-
-    const newJournal = {
-      name: journalName.trim(),
-      type: journalType,
-      defaultAccount: defaultAccount,
-    };
-
-    setJournals((previousJournals) => [
-      ...previousJournals,
-      newJournal,
-    ]);
-
-    // Reset form
-    setJournalName("");
-    setJournalType("");
-    setDefaultAccount("");
-
-    setShowForm(false);
-  };
-
-  // -----------------------------------------
-  // CLOSE FORM
-  // -----------------------------------------
-
-  const handleCloseForm = () => {
-    setShowForm(false);
-
-    setJournalName("");
-    setJournalType("");
-    setDefaultAccount("");
-  };
-
-  // -----------------------------------------
-  // BACK
-  // -----------------------------------------
-
-  const handleBack = () => {
-    navigate(-1);
-  };
-
-  // -----------------------------------------
-  // UI
-  // -----------------------------------------
-
-  return (
-    <div className="min-h-screen bg-[#f4f1eb] p-6 md:p-8">
-
-      {/* =====================================
-          HEADER
-      ===================================== */}
-
-      <div className="mb-6 flex items-center justify-between">
-
-        <div>
-          <h1 className="text-3xl font-semibold text-[#30251e]">
-            Journals
-          </h1>
-
-          <p className="mt-1 text-sm text-[#756b63]">
-            Manage your accounting journals.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-
-          {/* NEW */}
+        {/* Back / Heading */}
+        <div className="mb-7">
 
           <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 rounded-lg bg-[#49392f] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#5b483b]"
+            onClick={() => setSelectedJournal(null)}
+            className="
+              flex items-center gap-2
+              text-[#665b53]
+              mb-5
+              hover:text-black
+              transition
+            "
           >
-            <Plus size={18} />
+            <ArrowLeft size={18} />
+            Back to Journals
+          </button>
+
+          <div className="flex items-center gap-4">
+
+            <div
+              className="
+                w-12 h-12
+                rounded-xl
+                bg-white
+                border
+                border-[#e2ddd5]
+                flex items-center justify-center
+              "
+            >
+              <Icon size={24} />
+            </div>
+
+            <div>
+              <div className="flex items-center gap-2 text-sm mb-1">
+                <span className="text-gray-500">
+                  Account
+                </span>
+
+                <span className="text-gray-400">
+                  /
+                </span>
+
+                <span className="text-gray-900">
+                  Journals
+                </span>
+
+                <span className="text-gray-400">
+                  /
+                </span>
+
+                <span className="text-gray-900">
+                  {selectedJournal.name}
+                </span>
+              </div>
+
+              <h1 className="text-4xl font-bold text-gray-950">
+                {selectedJournal.name} Journal
+              </h1>
+            </div>
+          </div>
+
+          <div className="border-b border-[#dedbd5] mt-6" />
+        </div>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-4 gap-5 mb-7">
+
+          <div className="bg-white border border-[#e5e0d8] rounded-2xl p-5">
+            <p className="text-sm text-gray-500">
+              Transactions
+            </p>
+
+            <p className="text-2xl font-bold mt-2">
+              {selectedTransactions.length}
+            </p>
+          </div>
+
+          <div className="bg-white border border-[#e5e0d8] rounded-2xl p-5">
+            <p className="text-sm text-gray-500">
+              Total Amount
+            </p>
+
+            <p className="text-2xl font-bold mt-2">
+              {formatMoney(totalAmount)}
+            </p>
+          </div>
+
+          <div className="bg-white border border-[#e5e0d8] rounded-2xl p-5">
+            <p className="text-sm text-gray-500">
+              Total Debit
+            </p>
+
+            <p className="text-2xl font-bold text-green-700 mt-2">
+              {formatMoney(totalDebit)}
+            </p>
+          </div>
+
+          <div className="bg-white border border-[#e5e0d8] rounded-2xl p-5">
+            <p className="text-sm text-gray-500">
+              Total Credit
+            </p>
+
+            <p className="text-2xl font-bold text-red-700 mt-2">
+              {formatMoney(totalCredit)}
+            </p>
+          </div>
+
+        </div>
+
+        {/* Default Account */}
+        <div className="bg-white border border-[#e5e0d8] rounded-2xl p-5 mb-7">
+
+          <div className="flex items-center gap-3">
+
+            <BookOpen
+              size={20}
+              className="text-[#756b63]"
+            />
+
+            <div>
+              <p className="text-xs text-gray-500">
+                DEFAULT ACCOUNT
+              </p>
+
+              <p className="font-semibold text-lg">
+                {selectedJournal.defaultAccount}
+              </p>
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* Transactions */}
+        <div className="bg-white border border-[#e5e0d8] rounded-[20px] overflow-hidden shadow-sm">
+
+          <div className="px-7 py-5 border-b border-[#e5e0d8]">
+
+            <h2 className="text-xl font-semibold">
+              Journal Transactions
+            </h2>
+
+            <p className="text-sm text-gray-500 mt-1">
+              All transactions recorded under the{" "}
+              {selectedJournal.name} journal
+            </p>
+
+          </div>
+
+          {selectedTransactions.length === 0 ? (
+
+            <div className="py-16 text-center text-gray-500">
+              No transactions found.
+            </div>
+
+          ) : (
+
+            <div className="overflow-x-auto">
+
+              <table className="w-full">
+
+                <thead className="bg-[#fbfaf8]">
+
+                  <tr className="text-left text-xs text-[#675e57]">
+
+                    <th className="px-6 py-4">
+                      DATE
+                    </th>
+
+                    <th className="px-6 py-4">
+                      REFERENCE
+                    </th>
+
+                    <th className="px-6 py-4">
+                      PARTY
+                    </th>
+
+                    <th className="px-6 py-4">
+                      DESCRIPTION
+                    </th>
+
+                    <th className="px-6 py-4">
+                      AMOUNT
+                    </th>
+
+                    <th className="px-6 py-4">
+                      PAYMENT
+                    </th>
+
+                    <th className="px-6 py-4">
+                      STATUS
+                    </th>
+
+                  </tr>
+
+                </thead>
+
+                <tbody>
+
+                  {selectedTransactions.map(
+                    (transaction) => (
+
+                      <tr
+                        key={transaction.id}
+                        className="
+                          border-t
+                          border-[#eeeae4]
+                          hover:bg-[#fcfbf9]
+                          cursor-pointer
+                        "
+                        onClick={() => {
+                          alert(
+                            `Reference: ${transaction.reference}`
+                          );
+                        }}
+                      >
+
+                        <td className="px-6 py-5">
+
+                          <div className="flex items-center gap-2">
+
+                            <CalendarDays
+                              size={16}
+                              className="text-gray-400"
+                            />
+
+                            {transaction.date}
+
+                          </div>
+
+                        </td>
+
+                        <td className="px-6 py-5">
+
+                          <span className="font-semibold">
+                            {transaction.reference}
+                          </span>
+
+                        </td>
+
+                        <td className="px-6 py-5">
+
+                          <div>
+
+                            <div className="flex items-center gap-2 font-medium">
+
+                              <User size={16} />
+
+                              {transaction.party}
+
+                            </div>
+
+                            <p className="text-xs text-gray-500 ml-6">
+                              {transaction.partyType}
+                            </p>
+
+                          </div>
+
+                        </td>
+
+                        <td className="px-6 py-5">
+
+                          <div className="flex items-center gap-2">
+
+                            <Package
+                              size={16}
+                              className="text-gray-400"
+                            />
+
+                            <div>
+
+                              <p className="font-medium">
+                                {transaction.product}
+                              </p>
+
+                              {transaction.quantity > 0 && (
+                                <p className="text-xs text-gray-500">
+                                  Qty:{" "}
+                                  {transaction.quantity} ×{" "}
+                                  {formatMoney(
+                                    transaction.unitPrice
+                                  )}
+                                </p>
+                              )}
+
+                            </div>
+
+                          </div>
+
+                        </td>
+
+                        <td className="px-6 py-5 font-semibold">
+
+                          {formatMoney(
+                            transaction.total
+                          )}
+
+                        </td>
+
+                        <td className="px-6 py-5">
+
+                          <span
+                            className="
+                              inline-flex
+                              items-center
+                              gap-2
+                              px-3
+                              py-1.5
+                              rounded-full
+                              bg-gray-50
+                              border
+                              border-gray-200
+                              text-sm
+                            "
+                          >
+
+                            <CreditCard size={14} />
+
+                            {transaction.paymentMode}
+
+                          </span>
+
+                        </td>
+
+                        <td className="px-6 py-5">
+
+                          <span
+                            className={`
+                              inline-flex
+                              px-3
+                              py-1.5
+                              rounded-full
+                              text-sm
+                              border
+                              ${
+                                transaction.paymentStatus ===
+                                "Paid" ||
+                                transaction.paymentStatus ===
+                                "Received"
+                                  ? "bg-green-50 text-green-700 border-green-200"
+                                  : "bg-orange-50 text-orange-700 border-orange-200"
+                              }
+                            `}
+                          >
+                            {transaction.paymentStatus}
+                          </span>
+
+                        </td>
+
+                      </tr>
+
+                    )
+                  )}
+
+                </tbody>
+
+              </table>
+
+            </div>
+
+          )}
+
+        </div>
+
+        {/* Accounting Entries */}
+        <div className="bg-white border border-[#e5e0d8] rounded-[20px] overflow-hidden shadow-sm mt-7">
+
+          <div className="px-7 py-5 border-b border-[#e5e0d8]">
+
+            <h2 className="text-xl font-semibold">
+              Accounting Entries
+            </h2>
+
+            <p className="text-sm text-gray-500 mt-1">
+              Debit and credit accounts generated from
+              the journal transactions
+            </p>
+
+          </div>
+
+          <div className="overflow-x-auto">
+
+            <table className="w-full">
+
+              <thead className="bg-[#fbfaf8]">
+
+                <tr className="text-left text-xs text-[#675e57]">
+
+                  <th className="px-6 py-4">
+                    DATE
+                  </th>
+
+                  <th className="px-6 py-4">
+                    REFERENCE
+                  </th>
+
+                  <th className="px-6 py-4">
+                    DEBIT ACCOUNT
+                  </th>
+
+                  <th className="px-6 py-4">
+                    CREDIT ACCOUNT
+                  </th>
+
+                  <th className="px-6 py-4">
+                    DEBIT
+                  </th>
+
+                  <th className="px-6 py-4">
+                    CREDIT
+                  </th>
+
+                </tr>
+
+              </thead>
+
+              <tbody>
+
+                {selectedTransactions.map(
+                  (transaction) => (
+
+                    <tr
+                      key={`entry-${transaction.id}`}
+                      className="border-t border-[#eeeae4]"
+                    >
+
+                      <td className="px-6 py-5">
+                        {transaction.date}
+                      </td>
+
+                      <td className="px-6 py-5 font-medium">
+                        {transaction.reference}
+                      </td>
+
+                      <td className="px-6 py-5">
+
+                        <div className="flex items-center gap-2">
+
+                          <ArrowDownLeft
+                            size={16}
+                            className="text-green-600"
+                          />
+
+                          {transaction.debitAccount}
+
+                        </div>
+
+                      </td>
+
+                      <td className="px-6 py-5">
+
+                        <div className="flex items-center gap-2">
+
+                          <ArrowUpRight
+                            size={16}
+                            className="text-red-600"
+                          />
+
+                          {transaction.creditAccount}
+
+                        </div>
+
+                      </td>
+
+                      <td className="px-6 py-5 font-semibold text-green-700">
+                        {formatMoney(transaction.debit)}
+                      </td>
+
+                      <td className="px-6 py-5 font-semibold text-red-700">
+                        {formatMoney(transaction.credit)}
+                      </td>
+
+                    </tr>
+
+                  )
+                )}
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+        </div>
+
+      </div>
+    );
+  }
+
+  // =========================================================
+  // MAIN JOURNAL LIST
+  // =========================================================
+
+  return (
+    <div className="min-h-screen bg-[#f8f7f4] px-8 py-8">
+
+      {/* Page Heading */}
+      <div className="mb-7">
+
+        <div className="flex items-center gap-2 text-sm mb-2">
+
+          <span className="text-gray-500">
+            Account
+          </span>
+
+          <span className="text-gray-400">
+            /
+          </span>
+
+          <span className="text-gray-900">
+            Journals
+          </span>
+
+        </div>
+
+        <h1 className="text-4xl font-bold text-gray-950">
+          Journals
+        </h1>
+
+        <div className="border-b border-[#dedbd5] mt-6" />
+
+      </div>
+
+      {/* Toolbar */}
+      <div className="bg-white border border-[#e5e0d8] rounded-[20px] px-6 py-6 mb-7 shadow-sm">
+
+        <div className="flex items-center gap-4">
+
+          <button
+            onClick={() => {
+              // New Journal functionality later
+            }}
+            className="
+              flex items-center gap-2
+              bg-[#352a23]
+              text-white
+              px-6 py-4
+              rounded-xl
+              text-lg
+              font-medium
+              hover:bg-[#29211c]
+              transition
+            "
+          >
+            <Plus size={21} />
             New
           </button>
 
-          {/* BACK */}
+          {/* Search */}
+          <div className="relative w-[400px]">
 
+            <Search
+              size={21}
+              className="
+                absolute
+                left-4
+                top-1/2
+                -translate-y-1/2
+                text-gray-500
+              "
+            />
+
+            <input
+              type="text"
+              placeholder="Search journals or accounts..."
+              value={search}
+              onChange={(e) =>
+                setSearch(e.target.value)
+              }
+              className="
+                w-full
+                h-[52px]
+                pl-12
+                pr-4
+                rounded-xl
+                border
+                border-[#d8cfc3]
+                bg-white
+                text-gray-900
+                text-lg
+                outline-none
+                focus:border-[#8f7968]
+                focus:ring-1
+                focus:ring-[#8f7968]
+              "
+            />
+
+          </div>
+
+          {/* Back */}
           <button
-            onClick={handleBack}
-            className="flex items-center gap-2 rounded-lg border border-[#cfc5ba] bg-white px-5 py-3 text-sm font-medium text-[#40352e] transition hover:bg-[#eee8df]"
+            onClick={() => navigate(-1)}
+            className="
+              ml-auto
+              flex items-center gap-2
+              px-6
+              py-4
+              rounded-xl
+              border
+              border-[#e2ddd5]
+              bg-white
+              text-[#5b514a]
+              text-lg
+              hover:bg-[#f8f6f2]
+              transition
+              shadow-sm
+            "
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={20} />
             Back
           </button>
 
@@ -261,223 +1051,137 @@ function Journal() {
 
       </div>
 
-      {/* =====================================
-          JOURNAL TABLE
-      ===================================== */}
+      {/* Journal Table */}
+      <div className="bg-white rounded-[20px] border border-[#e5e0d8] overflow-hidden shadow-sm">
 
-      <div className="overflow-hidden rounded-xl border border-[#d7cec4] bg-white shadow-sm">
-
-        {/* TABLE HEADER */}
-
-        <div className="grid grid-cols-3 border-b border-[#d7cec4] bg-[#ebe4da] px-6 py-4 text-sm font-semibold text-[#49392f]">
+        {/* Header */}
+        <div
+          className="
+            grid
+            grid-cols-[1.1fr_1fr_1.5fr]
+            items-center
+            px-7
+            py-5
+            bg-[#fbfaf8]
+            border-b
+            border-[#e5e0d8]
+            text-sm
+            font-semibold
+            tracking-wide
+            text-[#675e57]
+          "
+        >
 
           <div>
-            Journal Name
+            JOURNAL NAME
           </div>
 
           <div>
-            Type
+            TYPE
           </div>
 
           <div>
-            Default Account
+            DEFAULT ACCOUNT
           </div>
 
         </div>
 
-        {/* TABLE ROWS */}
+        {/* Rows */}
+        {filteredJournals.length > 0 ? (
 
-        {journals.map((journal, index) => (
+          filteredJournals.map((journal) => {
 
-          <div
-            key={index}
-            className="grid grid-cols-3 border-b border-[#e2dbd3] px-6 py-4 text-sm last:border-b-0 hover:bg-[#faf8f5]"
-          >
+            const Icon = journal.icon;
 
-            <div className="font-medium text-[#d84c79]">
-              {journal.name}
-            </div>
+            return (
+              <div
+                key={journal.id}
+                onClick={() =>
+                  setSelectedJournal(journal)
+                }
+                className="
+                  grid
+                  grid-cols-[1.1fr_1fr_1.5fr]
+                  items-center
+                  px-7
+                  py-5
+                  border-b
+                  border-[#eeeae4]
+                  last:border-b-0
+                  hover:bg-[#fcfbf9]
+                  transition
+                  cursor-pointer
+                "
+              >
 
-            <div className="text-[#d84c79]">
-              {journal.type}
-            </div>
+                {/* Name */}
+                <div className="flex items-center gap-3">
 
-            <div className="text-[#d84c79]">
-              {journal.defaultAccount}
-            </div>
+                  <span className="w-2 h-2 rounded-full bg-[#bcb5ae]" />
 
+                  <span className="text-lg font-semibold text-gray-950">
+                    {journal.name}
+                  </span>
+
+                </div>
+
+                {/* Type */}
+                <div>
+
+                  <span
+                    className={`
+                      inline-flex
+                      items-center
+                      gap-2
+                      px-4
+                      py-2
+                      rounded-full
+                      border
+                      text-sm
+                      font-medium
+                      ${getTypeClass(journal.type)}
+                    `}
+                  >
+
+                    <Icon size={15} />
+
+                    {journal.type}
+
+                  </span>
+
+                </div>
+
+                {/* Default Account */}
+                <div className="flex items-center gap-3">
+
+                  <BookOpen
+                    size={19}
+                    strokeWidth={1.7}
+                    className="text-[#8b8178]"
+                  />
+
+                  <span className="text-lg text-gray-950">
+                    {journal.defaultAccount}
+                  </span>
+
+                </div>
+
+              </div>
+            );
+          })
+
+        ) : (
+
+          <div className="py-14 text-center text-gray-500">
+            No journals found.
           </div>
 
-        ))}
+        )}
 
       </div>
-
-      {/* =====================================
-          NEW JOURNAL MODAL
-      ===================================== */}
-
-      {showForm && (
-
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-
-          <div className="w-full max-w-xl rounded-2xl bg-[#faf8f5] shadow-2xl">
-
-            {/* MODAL HEADER */}
-
-            <div className="flex items-start justify-between border-b border-[#ddd4ca] px-7 py-6">
-
-              <div>
-
-                <h2 className="text-2xl font-semibold text-[#30251e]">
-                  New Journal
-                </h2>
-
-                <p className="mt-1 text-sm text-[#756b63]">
-                  Create a new accounting journal.
-                </p>
-
-              </div>
-
-              <button
-                onClick={handleCloseForm}
-                className="text-[#756b63] transition hover:text-[#30251e]"
-              >
-                <X size={24} />
-              </button>
-
-            </div>
-
-            {/* =================================
-                FORM
-            ================================= */}
-
-            <div className="space-y-6 px-7 py-7">
-
-              {/* JOURNAL NAME */}
-
-              <div>
-
-                <label className="mb-2 block text-sm font-medium text-[#30251e]">
-                  Journal Name
-                </label>
-
-                <input
-                  type="text"
-                  value={journalName}
-                  onChange={(e) =>
-                    setJournalName(e.target.value)
-                  }
-                  placeholder="Enter journal name"
-                  className="w-full rounded-lg border border-[#d6ccc1] bg-white px-4 py-3 text-sm outline-none transition focus:border-[#49392f] focus:ring-1 focus:ring-[#49392f]"
-                />
-
-              </div>
-
-              {/* JOURNAL TYPE */}
-
-              <div>
-
-                <label className="mb-2 block text-sm font-medium text-[#30251e]">
-                  Journal Type
-                </label>
-
-                <select
-                  value={journalType}
-                  onChange={handleTypeChange}
-                  className="w-full rounded-lg border border-[#d6ccc1] bg-white px-4 py-3 text-sm outline-none transition focus:border-[#49392f] focus:ring-1 focus:ring-[#49392f]"
-                >
-
-                  <option value="">
-                    Select Journal Type
-                  </option>
-
-                  {journalTypes.map((type) => (
-
-                    <option
-                      key={type}
-                      value={type}
-                    >
-                      {type}
-                    </option>
-
-                  ))}
-
-                </select>
-
-              </div>
-
-              {/* DEFAULT ACCOUNT */}
-
-              <div>
-
-                <label className="mb-2 block text-sm font-medium text-[#30251e]">
-                  Default Account
-                </label>
-
-                <select
-                  value={defaultAccount}
-                  onChange={(e) =>
-                    setDefaultAccount(e.target.value)
-                  }
-                  disabled={!journalType}
-                  className="w-full rounded-lg border border-[#d6ccc1] bg-white px-4 py-3 text-sm outline-none transition disabled:cursor-not-allowed disabled:bg-[#eeeae5] focus:border-[#49392f] focus:ring-1 focus:ring-[#49392f]"
-                >
-
-                  <option value="">
-                    {journalType
-                      ? "Select Default Account"
-                      : "Select Journal Type First"}
-                  </option>
-
-                  {getDefaultAccounts(
-                    journalType
-                  ).map((account) => (
-
-                    <option
-                      key={account.name}
-                      value={account.displayName}
-                    >
-                      {account.displayName}
-                    </option>
-
-                  ))}
-
-                </select>
-
-              </div>
-
-            </div>
-
-            {/* =================================
-                MODAL FOOTER
-            ================================= */}
-
-            <div className="flex justify-end gap-3 border-t border-[#ddd4ca] px-7 py-5">
-
-              <button
-                onClick={handleCloseForm}
-                className="rounded-lg border border-[#cfc5ba] px-5 py-2.5 text-sm font-medium text-[#49392f] transition hover:bg-[#eee8df]"
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={handleCreateJournal}
-                className="rounded-lg bg-[#49392f] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#5b483b]"
-              >
-                Create
-              </button>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      )}
 
     </div>
   );
 }
 
-export default Journal;
+export default Journals;
