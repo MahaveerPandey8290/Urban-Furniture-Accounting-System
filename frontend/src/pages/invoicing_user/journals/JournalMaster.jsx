@@ -148,6 +148,14 @@ function JournalMaster() {
     });
   }, [resolvedJournals, searchQuery]);
 
+  // Delete Journal
+  const handleDeleteJournal = (journalId) => {
+    if (window.confirm("Are you sure you want to delete this journal?")) {
+      setJournals((prev) => prev.filter((j) => j.id !== journalId));
+      showToast("Journal deleted successfully");
+    }
+  };
+
   return (
     <div className="w-full space-y-6">
 
@@ -233,6 +241,8 @@ function JournalMaster() {
           <JournalList
             journals={filteredJournals}
             onSelectJournal={handleSelectJournal}
+            onEditJournal={handleSelectJournal}
+            onDeleteJournal={handleDeleteJournal}
             onNewJournal={handleNewJournal}
           />
         </>

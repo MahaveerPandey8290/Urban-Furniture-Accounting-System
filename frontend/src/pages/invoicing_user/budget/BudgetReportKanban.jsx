@@ -1,5 +1,5 @@
 import React from "react";
-import { Calendar, User, Briefcase, ChevronRight, Plus, AlertCircle } from "lucide-react";
+import { Calendar, User, Briefcase, ChevronRight, Plus, AlertCircle, Pencil, Trash2 } from "lucide-react";
 import { formatINR, calculateAchievedPercent, calculateAmountToAchieve } from "./budgetData";
 import { formatDate } from "../../../utils/formatters";
 import BudgetChart from "./BudgetChart";
@@ -19,6 +19,8 @@ export function BudgetReportKanban({
   budgets = [],
   totalBudgetsCount = 0,
   onSelectBudget,
+  onEditBudget,
+  onDeleteBudget,
   onOpenCreate,
   onClearFilters
 }) {
@@ -108,7 +110,7 @@ export function BudgetReportKanban({
                       onClick={() => onSelectBudget(budget)}
                       className="bg-white border border-[#e7e3da] hover:border-[#342921]/40 rounded-xl p-4 shadow-2xs hover:shadow-xs transition-all cursor-pointer group min-w-0"
                     >
-                      {/* Card Header: Title & Status */}
+                      {/* Card Header: Title & Status & Actions */}
                       <div className="flex items-start justify-between gap-2 mb-2.5">
                         <div className="flex items-center gap-2 min-w-0 flex-1">
                           <div className="w-7 h-7 rounded-lg bg-[#faf8f4] border border-[#e7e3da] flex items-center justify-center text-[#342921] shrink-0 group-hover:bg-[#342921] group-hover:text-white transition">
@@ -118,7 +120,25 @@ export function BudgetReportKanban({
                             {budget.name}
                           </h4>
                         </div>
-                        <StatusBadge status={budget.status} />
+                        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                          <StatusBadge status={budget.status} />
+                          <button
+                            type="button"
+                            onClick={() => (onEditBudget || onSelectBudget)(budget)}
+                            className="p-1 rounded-md text-[#716B63] hover:text-[#211D19] hover:bg-[#ebe6dc] transition cursor-pointer"
+                            title="Edit / View Budget"
+                          >
+                            <Pencil size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onDeleteBudget && onDeleteBudget(budget.id)}
+                            className="p-1 rounded-md text-[#716B63] hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                            title="Delete Budget"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
                       </div>
 
                       {/* Analytic Account & Person */}

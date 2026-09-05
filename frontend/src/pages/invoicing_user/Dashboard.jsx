@@ -49,34 +49,12 @@ function Dashboard() {
   };
 
   return (
-    <div className="w-full space-y-8">
-
-      {/* ================= DASHBOARD TITLE & SUBTITLE ================= */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[#e7e3da] pb-5">
-        <div>
-          <h1 className="text-3xl font-semibold text-[#211D19] tracking-tight">
-            Dashboard
-          </h1>
-          <p className="mt-2 text-sm text-[#716B63]">
-            Accounting overview
-          </p>
-        </div>
-
-        {/* Company Context Pill */}
-        <div className="self-start sm:self-auto flex items-center gap-2 px-3.5 py-1.5 rounded-lg border border-[#e7e3da] bg-[#faf8f4] text-xs font-medium text-[#4d4237]">
-          <span className="w-2 h-2 rounded-full bg-[#523e2b]" />
-          <span>Urban Furniture Ltd.</span>
-          <span className="text-[#998d7f]">|</span>
-          <span className="text-[#716B63]">FY 2025–26</span>
-        </div>
-      </div>
-
-
+    <div className="w-full space-y-6">
       {/* ================= 3 MAJOR OVERVIEW CARDS ================= */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-7">
 
         {/* ----------------- 1. SALES CARD ----------------- */}
-        <div className="bg-white border border-[#e7e3da] rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.05)] transition-all flex flex-col justify-between group">
+        <div className="bg-white border border-[#e7e3da] rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_14px_30px_rgba(45,35,27,0.1)] hover:-translate-y-1 hover:border-[#cfc6b6] transition-all duration-200 flex flex-col justify-between group">
           <div>
             {/* Header */}
             <div className="flex items-center justify-between pb-4 border-b border-[#f0ece4]">
@@ -84,7 +62,7 @@ function Dashboard() {
                 onClick={() => navigate("/invoicing_user/sale-invoices")}
                 className="flex items-center gap-3 cursor-pointer"
               >
-                <div className="w-10 h-10 rounded-xl bg-[#f5f2eb] text-[#342921] flex items-center justify-center font-medium shadow-xs">
+                <div className="w-10 h-10 rounded-xl bg-[#f5f2eb] text-[#342921] flex items-center justify-center font-medium shadow-xs group-hover:scale-105 transition-transform">
                   <FileText size={19} />
                 </div>
                 <div>
@@ -99,7 +77,7 @@ function Dashboard() {
               <button
                 type="button"
                 onClick={() => setActiveModal("sales")}
-                className="bg-[#342921] text-white hover:bg-[#231b15] text-sm font-medium px-4 py-2 rounded-lg shadow-sm cursor-pointer transition flex items-center gap-1.5"
+                className="bg-[#342921] text-white hover:bg-[#231b15] text-sm font-medium px-4 py-2 rounded-lg shadow-sm cursor-pointer transition flex items-center gap-1.5 hover:scale-102"
               >
                 <Plus size={15} />
                 <span>New</span>
@@ -112,7 +90,7 @@ function Dashboard() {
               {/* All: 12 */}
               <div
                 onClick={() => navigate("/invoicing_user/sale-invoices")}
-                className="bg-[#faf8f4] border border-[#ebe6dc] hover:border-[#cfc6b6] rounded-xl p-3.5 text-center cursor-pointer transition"
+                className="bg-[#faf8f4] border border-[#ebe6dc] hover:border-[#bfaea0] hover:bg-white hover:-translate-y-0.5 hover:shadow-md rounded-xl p-3.5 text-center cursor-pointer transition-all duration-150"
               >
                 <span className="text-xs font-semibold text-[#716B63] tracking-wider uppercase">
                   All
@@ -128,7 +106,7 @@ function Dashboard() {
               {/* Confirmed: 10 */}
               <div
                 onClick={() => navigate("/invoicing_user/sale-invoices?status=confirmed")}
-                className="bg-[#faf8f4] border border-[#ebe6dc] hover:border-[#cfc6b6] rounded-xl p-3.5 text-center cursor-pointer transition"
+                className="bg-[#faf8f4] border border-[#ebe6dc] hover:border-[#bfaea0] hover:bg-white hover:-translate-y-0.5 hover:shadow-md rounded-xl p-3.5 text-center cursor-pointer transition-all duration-150"
               >
                 <span className="text-xs font-semibold text-[#3e5335] tracking-wider uppercase">
                   Confirmed
@@ -144,7 +122,7 @@ function Dashboard() {
               {/* Draft: 2 */}
               <div
                 onClick={() => navigate("/invoicing_user/sale-invoices?status=draft")}
-                className="bg-[#faf8f4] border border-[#ebe6dc] hover:border-[#cfc6b6] rounded-xl p-3.5 text-center cursor-pointer transition"
+                className="bg-[#faf8f4] border border-[#ebe6dc] hover:border-[#bfaea0] hover:bg-white hover:-translate-y-0.5 hover:shadow-md rounded-xl p-3.5 text-center cursor-pointer transition-all duration-150"
               >
                 <span className="text-xs font-semibold text-[#7c6352] tracking-wider uppercase">
                   Draft
@@ -173,7 +151,7 @@ function Dashboard() {
 
 
         {/* ----------------- 2. PURCHASE CARD ----------------- */}
-        <div className="bg-white border border-[#e7e3da] rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.05)] transition-all flex flex-col justify-between group">
+        <div className="bg-white border border-[#e7e3da] rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_14px_30px_rgba(45,35,27,0.1)] hover:-translate-y-1 hover:border-[#cfc6b6] transition-all duration-200 flex flex-col justify-between group">
           <div>
             {/* Header */}
             <div className="flex items-center justify-between pb-4 border-b border-[#f0ece4]">
@@ -181,7 +159,7 @@ function Dashboard() {
                 onClick={() => navigate("/invoicing_user/purchase-orders")}
                 className="flex items-center gap-3 cursor-pointer"
               >
-                <div className="w-10 h-10 rounded-xl bg-[#f5f2eb] text-[#342921] flex items-center justify-center font-medium shadow-xs">
+                <div className="w-10 h-10 rounded-xl bg-[#f5f2eb] text-[#342921] flex items-center justify-center font-medium shadow-xs group-hover:scale-105 transition-transform">
                   <ShoppingBag size={19} />
                 </div>
                 <div>
@@ -196,7 +174,7 @@ function Dashboard() {
               <button
                 type="button"
                 onClick={() => setActiveModal("purchase")}
-                className="bg-[#342921] text-white hover:bg-[#231b15] text-sm font-medium px-4 py-2 rounded-lg shadow-sm cursor-pointer transition flex items-center gap-1.5"
+                className="bg-[#342921] text-white hover:bg-[#231b15] text-sm font-medium px-4 py-2 rounded-lg shadow-sm cursor-pointer transition flex items-center gap-1.5 hover:scale-102"
               >
                 <Plus size={15} />
                 <span>New</span>
@@ -209,7 +187,7 @@ function Dashboard() {
               {/* All */}
               <div
                 onClick={() => navigate("/invoicing_user/purchase-orders")}
-                className="bg-[#faf8f4] border border-[#ebe6dc] hover:border-[#cfc6b6] rounded-xl p-3.5 text-center cursor-pointer transition"
+                className="bg-[#faf8f4] border border-[#ebe6dc] hover:border-[#bfaea0] hover:bg-white hover:-translate-y-0.5 hover:shadow-md rounded-xl p-3.5 text-center cursor-pointer transition-all duration-150"
               >
                 <span className="text-xs font-semibold text-[#716B63] tracking-wider uppercase">
                   All
@@ -225,7 +203,7 @@ function Dashboard() {
               {/* Confirmed */}
               <div
                 onClick={() => navigate("/invoicing_user/purchase-orders")}
-                className="bg-[#faf8f4] border border-[#ebe6dc] hover:border-[#cfc6b6] rounded-xl p-3.5 text-center cursor-pointer transition"
+                className="bg-[#faf8f4] border border-[#ebe6dc] hover:border-[#bfaea0] hover:bg-white hover:-translate-y-0.5 hover:shadow-md rounded-xl p-3.5 text-center cursor-pointer transition-all duration-150"
               >
                 <span className="text-xs font-semibold text-[#3e5335] tracking-wider uppercase">
                   Confirmed
@@ -241,7 +219,7 @@ function Dashboard() {
               {/* Draft */}
               <div
                 onClick={() => navigate("/invoicing_user/purchase-orders")}
-                className="bg-[#faf8f4] border border-[#ebe6dc] hover:border-[#cfc6b6] rounded-xl p-3.5 text-center cursor-pointer transition"
+                className="bg-[#faf8f4] border border-[#ebe6dc] hover:border-[#bfaea0] hover:bg-white hover:-translate-y-0.5 hover:shadow-md rounded-xl p-3.5 text-center cursor-pointer transition-all duration-150"
               >
                 <span className="text-xs font-semibold text-[#7c6352] tracking-wider uppercase">
                   Draft
@@ -270,7 +248,7 @@ function Dashboard() {
 
 
         {/* ----------------- 3. BUDGET REPORTS CARD ----------------- */}
-        <div className="bg-white border border-[#e7e3da] rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.05)] transition-all flex flex-col justify-between group">
+        <div className="bg-white border border-[#e7e3da] rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_14px_30px_rgba(45,35,27,0.1)] hover:-translate-y-1 hover:border-[#cfc6b6] transition-all duration-200 flex flex-col justify-between group">
           <div>
             {/* Header */}
             <div className="flex items-center justify-between pb-4 border-b border-[#f0ece4]">
@@ -278,7 +256,7 @@ function Dashboard() {
                 onClick={() => navigate("/invoicing_user/budget-reports")}
                 className="flex items-center gap-3 cursor-pointer"
               >
-                <div className="w-10 h-10 rounded-xl bg-[#f5f2eb] text-[#342921] flex items-center justify-center font-medium shadow-xs">
+                <div className="w-10 h-10 rounded-xl bg-[#f5f2eb] text-[#342921] flex items-center justify-center font-medium shadow-xs group-hover:scale-105 transition-transform">
                   <BarChart3 size={19} />
                 </div>
                 <div>
@@ -293,7 +271,7 @@ function Dashboard() {
               <button
                 type="button"
                 onClick={() => navigate("/invoicing_user/budget-reports")}
-                className="bg-[#342921] text-white hover:bg-[#231b15] text-sm font-medium px-4 py-2 rounded-lg shadow-sm cursor-pointer transition flex items-center gap-1.5"
+                className="bg-[#342921] text-white hover:bg-[#231b15] text-sm font-medium px-4 py-2 rounded-lg shadow-sm cursor-pointer transition flex items-center gap-1.5 hover:scale-102"
               >
                 <span>Report</span>
                 <ArrowRight size={14} />
@@ -306,7 +284,7 @@ function Dashboard() {
               {/* Achieved: 3 */}
               <div
                 onClick={() => navigate("/invoicing_user/budget-reports")}
-                className="bg-[#faf8f4] border border-[#ebe6dc] hover:border-[#cfc6b6] rounded-xl p-3.5 text-center cursor-pointer transition"
+                className="bg-[#faf8f4] border border-[#ebe6dc] hover:border-[#bfaea0] hover:bg-white hover:-translate-y-0.5 hover:shadow-md rounded-xl p-3.5 text-center cursor-pointer transition-all duration-150"
               >
                 <span className="text-xs font-semibold text-[#716B63] tracking-wider uppercase">
                   Achieved
@@ -322,7 +300,7 @@ function Dashboard() {
               {/* Budget: 2 */}
               <div
                 onClick={() => navigate("/invoicing_user/budget-reports")}
-                className="bg-[#faf8f4] border border-[#ebe6dc] hover:border-[#cfc6b6] rounded-xl p-3.5 text-center cursor-pointer transition"
+                className="bg-[#faf8f4] border border-[#ebe6dc] hover:border-[#bfaea0] hover:bg-white hover:-translate-y-0.5 hover:shadow-md rounded-xl p-3.5 text-center cursor-pointer transition-all duration-150"
               >
                 <span className="text-xs font-semibold text-[#3e5335] tracking-wider uppercase">
                   Budget
@@ -338,7 +316,7 @@ function Dashboard() {
               {/* Committed: 4 */}
               <div
                 onClick={() => navigate("/invoicing_user/budget-reports")}
-                className="bg-[#faf8f4] border border-[#ebe6dc] hover:border-[#cfc6b6] rounded-xl p-3.5 text-center cursor-pointer transition"
+                className="bg-[#faf8f4] border border-[#ebe6dc] hover:border-[#bfaea0] hover:bg-white hover:-translate-y-0.5 hover:shadow-md rounded-xl p-3.5 text-center cursor-pointer transition-all duration-150"
               >
                 <span className="text-xs font-semibold text-[#7c6352] tracking-wider uppercase">
                   Committed
@@ -372,7 +350,7 @@ function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-7 pt-2">
 
         {/* Recent Invoices & Orders Table (2 cols) */}
-        <div className="lg:col-span-2 bg-white border border-[#e7e3da] rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
+        <div className="lg:col-span-2 bg-white border border-[#e7e3da] rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_28px_rgba(45,35,27,0.08)] hover:-translate-y-0.5 hover:border-[#cfc6b6] transition-all duration-200">
           <div className="flex items-center justify-between pb-4 border-b border-[#f0ece4]">
             <div>
               <h3 className="text-lg font-semibold text-[#211D19]">
@@ -454,7 +432,7 @@ function Dashboard() {
         </div>
 
         {/* Quick Accounting Access (1 col) */}
-        <div className="bg-white border border-[#e7e3da] rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+        <div className="bg-white border border-[#e7e3da] rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_28px_rgba(45,35,27,0.08)] hover:-translate-y-0.5 hover:border-[#cfc6b6] transition-all duration-200 flex flex-col justify-between">
           <div>
             <h3 className="text-lg font-semibold text-[#211D19] pb-4 border-b border-[#f0ece4]">
               Accounting Modules
@@ -464,7 +442,7 @@ function Dashboard() {
               <button
                 type="button"
                 onClick={() => navigate("/invoicing_user/chart-of-accounts")}
-                className="w-full p-3.5 rounded-xl border border-[#ebe6dc] bg-[#faf8f4] hover:bg-[#f3efe7] transition text-left flex items-center justify-between cursor-pointer"
+                className="w-full p-3.5 rounded-xl border border-[#ebe6dc] bg-[#faf8f4] hover:border-[#bfaea0] hover:bg-white hover:-translate-y-0.5 hover:shadow-xs transition-all duration-150 text-left flex items-center justify-between cursor-pointer"
               >
                 <div>
                   <p className="text-sm font-semibold text-[#211D19]">Chart of Accounts</p>
@@ -476,7 +454,7 @@ function Dashboard() {
               <button
                 type="button"
                 onClick={() => navigate("/invoicing_user/journal-entries")}
-                className="w-full p-3.5 rounded-xl border border-[#ebe6dc] bg-[#faf8f4] hover:bg-[#f3efe7] transition text-left flex items-center justify-between cursor-pointer"
+                className="w-full p-3.5 rounded-xl border border-[#ebe6dc] bg-[#faf8f4] hover:border-[#bfaea0] hover:bg-white hover:-translate-y-0.5 hover:shadow-xs transition-all duration-150 text-left flex items-center justify-between cursor-pointer"
               >
                 <div>
                   <p className="text-sm font-semibold text-[#211D19]">Journal Entries</p>
@@ -488,7 +466,7 @@ function Dashboard() {
               <button
                 type="button"
                 onClick={() => navigate("/invoicing_user/balance-sheet")}
-                className="w-full p-3.5 rounded-xl border border-[#ebe6dc] bg-[#faf8f4] hover:bg-[#f3efe7] transition text-left flex items-center justify-between cursor-pointer"
+                className="w-full p-3.5 rounded-xl border border-[#ebe6dc] bg-[#faf8f4] hover:border-[#bfaea0] hover:bg-white hover:-translate-y-0.5 hover:shadow-xs transition-all duration-150 text-left flex items-center justify-between cursor-pointer"
               >
                 <div>
                   <p className="text-sm font-semibold text-[#211D19]">Balance Sheet</p>
@@ -500,11 +478,11 @@ function Dashboard() {
               <button
                 type="button"
                 onClick={() => navigate("/invoicing_user/profit-and-loss")}
-                className="w-full p-3.5 rounded-xl border border-[#ebe6dc] bg-[#faf8f4] hover:bg-[#f3efe7] transition text-left flex items-center justify-between cursor-pointer"
+                className="w-full p-3.5 rounded-xl border border-[#ebe6dc] bg-[#faf8f4] hover:border-[#bfaea0] hover:bg-white hover:-translate-y-0.5 hover:shadow-xs transition-all duration-150 text-left flex items-center justify-between cursor-pointer"
               >
                 <div>
                   <p className="text-sm font-semibold text-[#211D19]">Profit and Loss</p>
-                  <p className="text-xs text-[#716B63] mt-0.5">Operating revenue and expenditure</p>
+                  <p className="text-xs text-[#716B63] mt-0.5">Income statement & margin performance</p>
                 </div>
                 <ArrowRight size={15} className="text-[#68584b]" />
               </button>

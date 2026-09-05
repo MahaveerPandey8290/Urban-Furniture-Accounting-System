@@ -219,6 +219,14 @@ function JournalEntriesMaster() {
     });
   }, [entries, searchQuery]);
 
+  // Delete journal entry
+  const handleDeleteEntry = (entryId) => {
+    if (window.confirm("Are you sure you want to delete this journal entry?")) {
+      setEntries((prev) => prev.filter((e) => e.id !== entryId));
+      showToast("Journal entry deleted successfully");
+    }
+  };
+
   return (
     <div className="w-full space-y-6">
 
@@ -304,6 +312,8 @@ function JournalEntriesMaster() {
           <JournalEntryList
             entries={filteredEntries}
             onSelectEntry={handleSelectEntry}
+            onEditEntry={handleSelectEntry}
+            onDeleteEntry={handleDeleteEntry}
             onNewEntry={handleNewEntry}
           />
         </>

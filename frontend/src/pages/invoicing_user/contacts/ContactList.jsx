@@ -1,4 +1,4 @@
-import { Users, Plus } from "lucide-react";
+import { Users, Plus, Pencil, Trash2 } from "lucide-react";
 
 function ContactList({
   contacts,
@@ -6,6 +6,8 @@ function ContactList({
   onToggleSelect,
   onSelectAll,
   onSelectContact,
+  onEditContact,
+  onDeleteContact,
   onNewContact
 }) {
   const isAllSelected = contacts.length > 0 && contacts.every((c) => selectedIds.includes(c.id));
@@ -52,6 +54,7 @@ function ContactList({
               <th className="py-3.5 px-4">TYPE</th>
               <th className="py-3.5 px-4">EMAIL</th>
               <th className="py-3.5 px-4">PHONE</th>
+              <th className="py-3.5 px-4 text-right">ACTIONS</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#f5f2eb]">
@@ -122,6 +125,28 @@ function ContactList({
                   {/* Phone */}
                   <td className="py-3.5 px-4 text-sm text-[#211D19] font-medium">
                     {contact.phone || "—"}
+                  </td>
+
+                  {/* Actions */}
+                  <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => (onEditContact || onSelectContact)(contact)}
+                        className="p-1.5 rounded-lg text-[#716B63] hover:text-[#211D19] hover:bg-[#ebe6dc] transition cursor-pointer"
+                        title="Edit Contact"
+                      >
+                        <Pencil size={15} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDeleteContact && onDeleteContact(contact.id)}
+                        className="p-1.5 rounded-lg text-[#716B63] hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                        title="Delete Contact"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );

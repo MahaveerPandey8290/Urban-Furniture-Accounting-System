@@ -199,6 +199,15 @@ function PurchaseOrders() {
     navigate(`/invoicing_user/bills?billNumber=${targetBill.billNumber}`);
   };
 
+  // Delete Purchase Order
+  const handleDeletePO = (poId) => {
+    if (window.confirm("Are you sure you want to delete this purchase order?")) {
+      const updated = purchaseOrders.filter((p) => p.id !== poId);
+      persistOrders(updated);
+      showToast("Purchase order deleted successfully");
+    }
+  };
+
   return (
     <div className="w-full">
       {/* Toast Notification */}
@@ -221,6 +230,8 @@ function PurchaseOrders() {
           onViewChange={handleViewChange}
           onNewPO={handleNewPO}
           onSelectPO={handleSelectPO}
+          onEditPO={handleSelectPO}
+          onDeletePO={handleDeletePO}
           onBack={handleBack}
         />
       )}

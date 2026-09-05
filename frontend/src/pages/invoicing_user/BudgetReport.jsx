@@ -147,6 +147,24 @@ export function BudgetReport() {
     showToast("Sample demo budgets restored!");
   };
 
+  // Delete budget handler
+  const handleDeleteBudget = (budgetId) => {
+    if (window.confirm("Are you sure you want to delete this budget report?")) {
+      setBudgets((prev) => prev.filter((b) => b.id !== budgetId));
+      if (selectedBudget?.id === budgetId) {
+        setSelectedBudget(null);
+      }
+      showToast("Budget report deleted successfully");
+    }
+  };
+
+  // Update budget handler
+  const handleUpdateBudget = (updated) => {
+    setBudgets((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
+    setSelectedBudget(updated);
+    showToast(`Budget "${updated.name}" updated successfully!`);
+  };
+
   return (
     <div className="w-full min-w-0 space-y-6">
       <Toast message={toastMessage} />
@@ -155,6 +173,9 @@ export function BudgetReport() {
       {selectedBudget ? (
         <BudgetReportDetails
           budget={selectedBudget}
+          allBudgets={budgets}
+          onSelectBudget={setSelectedBudget}
+          onUpdateBudget={handleUpdateBudget}
           onBack={() => setSelectedBudget(null)}
         />
       ) : (
@@ -193,6 +214,8 @@ export function BudgetReport() {
               budgets={filteredBudgets}
               totalBudgetsCount={budgets.length}
               onSelectBudget={setSelectedBudget}
+              onEditBudget={setSelectedBudget}
+              onDeleteBudget={handleDeleteBudget}
               onOpenCreate={() => setIsCreateOpen(true)}
               onClearFilters={handleClearFilters}
             />
@@ -201,6 +224,8 @@ export function BudgetReport() {
               budgets={filteredBudgets}
               totalBudgetsCount={budgets.length}
               onSelectBudget={setSelectedBudget}
+              onEditBudget={setSelectedBudget}
+              onDeleteBudget={handleDeleteBudget}
               onOpenCreate={() => setIsCreateOpen(true)}
               onClearFilters={handleClearFilters}
             />

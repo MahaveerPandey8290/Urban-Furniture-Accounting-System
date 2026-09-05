@@ -135,7 +135,7 @@ function ProfitAndLoss() {
       {/* ================= 3 KPI SUMMARY METRICS ================= */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         {/* Total Income */}
-        <div className="bg-white border border-[#e7e3da] rounded-2xl p-5 shadow-2xs">
+        <div className="bg-white border border-[#e7e3da] rounded-2xl p-5 shadow-2xs hover:shadow-xl hover:-translate-y-1 hover:border-[#cfc6b6] transition-all duration-200">
           <div className="flex items-center justify-between">
             <span className="text-xs uppercase font-semibold text-[#716B63] tracking-wider">
               Total Revenue
@@ -153,7 +153,7 @@ function ProfitAndLoss() {
         </div>
 
         {/* Total Expenses */}
-        <div className="bg-white border border-[#e7e3da] rounded-2xl p-5 shadow-2xs">
+        <div className="bg-white border border-[#e7e3da] rounded-2xl p-5 shadow-2xs hover:shadow-xl hover:-translate-y-1 hover:border-[#cfc6b6] transition-all duration-200">
           <div className="flex items-center justify-between">
             <span className="text-xs uppercase font-semibold text-[#716B63] tracking-wider">
               Procurement & Expenses
@@ -171,7 +171,7 @@ function ProfitAndLoss() {
         </div>
 
         {/* Net Profit */}
-        <div className="bg-white border border-[#e7e3da] rounded-2xl p-5 shadow-2xs">
+        <div className="bg-white border border-[#e7e3da] rounded-2xl p-5 shadow-2xs hover:shadow-xl hover:-translate-y-1 hover:border-[#cfc6b6] transition-all duration-200">
           <div className="flex items-center justify-between">
             <span className="text-xs uppercase font-semibold text-[#716B63] tracking-wider">
               Net Profit / (Loss)
@@ -194,7 +194,7 @@ function ProfitAndLoss() {
       </div>
 
       {/* ================= DETAILED FINANCIAL TABLE ================= */}
-      <div className="bg-white border border-[#e7e3da] rounded-2xl shadow-2xs overflow-hidden">
+      <div className="bg-white border border-[#e7e3da] rounded-2xl shadow-2xs hover:shadow-lg hover:-translate-y-0.5 hover:border-[#cfc6b6] transition-all duration-200 overflow-hidden">
         <div className="p-5 bg-[#faf8f4] border-b border-[#e7e3da] flex items-center justify-between">
           <h3 className="text-sm font-bold text-[#211D19] uppercase tracking-wider">
             Statement of Financial Performance

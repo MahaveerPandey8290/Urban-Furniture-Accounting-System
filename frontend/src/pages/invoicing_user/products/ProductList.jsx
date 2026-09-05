@@ -1,4 +1,4 @@
-import { Package, Plus } from "lucide-react";
+import { Package, Plus, Pencil, Trash2 } from "lucide-react";
 
 function ProductList({
   products,
@@ -6,6 +6,8 @@ function ProductList({
   onToggleSelect,
   onSelectAll,
   onSelectProduct,
+  onEditProduct,
+  onDeleteProduct,
   onNewProduct,
 }) {
   const isAllSelected = products.length > 0 && products.every((p) => selectedIds.includes(p.id));
@@ -59,6 +61,7 @@ function ProductList({
               <th className="py-3.5 px-4">TYPE</th>
               <th className="py-3.5 px-4 text-right">SALES PRICE</th>
               <th className="py-3.5 px-4 text-right">COST</th>
+              <th className="py-3.5 px-4 text-right">ACTIONS</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#f5f2eb]">
@@ -130,6 +133,28 @@ function ProductList({
                   {/* Cost */}
                   <td className="py-3.5 px-4 text-right font-medium text-sm text-[#716B63]">
                     Rs. {formatPrice(product.cost)}
+                  </td>
+
+                  {/* Actions */}
+                  <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => (onEditProduct || onSelectProduct)(product)}
+                        className="p-1.5 rounded-lg text-[#716B63] hover:text-[#211D19] hover:bg-[#ebe6dc] transition cursor-pointer"
+                        title="Edit Product"
+                      >
+                        <Pencil size={15} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDeleteProduct && onDeleteProduct(product.id)}
+                        className="p-1.5 rounded-lg text-[#716B63] hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                        title="Delete Product"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );

@@ -12,6 +12,7 @@ import {
   WalletCards,
   ChevronRight,
 } from "lucide-react";
+import loginFurniture from "../../assets/login-furniture.png";
 
 function Sidebar() {
   const linkClass = ({ isActive }) =>
@@ -22,7 +23,14 @@ function Sidebar() {
     }`;
 
   return (
-    <aside className="fixed left-0 top-0 z-50 flex h-screen w-[280px] flex-col overflow-y-auto bg-[#30261F] px-[18px] py-[35px] text-white">
+    <aside
+      className="fixed left-0 top-0 z-50 flex h-screen w-[280px] flex-col overflow-y-auto bg-[#30261F] px-[18px] py-[35px] text-white"
+      style={{
+        backgroundImage: `linear-gradient(to bottom, rgba(48, 38, 31, 0.92), rgba(38, 30, 24, 0.88), rgba(26, 20, 16, 0.94)), url(${loginFurniture})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
 
       {/* Logo */}
       <div className="mb-10 px-[18px]">

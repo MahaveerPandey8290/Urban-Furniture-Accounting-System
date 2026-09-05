@@ -1,7 +1,7 @@
 import ContactCard from "./ContactCard";
 import { Users, Plus } from "lucide-react";
 
-function ContactKanban({ contacts, onSelectContact, onNewContact }) {
+function ContactKanban({ contacts, onSelectContact, onEditContact, onDeleteContact, onNewContact }) {
   if (contacts.length === 0) {
     return (
       <div className="bg-white border border-[#e7e3da] rounded-2xl p-12 text-center shadow-xs">
@@ -31,6 +31,8 @@ function ContactKanban({ contacts, onSelectContact, onNewContact }) {
           key={contact.id}
           contact={contact}
           onClick={onSelectContact}
+          onEdit={onEditContact}
+          onDelete={onDeleteContact}
         />
       ))}
     </div>

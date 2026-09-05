@@ -196,6 +196,15 @@ function Contacts() {
     }
   };
 
+  // Delete contact
+  const handleDeleteContact = (contactId) => {
+    if (window.confirm("Are you sure you want to delete this contact?")) {
+      setContacts((prev) => prev.filter((c) => c.id !== contactId));
+      setSelectedIds((prev) => prev.filter((id) => id !== contactId));
+      showToast("Contact deleted successfully");
+    }
+  };
+
   return (
     <div className="w-full space-y-6">
 
@@ -280,12 +289,16 @@ function Contacts() {
               onToggleSelect={handleToggleSelect}
               onSelectAll={handleSelectAll}
               onSelectContact={handleSelectContact}
+              onEditContact={handleSelectContact}
+              onDeleteContact={handleDeleteContact}
               onNewContact={handleNewContact}
             />
           ) : (
             <ContactKanban
               contacts={filteredContacts}
               onSelectContact={handleSelectContact}
+              onEditContact={handleSelectContact}
+              onDeleteContact={handleDeleteContact}
               onNewContact={handleNewContact}
             />
           )}

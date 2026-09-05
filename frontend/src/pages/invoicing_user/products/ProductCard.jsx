@@ -1,4 +1,6 @@
-function ProductCard({ product, onClick }) {
+import { Pencil, Trash2 } from "lucide-react";
+
+function ProductCard({ product, onClick, onEdit, onDelete }) {
   const hasImage = Boolean(product.image);
 
   // Format currency
@@ -11,7 +13,7 @@ function ProductCard({ product, onClick }) {
   return (
     <div
       onClick={() => onClick(product)}
-      className="bg-white border border-[#e7e3da] rounded-xl p-5 shadow-xs hover:border-[#b8ad9e] hover:shadow-md transition cursor-pointer flex flex-col justify-between group"
+      className="bg-white border border-[#e7e3da] rounded-xl p-5 shadow-xs hover:border-[#b8ad9e] hover:shadow-xl hover:-translate-y-1.5 transition-all duration-200 cursor-pointer flex flex-col justify-between group"
     >
       <div>
         {/* Product Image: Only shown if manually uploaded */}
@@ -25,26 +27,46 @@ function ProductCard({ product, onClick }) {
           </div>
         )}
 
-        {/* Top badges: Category & Type */}
-        <div className="flex items-center gap-2 mb-2.5">
-          {product.category && (
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#faf8f4] text-[#716B63] border border-[#e7e3da]">
-              {product.category}
-            </span>
-          )}
-          {product.productType && (
-            <span
-              className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                product.productType === "Goods"
-                  ? "bg-[#eef3e8] text-[#3e5335] border-[#d3dfca]"
-                  : product.productType === "Service"
-                  ? "bg-[#faf0e6] text-[#7a4e2d] border-[#e8d7c5]"
-                  : "bg-[#f3effa] text-[#553c7b] border-[#dfd4f2]"
-              }`}
+        {/* Top badges: Category & Type & Actions */}
+        <div className="flex items-center justify-between gap-2 mb-2.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            {product.category && (
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#faf8f4] text-[#716B63] border border-[#e7e3da]">
+                {product.category}
+              </span>
+            )}
+            {product.productType && (
+              <span
+                className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                  product.productType === "Goods"
+                    ? "bg-[#eef3e8] text-[#3e5335] border-[#d3dfca]"
+                    : product.productType === "Service"
+                    ? "bg-[#faf0e6] text-[#7a4e2d] border-[#e8d7c5]"
+                    : "bg-[#f3effa] text-[#553c7b] border-[#dfd4f2]"
+                }`}
+              >
+                {product.productType}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => (onEdit || onClick)(product)}
+              className="p-1 rounded-md text-[#716B63] hover:text-[#211D19] hover:bg-[#ebe6dc] transition cursor-pointer"
+              title="Edit Product"
             >
-              {product.productType}
-            </span>
-          )}
+              <Pencil size={13} />
+            </button>
+            <button
+              type="button"
+              onClick={() => onDelete && onDelete(product.id)}
+              className="p-1 rounded-md text-[#716B63] hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+              title="Delete Product"
+            >
+              <Trash2 size={13} />
+            </button>
+          </div>
         </div>
 
         {/* Product Name */}

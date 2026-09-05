@@ -1,4 +1,4 @@
-import { BookOpen, Archive, RotateCcw, Plus } from "lucide-react";
+import { BookOpen, Archive, RotateCcw, Plus, Pencil, Trash2 } from "lucide-react";
 
 function AccountList({
   accounts,
@@ -6,6 +6,8 @@ function AccountList({
   hasActiveFilter,
   onClearFilters,
   onSelectAccount,
+  onEditAccount,
+  onDeleteAccount,
   onToggleArchive,
   onNewAccount,
 }) {
@@ -109,29 +111,37 @@ function AccountList({
                   </span>
                 </td>
 
-                {/* Action (Archive / Restore) */}
+                {/* Action (Edit / Archive / Delete) */}
                 <td
-                  className="py-3.5 px-6 text-right"
+                  className="py-3.5 px-6 text-right whitespace-nowrap"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <button
-                    type="button"
-                    onClick={() => onToggleArchive(acc.id)}
-                    title={isArchivedView ? "Restore account" : "Archive account"}
-                    className="p-1.5 rounded-lg text-[#716B63] hover:text-[#211D19] hover:bg-[#f5f2eb] transition cursor-pointer inline-flex items-center gap-1.5 text-xs font-medium"
-                  >
-                    {isArchivedView ? (
-                      <>
-                        <RotateCcw size={14} />
-                        <span className="hidden sm:inline">Restore</span>
-                      </>
-                    ) : (
-                      <>
-                        <Archive size={14} />
-                        <span className="hidden sm:inline">Archive</span>
-                      </>
-                    )}
-                  </button>
+                  <div className="flex items-center justify-end gap-1">
+                    <button
+                      type="button"
+                      onClick={() => (onEditAccount || onSelectAccount)(acc)}
+                      title="Edit account"
+                      className="p-1.5 rounded-lg text-[#716B63] hover:text-[#211D19] hover:bg-[#f5f2eb] transition cursor-pointer"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onToggleArchive(acc.id)}
+                      title={isArchivedView ? "Restore account" : "Archive account"}
+                      className="p-1.5 rounded-lg text-[#716B63] hover:text-[#211D19] hover:bg-[#f5f2eb] transition cursor-pointer"
+                    >
+                      {isArchivedView ? <RotateCcw size={14} /> : <Archive size={14} />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDeleteAccount && onDeleteAccount(acc.id)}
+                      title="Delete account"
+                      className="p-1.5 rounded-lg text-[#716B63] hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

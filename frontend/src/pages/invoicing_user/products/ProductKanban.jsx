@@ -1,7 +1,7 @@
 import ProductCard from "./ProductCard";
 import { Package, Plus } from "lucide-react";
 
-function ProductKanban({ products, onSelectProduct, onNewProduct }) {
+function ProductKanban({ products, onSelectProduct, onEditProduct, onDeleteProduct, onNewProduct }) {
   if (products.length === 0) {
     return (
       <div className="bg-white border border-[#e7e3da] rounded-2xl p-12 text-center shadow-xs">
@@ -31,6 +31,8 @@ function ProductKanban({ products, onSelectProduct, onNewProduct }) {
           key={product.id}
           product={product}
           onClick={onSelectProduct}
+          onEdit={onEditProduct}
+          onDelete={onDeleteProduct}
         />
       ))}
     </div>

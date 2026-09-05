@@ -177,7 +177,7 @@ function BalanceSheet() {
       {/* ================= TOTALS CARDS ================= */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         {/* Assets */}
-        <div className="bg-white border border-[#e7e3da] rounded-2xl p-5 shadow-2xs">
+        <div className="bg-white border border-[#e7e3da] rounded-2xl p-5 shadow-2xs hover:shadow-xl hover:-translate-y-1 hover:border-[#cfc6b6] transition-all duration-200">
           <span className="text-xs uppercase font-semibold text-[#716B63] tracking-wider">
             Total Assets
           </span>
@@ -190,7 +190,7 @@ function BalanceSheet() {
         </div>
 
         {/* Liabilities */}
-        <div className="bg-white border border-[#e7e3da] rounded-2xl p-5 shadow-2xs">
+        <div className="bg-white border border-[#e7e3da] rounded-2xl p-5 shadow-2xs hover:shadow-xl hover:-translate-y-1 hover:border-[#cfc6b6] transition-all duration-200">
           <span className="text-xs uppercase font-semibold text-amber-800 tracking-wider">
             Total Liabilities
           </span>
@@ -203,7 +203,7 @@ function BalanceSheet() {
         </div>
 
         {/* Equity */}
-        <div className="bg-white border border-[#e7e3da] rounded-2xl p-5 shadow-2xs">
+        <div className="bg-white border border-[#e7e3da] rounded-2xl p-5 shadow-2xs hover:shadow-xl hover:-translate-y-1 hover:border-[#cfc6b6] transition-all duration-200">
           <span className="text-xs uppercase font-semibold text-[#716B63] tracking-wider">
             Total Capital & Equity
           </span>
@@ -219,7 +219,7 @@ function BalanceSheet() {
       {/* ================= BALANCE SHEET BREAKDOWN ================= */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* LEFT COLUMN: ASSETS */}
-        <div className="bg-white border border-[#e7e3da] rounded-2xl shadow-2xs overflow-hidden flex flex-col justify-between">
+        <div className="bg-white border border-[#e7e3da] rounded-2xl shadow-2xs hover:shadow-lg hover:-translate-y-0.5 hover:border-[#cfc6b6] transition-all duration-200 overflow-hidden flex flex-col justify-between">
           <div>
             <div className="p-4 bg-[#faf8f4] border-b border-[#e7e3da] flex items-center justify-between">
               <h3 className="text-xs uppercase font-bold text-[#211D19] tracking-wider">
@@ -257,7 +257,7 @@ function BalanceSheet() {
         </div>
 
         {/* RIGHT COLUMN: LIABILITIES & EQUITY */}
-        <div className="bg-white border border-[#e7e3da] rounded-2xl shadow-2xs overflow-hidden flex flex-col justify-between">
+        <div className="bg-white border border-[#e7e3da] rounded-2xl shadow-2xs hover:shadow-lg hover:-translate-y-0.5 hover:border-[#cfc6b6] transition-all duration-200 overflow-hidden flex flex-col justify-between">
           <div>
             <div className="p-4 bg-[#faf8f4] border-b border-[#e7e3da] flex items-center justify-between">
               <h3 className="text-xs uppercase font-bold text-[#211D19] tracking-wider">

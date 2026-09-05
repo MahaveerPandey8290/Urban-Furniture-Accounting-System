@@ -13,6 +13,8 @@ import {
   AlertCircle,
   ExternalLink,
   CreditCard,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import ViewToggle from "../../../components/common/ViewToggle";
 import { formatCurrency, formatDate } from "../../../utils/formatters";
@@ -23,6 +25,8 @@ function VendorBillList({
   onViewChange,
   onNewBill,
   onSelectBill,
+  onEditBill,
+  onDeleteBill,
   onBack,
 }) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -213,6 +217,7 @@ function VendorBillList({
                   <th className="py-3.5 px-4 font-semibold text-right">Paid</th>
                   <th className="py-3.5 px-4 font-semibold text-right">Amount Due</th>
                   <th className="py-3.5 px-4 font-semibold text-center">Status</th>
+                  <th className="py-3.5 px-4 font-semibold text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#f0ece4] text-sm text-[#211D19]">
@@ -283,6 +288,28 @@ function VendorBillList({
                       <td className="py-3.5 px-4 text-center">
                         {renderStatusBadge(bill)}
                       </td>
+
+                      {/* Actions */}
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            onClick={() => (onEditBill || onSelectBill)(bill)}
+                            className="p-1.5 rounded-lg text-[#716B63] hover:text-[#211D19] hover:bg-[#ebe6dc] transition cursor-pointer"
+                            title="Edit Vendor Bill"
+                          >
+                            <Pencil size={15} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onDeleteBill && onDeleteBill(bill.id)}
+                            className="p-1.5 rounded-lg text-[#716B63] hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                            title="Delete Vendor Bill"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
@@ -330,16 +357,34 @@ function VendorBillList({
             <div
               key={bill.id}
               onClick={() => onSelectBill(bill)}
-              className="bg-white border border-[#e7e3da] rounded-2xl p-5 shadow-2xs hover:shadow-md hover:border-[#cfc6b6] transition-all cursor-pointer flex flex-col justify-between group"
+              className="bg-white border border-[#e7e3da] rounded-2xl p-5 shadow-2xs hover:shadow-xl hover:-translate-y-1.5 hover:border-[#b8ad9e] transition-all duration-200 cursor-pointer flex flex-col justify-between group"
             >
               <div>
-                {/* Top: Bill Number & Status */}
+                {/* Top: Bill Number & Status & Actions */}
                 <div className="flex items-center justify-between gap-2 pb-3 border-b border-[#f0ece4]">
                   <span className="text-sm font-bold text-[#342921] group-hover:text-[#523e2b] transition flex items-center gap-1.5">
                     <FileText size={15} className="text-[#8f8274]" />
                     {bill.billNumber}
                   </span>
-                  {renderStatusBadge(bill)}
+                  <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                    {renderStatusBadge(bill)}
+                    <button
+                      type="button"
+                      onClick={() => (onEditBill || onSelectBill)(bill)}
+                      className="p-1 rounded-md text-[#716B63] hover:text-[#211D19] hover:bg-[#ebe6dc] transition cursor-pointer"
+                      title="Edit Vendor Bill"
+                    >
+                      <Pencil size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDeleteBill && onDeleteBill(bill.id)}
+                      className="p-1 rounded-md text-[#716B63] hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                      title="Delete Vendor Bill"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Vendor & PO Ref */}

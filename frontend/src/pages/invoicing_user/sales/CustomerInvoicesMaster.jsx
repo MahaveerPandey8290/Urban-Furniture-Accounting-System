@@ -166,8 +166,16 @@ function CustomerInvoicesMaster({ mode }) {
     showToast(`Invoice ${confirmedData.invoiceNo} confirmed! Balanced Journal Entry created in Sales Journal.`);
   };
 
+  const handleDeleteInvoice = (id) => {
+    if (window.confirm("Are you sure you want to delete this invoice?")) {
+      const updated = invoices.filter((i) => i.id !== id);
+      persistInvoices(updated);
+      showToast("Invoice deleted successfully.");
+    }
+  };
+
   const handleCancelInvoice = (id) => {
-    const updated = invoices.map((i) => (i.id === id ? { ...i, confirmationStatus: "Cancelled" } : o));
+    const updated = invoices.map((i) => (i.id === id ? { ...i, confirmationStatus: "Cancelled" } : i));
     persistInvoices(updated);
     if (selectedInvoice?.id === id) {
       setSelectedInvoice((prev) => ({ ...prev, confirmationStatus: "Cancelled" }));
@@ -289,7 +297,7 @@ function CustomerInvoicesMaster({ mode }) {
         <>
           {/* Summary Metric Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white border border-[#e7e3da] p-5 rounded-2xl shadow-xs">
+            <div className="bg-white border border-[#e7e3da] p-5 rounded-2xl shadow-xs hover:shadow-xl hover:-translate-y-1 hover:border-[#cfc6b6] transition-all duration-200 cursor-default">
               <div className="flex items-center justify-between text-[#716B63] text-xs font-semibold uppercase tracking-wider">
                 <span>Total Invoices</span>
                 <FileText size={16} />
@@ -299,7 +307,7 @@ function CustomerInvoicesMaster({ mode }) {
               </p>
             </div>
 
-            <div className="bg-white border border-[#e7e3da] p-5 rounded-2xl shadow-xs">
+            <div className="bg-white border border-[#e7e3da] p-5 rounded-2xl shadow-xs hover:shadow-xl hover:-translate-y-1 hover:border-[#cfc6b6] transition-all duration-200 cursor-default">
               <div className="flex items-center justify-between text-[#716B63] text-xs font-semibold uppercase tracking-wider">
                 <span>Total Receivables</span>
                 <DollarSign size={16} />
@@ -309,7 +317,7 @@ function CustomerInvoicesMaster({ mode }) {
               </p>
             </div>
 
-            <div className="bg-white border border-[#e7e3da] p-5 rounded-2xl shadow-xs">
+            <div className="bg-white border border-[#e7e3da] p-5 rounded-2xl shadow-xs hover:shadow-xl hover:-translate-y-1 hover:border-[#cfc6b6] transition-all duration-200 cursor-default">
               <div className="flex items-center justify-between text-emerald-800 text-xs font-semibold uppercase tracking-wider">
                 <span>Total Paid</span>
                 <CheckCircle size={16} />
@@ -319,7 +327,7 @@ function CustomerInvoicesMaster({ mode }) {
               </p>
             </div>
 
-            <div className="bg-white border border-[#e7e3da] p-5 rounded-2xl shadow-xs">
+            <div className="bg-white border border-[#e7e3da] p-5 rounded-2xl shadow-xs hover:shadow-xl hover:-translate-y-1 hover:border-[#cfc6b6] transition-all duration-200 cursor-default">
               <div className="flex items-center justify-between text-amber-800 text-xs font-semibold uppercase tracking-wider">
                 <span>Total Outstanding</span>
                 <Clock size={16} />
@@ -372,6 +380,8 @@ function CustomerInvoicesMaster({ mode }) {
             invoices={filteredInvoices}
             onSelectInvoice={handleSelectInvoice}
             onNewInvoice={handleNewInvoice}
+            onEditInvoice={handleSelectInvoice}
+            onDeleteInvoice={handleDeleteInvoice}
             isBills={isBills}
           />
         </>

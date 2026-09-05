@@ -218,6 +218,15 @@ function ProductMaster() {
     }
   };
 
+  // Delete product
+  const handleDeleteProduct = (productId) => {
+    if (window.confirm("Are you sure you want to delete this product?")) {
+      setProducts((prev) => prev.filter((p) => p.id !== productId));
+      setSelectedIds((prev) => prev.filter((id) => id !== productId));
+      showToast("Product deleted successfully");
+    }
+  };
+
   return (
     <div className="w-full space-y-6">
 
@@ -302,12 +311,16 @@ function ProductMaster() {
               onToggleSelect={handleToggleSelect}
               onSelectAll={handleSelectAll}
               onSelectProduct={handleSelectProduct}
+              onEditProduct={handleSelectProduct}
+              onDeleteProduct={handleDeleteProduct}
               onNewProduct={handleNewProduct}
             />
           ) : (
             <ProductKanban
               products={filteredProducts}
               onSelectProduct={handleSelectProduct}
+              onEditProduct={handleSelectProduct}
+              onDeleteProduct={handleDeleteProduct}
               onNewProduct={handleNewProduct}
             />
           )}

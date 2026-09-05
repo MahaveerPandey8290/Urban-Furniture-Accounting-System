@@ -17,7 +17,7 @@ export function BudgetSummaryCards({ budgets = [] }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* Total Committed Amount */}
-      <div className="bg-white border border-[#e7e3da] rounded-2xl p-5 shadow-2xs hover:shadow-xs transition-shadow min-w-0">
+      <div className="bg-white border border-[#e7e3da] rounded-2xl p-5 shadow-2xs hover:shadow-xl hover:-translate-y-1 hover:border-[#cfc6b6] transition-all duration-200 min-w-0 cursor-default">
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs uppercase font-semibold text-[#716B63] tracking-wider truncate">
             Total Committed
@@ -35,7 +35,7 @@ export function BudgetSummaryCards({ budgets = [] }) {
       </div>
 
       {/* Total Achieved Amount */}
-      <div className="bg-white border border-[#e7e3da] rounded-2xl p-5 shadow-2xs hover:shadow-xs transition-shadow min-w-0">
+      <div className="bg-white border border-[#e7e3da] rounded-2xl p-5 shadow-2xs hover:shadow-xl hover:-translate-y-1 hover:border-[#cfc6b6] transition-all duration-200 min-w-0 cursor-default">
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs uppercase font-semibold text-emerald-800 tracking-wider truncate">
             Total Achieved
@@ -54,7 +54,7 @@ export function BudgetSummaryCards({ budgets = [] }) {
       </div>
 
       {/* Total Amount To Achieve */}
-      <div className="bg-white border border-[#e7e3da] rounded-2xl p-5 shadow-2xs hover:shadow-xs transition-shadow min-w-0">
+      <div className="bg-white border border-[#e7e3da] rounded-2xl p-5 shadow-2xs hover:shadow-xl hover:-translate-y-1 hover:border-[#cfc6b6] transition-all duration-200 min-w-0 cursor-default">
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs uppercase font-semibold text-[#625547] tracking-wider truncate">
             Amount To Achieve
@@ -72,7 +72,7 @@ export function BudgetSummaryCards({ budgets = [] }) {
       </div>
 
       {/* Overall Achieved Rate */}
-      <div className="bg-white border border-[#e7e3da] rounded-2xl p-5 shadow-2xs hover:shadow-xs transition-shadow min-w-0">
+      <div className="bg-white border border-[#e7e3da] rounded-2xl p-5 shadow-2xs hover:shadow-xl hover:-translate-y-1 hover:border-[#cfc6b6] transition-all duration-200 min-w-0 cursor-default">
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs uppercase font-semibold text-[#716B63] tracking-wider truncate">
             Overall Achieved %

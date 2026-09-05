@@ -6,7 +6,9 @@ import {
   ChevronRight,
   Plus,
   PieChart as PieChartIcon,
-  AlertCircle
+  AlertCircle,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { formatINR, calculateAchievedPercent, calculateAmountToAchieve } from "./budgetData";
 import { formatDate } from "../../../utils/formatters";
@@ -47,6 +49,8 @@ export function BudgetReportTable({
   budgets = [],
   totalBudgetsCount = 0,
   onSelectBudget,
+  onEditBudget,
+  onDeleteBudget,
   onOpenCreate,
   onClearFilters
 }) {
@@ -114,7 +118,7 @@ export function BudgetReportTable({
               <th className="py-3.5 px-3 lg:px-3.5 font-semibold text-right">Achieved</th>
               <th className="py-3.5 px-3 lg:px-3.5 font-semibold text-right">To Achieve</th>
               <th className="py-3.5 px-2 lg:px-3 font-semibold text-center w-28">Ratio</th>
-              <th className="py-3.5 px-2 w-8"></th>
+              <th className="py-3.5 px-3 font-semibold text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#f0ece4] text-sm text-[#211D19]">
@@ -212,12 +216,26 @@ export function BudgetReportTable({
                     </div>
                   </td>
 
-                  {/* Row Navigation Icon */}
-                  <td className="py-3 px-2 text-right w-8">
-                    <ChevronRight
-                      size={16}
-                      className="text-[#998d7f] group-hover:text-[#342921] group-hover:translate-x-0.5 transition"
-                    />
+                  {/* Actions Column */}
+                  <td className="py-3 px-3 text-right whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => (onEditBudget || onSelectBudget)(budget)}
+                        className="p-1.5 rounded-lg text-[#716B63] hover:text-[#211D19] hover:bg-[#ebe6dc] transition cursor-pointer"
+                        title="Edit / View Budget"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDeleteBudget && onDeleteBudget(budget.id)}
+                        className="p-1.5 rounded-lg text-[#716B63] hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                        title="Delete Budget"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );

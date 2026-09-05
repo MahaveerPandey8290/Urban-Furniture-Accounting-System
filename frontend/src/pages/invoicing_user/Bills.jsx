@@ -192,6 +192,15 @@ function Bills() {
     navigate(`/invoicing_user/purchase-orders?poNumber=${poNum}`);
   };
 
+  // Delete Vendor Bill
+  const handleDeleteBill = (billId) => {
+    if (window.confirm("Are you sure you want to delete this vendor bill?")) {
+      const updated = bills.filter((b) => b.id !== billId);
+      persistBills(updated);
+      showToast("Vendor bill deleted successfully");
+    }
+  };
+
   return (
     <div className="w-full">
       {/* Toast Notification */}
@@ -215,6 +224,8 @@ function Bills() {
           onViewChange={handleViewChange}
           onNewBill={handleNewBill}
           onSelectBill={handleSelectBill}
+          onEditBill={handleSelectBill}
+          onDeleteBill={handleDeleteBill}
           onBack={handleBack}
         />
       )}

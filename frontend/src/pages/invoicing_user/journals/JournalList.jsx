@@ -1,8 +1,10 @@
-import { BookOpen, Plus, Landmark, Wallet, ShoppingCart, ShoppingBag } from "lucide-react";
+import { BookOpen, Plus, Landmark, Wallet, ShoppingCart, ShoppingBag, Pencil, Trash2 } from "lucide-react";
 
 function JournalList({
   journals,
   onSelectJournal,
+  onEditJournal,
+  onDeleteJournal,
   onNewJournal,
 }) {
   const getTypeBadge = (type) => {
@@ -71,6 +73,7 @@ function JournalList({
               <th className="py-3.5 px-6">JOURNAL NAME</th>
               <th className="py-3.5 px-6">TYPE</th>
               <th className="py-3.5 px-6">DEFAULT ACCOUNT</th>
+              <th className="py-3.5 px-6 text-right">ACTIONS</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#f5f2eb]">
@@ -107,6 +110,28 @@ function JournalList({
                       <span className="font-medium text-[#211D19]">
                         {journal.defaultAccountName || "Not assigned"}
                       </span>
+                    </div>
+                  </td>
+
+                  {/* 4. Actions */}
+                  <td className="py-3.5 px-6 text-right whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => (onEditJournal || onSelectJournal)(journal)}
+                        className="p-1.5 rounded-lg text-[#716B63] hover:text-[#211D19] hover:bg-[#ebe6dc] transition cursor-pointer"
+                        title="Edit Journal"
+                      >
+                        <Pencil size={15} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDeleteJournal && onDeleteJournal(journal.id)}
+                        className="p-1.5 rounded-lg text-[#716B63] hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                        title="Delete Journal"
+                      >
+                        <Trash2 size={15} />
+                      </button>
                     </div>
                   </td>
                 </tr>

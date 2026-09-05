@@ -258,12 +258,20 @@ function ChartOfAccountsMaster() {
   const activeCount = accounts.filter((a) => a.status === "ACTIVE").length;
   const archivedCount = accounts.filter((a) => a.status === "ARCHIVED").length;
 
+  // Delete account
+  const handleDeleteAccount = (id) => {
+    if (window.confirm("Are you sure you want to delete this account?")) {
+      setAccounts((prev) => prev.filter((a) => a.id !== id));
+      showToast("Account deleted successfully");
+    }
+  };
+
   return (
     <div className="w-full space-y-6">
 
       {/* Header breadcrumb & title */}
       <div className="border-b border-[#e7e3da] pb-4">
-        <div className="flex items-center gap-2 text-sm text-[#716B63] mb-1">
+        <div className="flex items-center gap-1.5 text-sm text-[#716B63] mb-1">
           <span>Account</span>
           <span>/</span>
           <span className="text-[#211D19] font-medium">Chart of Accounts</span>
@@ -271,7 +279,7 @@ function ChartOfAccountsMaster() {
         <h1 className="text-3xl font-semibold text-[#211D19] tracking-tight">
           {currentView === "form"
             ? editingAccount
-              ? `Chart of Accounts: ${editingAccount.accountName}`
+              ? `Edit Account: ${editingAccount.accountName}`
               : "New Account"
             : "Chart of Accounts"}
         </h1>
@@ -284,7 +292,7 @@ function ChartOfAccountsMaster() {
       {currentView === "list" && (
         <>
           {/* Top Action Bar */}
-          {/* LEFT: [ New ] [ Archived ] [ Search + Account Category Filter ] | RIGHT: [ Home ] [ Back ] */}
+          {/* LEFT: [ New ] [ Archived ] [ Search & Filter Bar ] | RIGHT: [ Home ] [ Back ] */}
           <div className="bg-white border border-[#e7e3da] rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
 
             {/* Left Actions */}
@@ -314,40 +322,35 @@ function ChartOfAccountsMaster() {
                 </span>
               </button>
 
-              {/* Integrated Search Bar with Account Category Filter */}
-              <div className="flex items-center gap-2 flex-1 max-w-lg min-w-[260px]">
-                <div className="relative flex items-center flex-1 h-10 rounded-lg border border-[#cfc6b6] bg-white focus-within:border-[#342921] focus-within:ring-1 focus-within:ring-[#342921]/15 transition">
-                  {/* Search Icon */}
+              {/* Combined Search + Category Filter Bar */}
+              <div className="flex items-center gap-2 flex-1 max-w-xl">
+                <div className="relative flex-1 flex items-center bg-white rounded-lg border border-[#cfc6b6] focus-within:border-[#342921] transition overflow-hidden">
                   <Search
                     size={16}
-                    className="ml-3 text-[#716B63] flex-shrink-0"
+                    className="absolute left-3.5 text-[#716B63] pointer-events-none"
                   />
-
-                  {/* Search Input */}
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search accounts..."
-                    className="w-full h-full px-2.5 bg-transparent text-sm text-[#211D19] outline-none placeholder:text-[#a89f91]"
+                    className="w-full h-10 pl-10 pr-8 bg-transparent text-sm text-[#211D19] outline-none"
                   />
-
-                  {/* Clear Search Input Button */}
                   {searchQuery && (
                     <button
                       type="button"
                       onClick={() => setSearchQuery("")}
-                      className="p-1 mr-1 text-[#a89f91] hover:text-[#211D19] text-sm cursor-pointer rounded"
-                      title="Clear search text"
+                      className="absolute right-2 text-[#716B63] hover:text-[#211D19] text-xs cursor-pointer p-1"
+                      title="Clear search"
                     >
-                      <X size={15} />
+                      ✕
                     </button>
                   )}
 
-                  {/* Vertical Separator */}
-                  <div className="h-4 w-[1px] bg-[#e7e3da] flex-shrink-0" />
+                  {/* Vertical Divider */}
+                  <div className="w-[1px] h-6 bg-[#cfc6b6] self-center flex-shrink-0" />
 
-                  {/* Account Category Filter Dropdown (flat list with Bank, Cash, and no balance sheet/profit & loss optgroups) */}
+                  {/* Account Category Filter Dropdown */}
                   <div className="relative flex items-center flex-shrink-0">
                     <Filter size={14} className="absolute left-2.5 text-[#716B63] pointer-events-none" />
                     <select
@@ -369,22 +372,6 @@ function ChartOfAccountsMaster() {
                     <ChevronDown size={14} className="absolute right-2 text-[#716B63] pointer-events-none" />
                   </div>
                 </div>
-
-                {/* Reset Button (visible when filter or search active) */}
-                {(searchQuery.trim() || selectedTypeFilter !== "ALL") && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSearchQuery("");
-                      setSelectedTypeFilter("ALL");
-                    }}
-                    className="h-10 px-3 rounded-lg border border-[#e7e3da] bg-[#faf8f4] hover:bg-[#f3efe7] text-xs font-medium text-[#716B63] hover:text-[#211D19] transition cursor-pointer flex items-center gap-1 flex-shrink-0"
-                    title="Reset search and filters"
-                  >
-                    <RotateCcw size={13} />
-                    <span className="hidden sm:inline">Reset</span>
-                  </button>
-                )}
               </div>
             </div>
 
@@ -410,51 +397,7 @@ function ChartOfAccountsMaster() {
                 <span className="hidden sm:inline">Back</span>
               </button>
             </div>
-
           </div>
-
-          {/* Active Filter Chips */}
-          {(selectedTypeFilter !== "ALL" || searchQuery.trim()) && (
-            <div className="flex flex-wrap items-center gap-2 text-xs text-[#7a7065] px-1">
-              <span>Active filters:</span>
-              {selectedTypeFilter !== "ALL" && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#f4efe8] border border-[#e2dacd] text-[#342921] font-medium text-[11px]">
-                  <span>Category: {selectedTypeFilter.charAt(0) + selectedTypeFilter.slice(1).toLowerCase()}</span>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTypeFilter("ALL")}
-                    className="hover:text-red-700 cursor-pointer ml-0.5"
-                    title="Remove category filter"
-                  >
-                    <X size={11} />
-                  </button>
-                </span>
-              )}
-              {searchQuery.trim() && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#f4efe8] border border-[#e2dacd] text-[#342921] font-medium text-[11px]">
-                  <span>Query: "{searchQuery}"</span>
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery("")}
-                    className="hover:text-red-700 cursor-pointer ml-0.5"
-                    title="Remove query filter"
-                  >
-                    <X size={11} />
-                  </button>
-                </span>
-              )}
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchQuery("");
-                  setSelectedTypeFilter("ALL");
-                }}
-                className="text-[11px] text-[#7a7065] hover:text-[#24201a] underline cursor-pointer ml-1"
-              >
-                Clear all
-              </button>
-            </div>
-          )}
 
           {/* Archived Banner indicator */}
           {isArchivedView && (
@@ -485,6 +428,8 @@ function ChartOfAccountsMaster() {
               setSelectedTypeFilter("ALL");
             }}
             onSelectAccount={handleSelectAccount}
+            onEditAccount={handleSelectAccount}
+            onDeleteAccount={handleDeleteAccount}
             onToggleArchive={handleToggleArchive}
             onNewAccount={handleNewAccount}
           />

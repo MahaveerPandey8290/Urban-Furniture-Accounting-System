@@ -1,10 +1,12 @@
-import { ShoppingCart, Plus, CheckCircle, FileText, ArrowRight, Ban, Clock } from "lucide-react";
+import { ShoppingCart, Plus, CheckCircle, FileText, ArrowRight, Ban, Clock, Pencil, Trash2 } from "lucide-react";
 import { formatCurrency, formatDate } from "../../../utils/formatters";
 
 function SalesOrderList({
   orders,
   onSelectOrder,
   onNewOrder,
+  onEditOrder,
+  onDeleteOrder,
 }) {
   const getStatusBadge = (status) => {
     switch (status) {
@@ -155,8 +157,25 @@ function SalesOrderList({
                   </td>
 
                   {/* 7. Actions */}
-                  <td className="py-3.5 px-4 sm:px-6 text-right text-[#a89f91] group-hover:text-[#342921] transition">
-                    <ArrowRight size={16} className="inline ml-auto" />
+                  <td className="py-3.5 px-4 sm:px-6 text-right whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => (onEditOrder || onSelectOrder)(so)}
+                        className="p-1.5 rounded-lg text-[#716B63] hover:text-[#211D19] hover:bg-[#ebe6dc] transition cursor-pointer"
+                        title="Edit Sales Order"
+                      >
+                        <Pencil size={15} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDeleteOrder && onDeleteOrder(so.id)}
+                        className="p-1.5 rounded-lg text-[#716B63] hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                        title="Delete Sales Order"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );

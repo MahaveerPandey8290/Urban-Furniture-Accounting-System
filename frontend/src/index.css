@@ -46,3 +46,20 @@ select,
 textarea {
   font-family: inherit;
 }
+
+/* =========================================================
+   Universal Card Hover Effects Across All Screens
+   ========================================================= */
+main div[class*="rounded-2xl"][class*="bg-white"][class*="border"]:not([role="dialog"]):not(form):not(table):not(.no-hover),
+main div[class*="rounded-xl"][class*="bg-white"][class*="border"]:not([role="dialog"]):not(form):not(table):not(input):not(button):not(.no-hover) {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+main div[class*="rounded-2xl"][class*="bg-white"][class*="border"]:not([role="dialog"]):not(form):not(table):not(.no-hover):hover,
+main div[class*="rounded-xl"][class*="bg-white"][class*="border"]:not([role="dialog"]):not(form):not(table):not(input):not(button):not(.no-hover):hover {
+  transform: translateY(-2.5px);
+  box-shadow: 0 12px 28px -4px rgba(45, 35, 27, 0.09), 0 4px 10px -2px rgba(45, 35, 27, 0.04);
+  border-color: #cfc5b6;
+}

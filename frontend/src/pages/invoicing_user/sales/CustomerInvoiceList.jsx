@@ -1,10 +1,12 @@
-import { FileText, Plus, CheckCircle, Clock, AlertCircle, ArrowRight, Ban, Link2 } from "lucide-react";
+import { FileText, Plus, CheckCircle, Clock, AlertCircle, ArrowRight, Ban, Link2, Pencil, Trash2 } from "lucide-react";
 import { formatCurrency, formatDate } from "../../../utils/formatters";
 
 function CustomerInvoiceList({
   invoices,
   onSelectInvoice,
   onNewInvoice,
+  onEditInvoice,
+  onDeleteInvoice,
   isBills = false,
 }) {
   const getPaymentBadge = (status) => {
@@ -148,8 +150,25 @@ function CustomerInvoiceList({
                   </td>
 
                   {/* 10. Actions */}
-                  <td className="py-3.5 px-3 text-right text-[#a89f91] group-hover:text-[#342921] transition">
-                    <ArrowRight size={16} className="inline ml-auto" />
+                  <td className="py-3.5 px-3 text-right whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => (onEditInvoice || onSelectInvoice)(inv)}
+                        className="p-1.5 rounded-lg text-[#716B63] hover:text-[#211D19] hover:bg-[#ebe6dc] transition cursor-pointer"
+                        title="Edit Invoice"
+                      >
+                        <Pencil size={15} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDeleteInvoice && onDeleteInvoice(inv.id)}
+                        className="p-1.5 rounded-lg text-[#716B63] hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                        title="Delete Invoice"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );

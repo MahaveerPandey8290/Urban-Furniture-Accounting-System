@@ -84,6 +84,15 @@ function SalesOrdersMaster() {
     setSearchParams({ soId: so.id });
   };
 
+  const handleDeleteOrder = (soId) => {
+    if (window.confirm("Are you sure you want to delete this sales order?")) {
+      const updated = orders.filter((o) => o.id !== soId);
+      setOrders(updated);
+      saveSalesOrders(updated);
+      showToast("Sales order deleted successfully!");
+    }
+  };
+
   const handleBack = () => {
     if (currentView === "form") {
       setCurrentView("list");
@@ -291,6 +300,8 @@ function SalesOrdersMaster() {
             orders={filteredOrders}
             onSelectOrder={handleSelectOrder}
             onNewOrder={handleNewOrder}
+            onEditOrder={handleSelectOrder}
+            onDeleteOrder={handleDeleteOrder}
           />
         </>
       )}

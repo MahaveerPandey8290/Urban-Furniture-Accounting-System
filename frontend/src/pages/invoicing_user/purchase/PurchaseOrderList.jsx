@@ -12,6 +12,8 @@ import {
   Ban,
   ArrowUpDown,
   ExternalLink,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import ViewToggle from "../../../components/common/ViewToggle";
 import { formatCurrency, formatDate } from "../../../utils/formatters";
@@ -22,6 +24,8 @@ function PurchaseOrderList({
   onViewChange,
   onNewPO,
   onSelectPO,
+  onEditPO,
+  onDeletePO,
   onBack,
 }) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -212,6 +216,7 @@ function PurchaseOrderList({
                   <th className="py-3.5 px-4 font-semibold text-right">Total</th>
                   <th className="py-3.5 px-4 font-semibold text-center">Status</th>
                   <th className="py-3.5 px-4 font-semibold text-center">Linked Bill</th>
+                  <th className="py-3.5 px-4 font-semibold text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#f0ece4] text-sm text-[#211D19]">
@@ -285,6 +290,28 @@ function PurchaseOrderList({
                           <span className="text-xs text-[#998d7f]">—</span>
                         )}
                       </td>
+
+                      {/* Actions */}
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            onClick={() => (onEditPO || onSelectPO)(order)}
+                            className="p-1.5 rounded-lg text-[#716B63] hover:text-[#211D19] hover:bg-[#ebe6dc] transition cursor-pointer"
+                            title="Edit Purchase Order"
+                          >
+                            <Pencil size={15} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onDeletePO && onDeletePO(order.id)}
+                            className="p-1.5 rounded-lg text-[#716B63] hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                            title="Delete Purchase Order"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
@@ -315,16 +342,34 @@ function PurchaseOrderList({
             <div
               key={order.id}
               onClick={() => onSelectPO(order)}
-              className="bg-white border border-[#e7e3da] rounded-2xl p-5 shadow-2xs hover:shadow-md hover:border-[#cfc6b6] transition-all cursor-pointer flex flex-col justify-between group"
+              className="bg-white border border-[#e7e3da] rounded-2xl p-5 shadow-2xs hover:shadow-xl hover:-translate-y-1.5 hover:border-[#b8ad9e] transition-all duration-200 cursor-pointer flex flex-col justify-between group"
             >
               <div>
-                {/* Card Top: PO Number & Status */}
+                {/* Card Top: PO Number & Status & Actions */}
                 <div className="flex items-center justify-between gap-2 pb-3 border-b border-[#f0ece4]">
                   <span className="text-sm font-bold text-[#342921] group-hover:text-[#523e2b] transition flex items-center gap-1.5">
                     <ShoppingBag size={15} className="text-[#8f8274]" />
                     {order.poNumber}
                   </span>
-                  {renderStatusBadge(order.status)}
+                  <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                    {renderStatusBadge(order.status)}
+                    <button
+                      type="button"
+                      onClick={() => (onEditPO || onSelectPO)(order)}
+                      className="p-1 rounded-md text-[#716B63] hover:text-[#211D19] hover:bg-[#ebe6dc] transition cursor-pointer"
+                      title="Edit Purchase Order"
+                    >
+                      <Pencil size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDeletePO && onDeletePO(order.id)}
+                      className="p-1 rounded-md text-[#716B63] hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                      title="Delete Purchase Order"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Vendor Name */}
