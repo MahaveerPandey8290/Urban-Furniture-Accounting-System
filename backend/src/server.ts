@@ -8,7 +8,7 @@ const app = createApp();
 const server = app.listen(env.PORT, () => {
   logger.info(
     { port: env.PORT, env: env.NODE_ENV },
-    `🚀 Server started on port ${env.PORT}`
+    ` Server started on port ${env.PORT}`
   );
 });
 

@@ -41,7 +41,7 @@ function generateTempPassword(): string {
 }
 
 async function main() {
-  console.log('🌱 Seeding database...');
+  console.log('Seeding initial baseline data...');
 
   // ─── Company ────────────────────────────────────────────────────────────────
   const company = await prisma.company.upsert({
@@ -54,7 +54,7 @@ async function main() {
       fiscalYearStartMonth: 4,
     },
   });
-  console.log(`✅ Company: ${company.name}`);
+  console.log(`[Created] Company: ${company.name}`);
 
   // ─── Accounts (Chart of Accounts) ───────────────────────────────────────────
   const accountDefs = [
@@ -76,7 +76,7 @@ async function main() {
       create: { companyId: company.id, ...acc, isArchived: false },
     });
     accounts[acc.name] = record.id;
-    console.log(`  ✅ Account: ${acc.name}`);
+    console.log(`  [Account] ${acc.name}`);
   }
 
   // ─── Tax ────────────────────────────────────────────────────────────────────
@@ -85,7 +85,7 @@ async function main() {
     update: {},
     create: { companyId: company.id, name: 'No Tax', rate: 0, scope: 'BOTH', isArchived: false },
   });
-  console.log(`✅ Tax: ${noTax.name}`);
+  console.log(`[Created] Tax: ${noTax.name}`);
 
   // ─── Journals ───────────────────────────────────────────────────────────────
   const journalDefs = [
@@ -111,7 +111,7 @@ async function main() {
       },
     });
     journals[j.name] = record.id;
-    console.log(`  ✅ Journal: ${j.name}`);
+    console.log(`  [Journal] ${j.name}`);
   }
 
   // ─── Admin user ─────────────────────────────────────────────────────────────
@@ -133,7 +133,7 @@ async function main() {
       mustChangePassword: false,
     },
   });
-  console.log(`✅ Admin user: ${admin.loginId}`);
+  console.log(`[Created] Admin user: ${admin.loginId}`);
 
   // ─── Demo Accountant ─────────────────────────────────────────────────────────
   const acctHash = await argon2.hash('Acct@1234', ARGON2_OPTIONS);
@@ -151,7 +151,7 @@ async function main() {
       mustChangePassword: false,
     },
   });
-  console.log('✅ Demo Accountant: acct001 / Acct@1234');
+  console.log('[Created] Demo Accountant: acct001 / Acct@1234');
 
   // ─── Contacts with portal users ──────────────────────────────────────────────
   const vendorContact = await prisma.contact.upsert({
@@ -183,7 +183,7 @@ async function main() {
       contactId: vendorContact.id,
     },
   });
-  console.log(`✅ Vendor Contact: Rahul Sharma (portal: rahul_v / ${vendorPortalPass})`);
+  console.log(`[Created] Vendor Contact: Rahul Sharma (portal: rahul_v / ${vendorPortalPass})`);
 
   const customerContact = await prisma.contact.upsert({
     where: { companyId_email: { companyId: company.id, email: 'nimesh@customer.local' } },
@@ -214,7 +214,7 @@ async function main() {
       contactId: customerContact.id,
     },
   });
-  console.log(`✅ Customer Contact: Nimesh Pathak (portal: nimesh_c / ${custPortalPass})`);
+  console.log(`[Created] Customer Contact: Nimesh Pathak (portal: nimesh_c / ${custPortalPass})`);
 
   // ─── Product Category ────────────────────────────────────────────────────────
   const furnitureCategory = await prisma.productCategory.upsert({
@@ -249,11 +249,11 @@ async function main() {
         isArchived: false,
       },
     });
-    console.log(`  ✅ Product: ${p.name}`);
+    console.log(`  [Product] ${p.name}`);
   }
 
   // ─── Analytic Accounts ───────────────────────────────────────────────────────
-  const analyticProject = await prisma.analyticAccount.upsert({
+  await prisma.analyticAccount.upsert({
     where: { companyId_name: { companyId: company.id, name: 'Project 1' } },
     update: {},
     create: { companyId: company.id, name: 'Project 1', type: 'INCOME', isArchived: false },
@@ -263,7 +263,7 @@ async function main() {
     update: {},
     create: { companyId: company.id, name: 'Furniture', type: 'EXPENSE', isArchived: false },
   });
-  console.log('✅ Analytic Accounts: Project 1, Furniture');
+  console.log('[Created] Analytic Accounts: Project 1, Furniture');
 
   // ─── Budget ──────────────────────────────────────────────────────────────────
   const now = new Date();
@@ -291,13 +291,12 @@ async function main() {
         },
       },
     });
-    console.log(`✅ Budget: ${budget.name} (₹200,000)`);
+    console.log(`[Created] Budget: ${budget.name} (INR 200,000)`);
   } else {
-    console.log('✅ Budget already exists, skipping');
+    console.log('[Info] Budget already exists, skipping creation');
   }
 
   // ─── Opening journal entry ────────────────────────────────────────────────────
-  // Dr Bank 500000, Cr Capital 500000
   const existingEntry = await prisma.journalEntry.findFirst({
     where: { companyId: company.id, narration: 'Opening Balance' },
   });
@@ -308,7 +307,6 @@ async function main() {
     });
 
     if (bankJournal) {
-      // Acquire sequence via advisory lock pattern (simplified for seed)
       await prisma.$transaction(async (tx) => {
         const lockKey = `${company.id}:${bankJournal.id}:${now.getFullYear()}`;
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
@@ -348,22 +346,22 @@ async function main() {
           },
         });
       });
-      console.log('✅ Opening entry: Dr Bank ₹5,00,000 / Cr Capital ₹5,00,000');
+      console.log('[Created] Opening entry: Dr Bank INR 500,000 / Cr Capital INR 500,000');
     }
   } else {
-    console.log('✅ Opening entry already exists, skipping');
+    console.log('[Info] Opening entry already exists, skipping creation');
   }
 
-  console.log('\n🎉 Seed complete!\n');
-  console.log('─── Seeded Credentials ───────────────────────────────────────');
-  console.log(`Admin:      loginId=${adminLoginId}  password=${adminPassword}`);
-  console.log('Accountant: loginId=acct001          password=Acct@1234');
-  console.log('─────────────────────────────────────────────────────────────');
+  console.log('\nDatabase seeding completed successfully.\n');
+  console.log('------------------ Default Credentials ------------------');
+  console.log(`Admin user:        loginId = ${adminLoginId}   password = ${adminPassword}`);
+  console.log('Accountant user:   loginId = acct001           password = Acct@1234');
+  console.log('---------------------------------------------------------');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Seed failed:', e);
+    console.error('[Error] Seed failed:', e);
     process.exit(1);
   })
   .finally(async () => {

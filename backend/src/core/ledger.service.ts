@@ -1,5 +1,5 @@
 import { Decimal } from 'decimal.js-light';
-import { round2, sumDecimals, fromPrismaDecimal } from './money.js';
+import { round2, sumDecimals } from './money.js';
 import { SequenceService } from './sequence.service.js';
 import { AuditService } from './audit.service.js';
 import {
@@ -7,7 +7,6 @@ import {
   InvalidLineError,
   UnbalancedEntryError,
   InvalidAccountError,
-  PeriodLockedError,
   ImmutableEntryError,
   NotFoundError,
   ForbiddenError,

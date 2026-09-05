@@ -78,7 +78,7 @@ function generateTempPassword(): string {
 
 function issueAccessToken(payload: AuthContext): string {
   return jwt.sign(payload, env.JWT_ACCESS_SECRET, {
-    expiresIn: env.JWT_ACCESS_EXPIRES_IN as string,
+    expiresIn: env.JWT_ACCESS_EXPIRES_IN as jwt.SignOptions['expiresIn'],
   });
 }
 
