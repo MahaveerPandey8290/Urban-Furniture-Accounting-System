@@ -6,13 +6,23 @@ import AuthCard from "../../components/auth/AuthCard";
 
 function Login() {
   const [showPassword, setShowPassword] = useState(false);
+  const [loginId, setLoginId] = useState("");
 
   const navigate = useNavigate();
 
   const handleLogin = (e) => {
     e.preventDefault();
 
-    navigate("/invoicing_user");
+    const lowerId = loginId.toLowerCase();
+    if (lowerId.includes("admin")) {
+      navigate("/admin");
+    } else if (lowerId.includes("customer")) {
+      navigate("/customer");
+    } else if (lowerId.includes("vendor")) {
+      navigate("/vendor");
+    } else {
+      navigate("/invoicing_user");
+    }
   };
 
   return (
@@ -45,6 +55,8 @@ function Login() {
                   />
                   <input
                     type="text"
+                    value={loginId}
+                    onChange={(e) => setLoginId(e.target.value)}
                     placeholder="Enter your login ID"
                     className="
                       w-full

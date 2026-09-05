@@ -27,6 +27,22 @@ import Login from "../pages/auth/Login";
 import Signup from "../pages/auth/Signup";
 
 // =====================================================
+// CUSTOMER PORTAL
+// =====================================================
+import CustomerLayout from "../components/layout/CustomerLayout";
+import CustomerDashboard from "../pages/customer/Dashboard";
+import MySalesOrders from "../pages/customer/MySalesOrders";
+import MyInvoices from "../pages/customer/MyInvoices";
+
+// =====================================================
+// VENDOR PORTAL
+// =====================================================
+import VendorLayout from "../components/layout/VendorLayout";
+import VendorDashboard from "../pages/vendor/Dashboard";
+import MyPurchaseOrders from "../pages/vendor/MyPurchaseOrders";
+import MyBills from "../pages/vendor/MyBills";
+
+// =====================================================
 // ACCOUNTANT / INVOICING USER
 // =====================================================
 
@@ -175,6 +191,26 @@ function AppRoutes() {
         <Route path="profit-and-loss" element={<ProfitAndLoss />} />
         <Route path="budget-reports" element={<BudgetReport />} />
         <Route path="reports" element={<BudgetReport />} />
+      </Route>
+
+      {/* =================================================
+          CUSTOMER PORTAL
+      ================================================= */}
+      <Route path="/customer" element={<CustomerLayout />}>
+        <Route index element={<CustomerDashboard />} />
+        <Route path="dashboard" element={<CustomerDashboard />} />
+        <Route path="sales-orders" element={<MySalesOrders />} />
+        <Route path="invoices" element={<MyInvoices />} />
+      </Route>
+
+      {/* =================================================
+          VENDOR PORTAL
+      ================================================= */}
+      <Route path="/vendor" element={<VendorLayout />}>
+        <Route index element={<VendorDashboard />} />
+        <Route path="dashboard" element={<VendorDashboard />} />
+        <Route path="purchase-orders" element={<MyPurchaseOrders />} />
+        <Route path="bills" element={<MyBills />} />
       </Route>
 
     </Routes>
