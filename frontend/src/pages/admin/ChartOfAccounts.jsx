@@ -23,31 +23,16 @@ function ChartOfAccounts() {
   const [accountName, setAccountName] = useState("");
   const [accountType, setAccountType] = useState("");
 
-  // Cash filters
-  const [cashPartyFilter, setCashPartyFilter] =
-    useState("Customer");
+  // =========================================
+  // ACCOUNT FILTERS
+  // =========================================
 
-  const [cashTransactionFilter, setCashTransactionFilter] =
+  const [accountTransactionFilter, setAccountTransactionFilter] =
     useState("All");
 
-  const [cashDateFilter, setCashDateFilter] =
-    useState("");
+  const [accountDateFilter, setAccountDateFilter] = useState("");
 
-  const [cashAmountFilter, setCashAmountFilter] =
-    useState("");
-
-  // Bank filters
-  const [bankPartyFilter, setBankPartyFilter] =
-    useState("All");
-
-  const [bankTransactionFilter, setBankTransactionFilter] =
-    useState("All");
-
-  const [bankDateFilter, setBankDateFilter] =
-    useState("");
-
-  const [bankAmountFilter, setBankAmountFilter] =
-    useState("");
+  const [accountAmountFilter, setAccountAmountFilter] = useState("");
 
   // Accounts
   const [accounts, setAccounts] = useState([
@@ -92,7 +77,10 @@ function ChartOfAccounts() {
     "Capital",
   ];
 
-  // Sample transactions
+  // =========================================
+  // SAMPLE TRANSACTIONS
+  // =========================================
+
   const transactions = [
     {
       id: 1,
@@ -101,6 +89,7 @@ function ChartOfAccounts() {
       partyType: "Customer",
       description: "Sales Invoice #INV-001",
       transactionType: "Received",
+      category: "Received",
       debit: 25000,
       credit: 0,
       account: "Cash",
@@ -112,6 +101,7 @@ function ChartOfAccounts() {
       partyType: "Customer",
       description: "Sales Invoice #INV-002",
       transactionType: "Received",
+      category: "Received",
       debit: 18000,
       credit: 0,
       account: "Bank",
@@ -123,6 +113,7 @@ function ChartOfAccounts() {
       partyType: "Vendor",
       description: "Purchase Bill #PUR-021",
       transactionType: "Paid",
+      category: "Paid",
       debit: 35000,
       credit: 0,
       account: "Bank",
@@ -134,6 +125,7 @@ function ChartOfAccounts() {
       partyType: "Customer",
       description: "Payment received",
       transactionType: "Received",
+      category: "Received",
       debit: 15000,
       credit: 0,
       account: "Cash",
@@ -145,13 +137,144 @@ function ChartOfAccounts() {
       partyType: "Vendor",
       description: "Vendor payment",
       transactionType: "Paid",
+      category: "Paid",
       debit: 22000,
       credit: 0,
       account: "Bank",
     },
+
+    // Debtors
+    {
+      id: 6,
+      date: "31 Aug 2026",
+      party: "Modern Home",
+      partyType: "Customer",
+      description: "Outstanding sales invoice #INV-003",
+      transactionType: "Receivable",
+      category: "Receivable",
+      debit: 30000,
+      credit: 0,
+      account: "Debtors",
+    },
+    {
+      id: 7,
+      date: "30 Aug 2026",
+      party: "Raj Furniture",
+      partyType: "Customer",
+      description: "Payment received from customer",
+      transactionType: "Received",
+      category: "Received",
+      debit: 15000,
+      credit: 0,
+      account: "Debtors",
+    },
+
+    // Creditors
+    {
+      id: 8,
+      date: "29 Aug 2026",
+      party: "ABC Wood Suppliers",
+      partyType: "Vendor",
+      description: "Outstanding purchase bill #PUR-022",
+      transactionType: "Payable",
+      category: "Payable",
+      debit: 0,
+      credit: 40000,
+      account: "Creditors",
+    },
+    {
+      id: 9,
+      date: "28 Aug 2026",
+      party: "WoodCraft Suppliers",
+      partyType: "Vendor",
+      description: "Payment made to vendor",
+      transactionType: "Paid",
+      category: "Paid",
+      debit: 22000,
+      credit: 0,
+      account: "Creditors",
+    },
+
+    // Sales Income
+    {
+      id: 10,
+      date: "27 Aug 2026",
+      party: "Urban Interiors",
+      partyType: "Customer",
+      description: "Sales Invoice #INV-004",
+      transactionType: "Sales",
+      category: "Sales",
+      debit: 0,
+      credit: 50000,
+      account: "Sales Income",
+    },
+    {
+      id: 11,
+      date: "26 Aug 2026",
+      party: "Modern Home",
+      partyType: "Customer",
+      description: "Sales return #SR-001",
+      transactionType: "Sales Return",
+      category: "Sales Return",
+      debit: 5000,
+      credit: 0,
+      account: "Sales Income",
+    },
+
+    // Purchase Expense
+    {
+      id: 12,
+      date: "25 Aug 2026",
+      party: "ABC Wood Suppliers",
+      partyType: "Vendor",
+      description: "Purchase Bill #PUR-023",
+      transactionType: "Purchase",
+      category: "Purchase",
+      debit: 45000,
+      credit: 0,
+      account: "Purchase Expense",
+    },
+    {
+      id: 13,
+      date: "24 Aug 2026",
+      party: "WoodCraft Suppliers",
+      partyType: "Vendor",
+      description: "Purchase return #PR-001",
+      transactionType: "Purchase Return",
+      category: "Purchase Return",
+      debit: 0,
+      credit: 7000,
+      account: "Purchase Expense",
+    },
   ];
 
-  // Create new account
+  // =========================================
+  // ACCOUNT FILTER CONFIGURATION
+  // =========================================
+
+  const getFilterOptions = (accountName) => {
+    switch (accountName) {
+      case "Debtors":
+        return ["All", "Receivable", "Received"];
+
+      case "Creditors":
+        return ["All", "Payable", "Paid"];
+
+      case "Sales Income":
+        return ["All", "Sales", "Sales Return"];
+
+      case "Purchase Expense":
+        return ["All", "Purchase", "Purchase Return"];
+
+      default:
+        return [];
+    }
+  };
+
+  // =========================================
+  // CREATE NEW ACCOUNT
+  // =========================================
+
   const handleCreate = () => {
     if (!accountName.trim() || !accountType) {
       return;
@@ -170,23 +293,32 @@ function ChartOfAccounts() {
     setShowForm(false);
   };
 
-  // Reset Cash filters
-  const resetCashFilters = () => {
-    setCashPartyFilter("Customer");
-    setCashTransactionFilter("All");
-    setCashDateFilter("");
-    setCashAmountFilter("");
+  // =========================================
+  // RESET FILTERS
+  // =========================================
+
+  const resetAccountFilters = () => {
+    setAccountTransactionFilter("All");
+    setAccountDateFilter("");
+    setAccountAmountFilter("");
   };
 
-  // Reset Bank filters
-  const resetBankFilters = () => {
-    setBankPartyFilter("All");
-    setBankTransactionFilter("All");
-    setBankDateFilter("");
-    setBankAmountFilter("");
+  // =========================================
+  // SELECT ACCOUNT
+  // =========================================
+
+  const handleAccountSelect = (account) => {
+    setSelectedAccount(account);
+
+    // Every account starts with All
+    // and no date/amount filters.
+    resetAccountFilters();
   };
 
-  // Get transactions for selected account
+  // =========================================
+  // GET TRANSACTIONS FOR SELECTED ACCOUNT
+  // =========================================
+
   const getAccountTransactions = () => {
     if (!selectedAccount) {
       return [];
@@ -197,83 +329,57 @@ function ChartOfAccounts() {
         transaction.account === selectedAccount.name
     );
 
-    // ============================
-    // CASH FILTERS
-    // ============================
+    // =========================================
+    // ACCOUNT-SPECIFIC TRANSACTION FILTER
+    // =========================================
 
-    if (selectedAccount.name === "Cash") {
+    if (
+      selectedAccount.name !== "Cash" &&
+      selectedAccount.name !== "Bank" &&
+      accountTransactionFilter !== "All"
+    ) {
       result = result.filter(
         (transaction) =>
-          transaction.partyType === "Customer"
+          transaction.category === accountTransactionFilter
       );
-
-      if (cashTransactionFilter !== "All") {
-        result = result.filter(
-          (transaction) =>
-            transaction.transactionType ===
-            cashTransactionFilter
-        );
-      }
-
-      if (cashDateFilter) {
-        result = result.filter((transaction) =>
-          transaction.date
-            .toLowerCase()
-            .includes(cashDateFilter.toLowerCase())
-        );
-      }
-
-      if (cashAmountFilter) {
-        result = result.filter(
-          (transaction) =>
-            transaction.debit >=
-            Number(cashAmountFilter)
-        );
-      }
     }
 
-    // ============================
-    // BANK FILTERS
-    // ============================
+    // =========================================
+    // DATE FILTER
+    // =========================================
 
-    if (selectedAccount.name === "Bank") {
-      if (bankPartyFilter !== "All") {
-        result = result.filter(
-          (transaction) =>
-            transaction.partyType === bankPartyFilter
-        );
-      }
+    if (accountDateFilter) {
+      result = result.filter((transaction) =>
+        transaction.date
+          .toLowerCase()
+          .includes(accountDateFilter.toLowerCase())
+      );
+      debugger
+    }
 
-      if (bankTransactionFilter !== "All") {
-        result = result.filter(
-          (transaction) =>
-            transaction.transactionType ===
-            bankTransactionFilter
-        );
-      }
+    // =========================================
+    // AMOUNT FILTER
+    // =========================================
 
-      if (bankDateFilter) {
-        result = result.filter((transaction) =>
-          transaction.date
-            .toLowerCase()
-            .includes(bankDateFilter.toLowerCase())
+    if (accountAmountFilter) {
+      result = result.filter((transaction) => {
+        const amount = Math.max(
+          transaction.debit,
+          transaction.credit
         );
-      }
 
-      if (bankAmountFilter) {
-        result = result.filter(
-          (transaction) =>
-            transaction.debit >=
-            Number(bankAmountFilter)
-        );
-      }
+        return amount >= Number(accountAmountFilter);
+      });
     }
 
     return result;
   };
 
-  const selectedTransactions =
-    getAccountTransactions();
+  const selectedTransactions = getAccountTransactions();
+
+  // =========================================
+  // SUMMARY
+  // =========================================
 
   const totalDebit = selectedTransactions.reduce(
     (total, transaction) =>
@@ -286,6 +392,14 @@ function ChartOfAccounts() {
       total + transaction.credit,
     0
   );
+
+  // Get filters for selected account
+  const selectedFilterOptions = selectedAccount
+    ? getFilterOptions(selectedAccount.name)
+    : [];
+
+  const hasAccountSpecificFilters =
+    selectedFilterOptions.length > 0;
 
   return (
     <div className="min-h-screen bg-[#f4f1eb] p-6 md:p-8">
@@ -346,7 +460,10 @@ function ChartOfAccounts() {
 
         {selectedAccount && (
           <button
-            onClick={() => setSelectedAccount(null)}
+            onClick={() => {
+              setSelectedAccount(null);
+              resetAccountFilters();
+            }}
             className="flex items-center gap-2 rounded-md border border-[#cfc5ba] bg-white px-4 py-2 text-sm text-[#40352e] transition hover:bg-[#eee8df]"
           >
             <ArrowLeft size={16} />
@@ -406,59 +523,38 @@ function ChartOfAccounts() {
           </div>
 
           {/* =========================================
-              CASH FILTERS
+              ACCOUNT-SPECIFIC FILTERS
           ========================================= */}
 
-          {selectedAccount.name === "Cash" && (
+          {hasAccountSpecificFilters && (
 
             <div className="mb-6 rounded-xl border border-[#d7cec4] bg-white p-5 shadow-sm">
 
               <div className="mb-5 flex items-center gap-2">
 
-                <Wallet
+                <Filter
                   size={18}
                   className="text-[#49392f]"
                 />
 
                 <div>
+
                   <h3 className="font-semibold text-[#30251e]">
-                    Cash Filters
+                    {selectedAccount.name} Filters
                   </h3>
 
                   <p className="text-xs text-[#756b63]">
-                    Cash transactions are available only for customers.
+                    Filter transactions according to this
+                    account type.
                   </p>
+
                 </div>
 
               </div>
 
-              <div className="grid gap-4 md:grid-cols-4">
+              {/* Transaction Type */}
 
-                {/* Party */}
-
-                <div>
-
-                  <label className="mb-2 block text-sm font-medium text-[#30251e]">
-                    Party
-                  </label>
-
-                  <select
-                    value={cashPartyFilter}
-                    onChange={(e) =>
-                      setCashPartyFilter(
-                        e.target.value
-                      )
-                    }
-                    className="w-full rounded-lg border border-[#d6ccc1] bg-white px-4 py-3 text-sm outline-none focus:border-[#49392f] focus:ring-1 focus:ring-[#49392f]"
-                  >
-                    <option value="Customer">
-                      Customer
-                    </option>
-                  </select>
-
-                </div>
-
-                {/* Transaction */}
+              <div className="grid gap-4 md:grid-cols-3">
 
                 <div>
 
@@ -467,26 +563,25 @@ function ChartOfAccounts() {
                   </label>
 
                   <select
-                    value={cashTransactionFilter}
+                    value={accountTransactionFilter}
                     onChange={(e) =>
-                      setCashTransactionFilter(
+                      setAccountTransactionFilter(
                         e.target.value
                       )
                     }
                     className="w-full rounded-lg border border-[#d6ccc1] bg-white px-4 py-3 text-sm outline-none focus:border-[#49392f] focus:ring-1 focus:ring-[#49392f]"
                   >
 
-                    <option value="All">
-                      All
-                    </option>
-
-                    <option value="Received">
-                      Cash Received
-                    </option>
-
-                    <option value="Paid">
-                      Cash Paid
-                    </option>
+                    {selectedFilterOptions.map(
+                      (filter) => (
+                        <option
+                          key={filter}
+                          value={filter}
+                        >
+                          {filter}
+                        </option>
+                      )
+                    )}
 
                   </select>
 
@@ -502,9 +597,9 @@ function ChartOfAccounts() {
 
                   <input
                     type="text"
-                    value={cashDateFilter}
+                    value={accountDateFilter}
                     onChange={(e) =>
-                      setCashDateFilter(
+                      setAccountDateFilter(
                         e.target.value
                       )
                     }
@@ -524,9 +619,9 @@ function ChartOfAccounts() {
 
                   <input
                     type="number"
-                    value={cashAmountFilter}
+                    value={accountAmountFilter}
                     onChange={(e) =>
-                      setCashAmountFilter(
+                      setAccountAmountFilter(
                         e.target.value
                       )
                     }
@@ -539,10 +634,10 @@ function ChartOfAccounts() {
               </div>
 
               <button
-                onClick={resetCashFilters}
+                onClick={resetAccountFilters}
                 className="mt-4 rounded-lg border border-[#cfc5ba] px-4 py-2 text-sm font-medium text-[#49392f] transition hover:bg-[#eee8df]"
               >
-                Reset Cash Filters
+                Reset Filters
               </button>
 
             </div>
@@ -550,154 +645,44 @@ function ChartOfAccounts() {
           )}
 
           {/* =========================================
-              BANK FILTERS
+              CASH / BANK
+              NO TRANSACTION FILTERS
           ========================================= */}
 
-          {selectedAccount.name === "Bank" && (
+          {(selectedAccount.name === "Cash" ||
+            selectedAccount.name === "Bank") && (
 
             <div className="mb-6 rounded-xl border border-[#d7cec4] bg-white p-5 shadow-sm">
 
-              <div className="mb-5 flex items-center gap-2">
+              <div className="flex items-center gap-2">
 
-                <CreditCard
-                  size={18}
-                  className="text-[#49392f]"
-                />
+                {selectedAccount.name === "Cash" ? (
+                  <Wallet
+                    size={18}
+                    className="text-[#49392f]"
+                  />
+                ) : (
+                  <CreditCard
+                    size={18}
+                    className="text-[#49392f]"
+                  />
+                )}
 
                 <div>
+
                   <h3 className="font-semibold text-[#30251e]">
-                    Bank Filters
+                    {selectedAccount.name} Transactions
                   </h3>
 
                   <p className="text-xs text-[#756b63]">
-                    View customer and vendor bank transactions.
+                    All {selectedAccount.name.toLowerCase()}{" "}
+                    transactions are shown here. No
+                    transaction-type filter is required.
                   </p>
-                </div>
-
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-4">
-
-                {/* Party */}
-
-                <div>
-
-                  <label className="mb-2 block text-sm font-medium text-[#30251e]">
-                    Party
-                  </label>
-
-                  <select
-                    value={bankPartyFilter}
-                    onChange={(e) =>
-                      setBankPartyFilter(
-                        e.target.value
-                      )
-                    }
-                    className="w-full rounded-lg border border-[#d6ccc1] bg-white px-4 py-3 text-sm outline-none focus:border-[#49392f] focus:ring-1 focus:ring-[#49392f]"
-                  >
-
-                    <option value="All">
-                      All Parties
-                    </option>
-
-                    <option value="Customer">
-                      Customer
-                    </option>
-
-                    <option value="Vendor">
-                      Vendor
-                    </option>
-
-                  </select>
-
-                </div>
-
-                {/* Transaction */}
-
-                <div>
-
-                  <label className="mb-2 block text-sm font-medium text-[#30251e]">
-                    Transaction
-                  </label>
-
-                  <select
-                    value={bankTransactionFilter}
-                    onChange={(e) =>
-                      setBankTransactionFilter(
-                        e.target.value
-                      )
-                    }
-                    className="w-full rounded-lg border border-[#d6ccc1] bg-white px-4 py-3 text-sm outline-none focus:border-[#49392f] focus:ring-1 focus:ring-[#49392f]"
-                  >
-
-                    <option value="All">
-                      All
-                    </option>
-
-                    <option value="Received">
-                      Money Received
-                    </option>
-
-                    <option value="Paid">
-                      Money Paid
-                    </option>
-
-                  </select>
-
-                </div>
-
-                {/* Date */}
-
-                <div>
-
-                  <label className="mb-2 block text-sm font-medium text-[#30251e]">
-                    Date
-                  </label>
-
-                  <input
-                    type="text"
-                    value={bankDateFilter}
-                    onChange={(e) =>
-                      setBankDateFilter(
-                        e.target.value
-                      )
-                    }
-                    placeholder="e.g. 05 Sep"
-                    className="w-full rounded-lg border border-[#d6ccc1] bg-white px-4 py-3 text-sm outline-none focus:border-[#49392f] focus:ring-1 focus:ring-[#49392f]"
-                  />
-
-                </div>
-
-                {/* Amount */}
-
-                <div>
-
-                  <label className="mb-2 block text-sm font-medium text-[#30251e]">
-                    Minimum Amount
-                  </label>
-
-                  <input
-                    type="number"
-                    value={bankAmountFilter}
-                    onChange={(e) =>
-                      setBankAmountFilter(
-                        e.target.value
-                      )
-                    }
-                    placeholder="₹ Amount"
-                    className="w-full rounded-lg border border-[#d6ccc1] bg-white px-4 py-3 text-sm outline-none focus:border-[#49392f] focus:ring-1 focus:ring-[#49392f]"
-                  />
 
                 </div>
 
               </div>
-
-              <button
-                onClick={resetBankFilters}
-                className="mt-4 rounded-lg border border-[#cfc5ba] px-4 py-2 text-sm font-medium text-[#49392f] transition hover:bg-[#eee8df]"
-              >
-                Reset Bank Filters
-              </button>
 
             </div>
 
@@ -708,6 +693,8 @@ function ChartOfAccounts() {
           ========================================= */}
 
           <div className="mb-6 grid gap-4 md:grid-cols-3">
+
+            {/* Total Debit */}
 
             <div className="rounded-xl border border-[#d7cec4] bg-white p-5">
 
@@ -730,6 +717,8 @@ function ChartOfAccounts() {
 
             </div>
 
+            {/* Total Credit */}
+
             <div className="rounded-xl border border-[#d7cec4] bg-white p-5">
 
               <div className="mb-3 flex items-center gap-2 text-[#756b63]">
@@ -750,6 +739,8 @@ function ChartOfAccounts() {
               </p>
 
             </div>
+
+            {/* Transactions */}
 
             <div className="rounded-xl border border-[#d7cec4] bg-white p-5">
 
@@ -790,7 +781,8 @@ function ChartOfAccounts() {
               <div className="p-10 text-center">
 
                 <p className="text-sm text-[#756b63]">
-                  No transactions found for the selected filters.
+                  No transactions found for the
+                  selected filters.
                 </p>
 
               </div>
@@ -847,9 +839,13 @@ function ChartOfAccounts() {
                           className="border-b border-[#eee8df] transition last:border-0 hover:bg-[#faf8f5]"
                         >
 
+                          {/* Date */}
+
                           <td className="px-5 py-4 text-sm text-[#40352e]">
                             {transaction.date}
                           </td>
+
+                          {/* Party */}
 
                           <td className="px-5 py-4">
 
@@ -868,9 +864,13 @@ function ChartOfAccounts() {
 
                           </td>
 
+                          {/* Description */}
+
                           <td className="px-5 py-4 text-sm text-[#756b63]">
                             {transaction.description}
                           </td>
+
+                          {/* Party Type */}
 
                           <td className="px-5 py-4">
 
@@ -880,19 +880,29 @@ function ChartOfAccounts() {
 
                           </td>
 
+                          {/* Transaction */}
+
                           <td className="px-5 py-4">
 
                             <div className="flex items-center gap-2 text-sm text-[#40352e]">
 
                               {transaction.transactionType ===
-                              "Received" ? (
+                                "Received" ||
+                              transaction.transactionType ===
+                                "Sales Return" ||
+                              transaction.transactionType ===
+                                "Paid" ? (
+
                                 <ArrowDownLeft
                                   size={15}
                                 />
+
                               ) : (
+
                                 <ArrowUpRight
                                   size={15}
                                 />
+
                               )}
 
                               {transaction.transactionType}
@@ -900,6 +910,8 @@ function ChartOfAccounts() {
                             </div>
 
                           </td>
+
+                          {/* Debit */}
 
                           <td className="px-5 py-4 text-right text-sm font-medium text-[#30251e]">
 
@@ -910,6 +922,8 @@ function ChartOfAccounts() {
                               : "-"}
 
                           </td>
+
+                          {/* Credit */}
 
                           <td className="px-5 py-4 text-right text-sm font-medium text-[#30251e]">
 
@@ -966,21 +980,9 @@ function ChartOfAccounts() {
 
             <button
               key={index}
-              onClick={() => {
-
-                setSelectedAccount(account);
-
-                // Cash always starts with Customer
-                if (account.name === "Cash") {
-                  resetCashFilters();
-                }
-
-                // Bank starts with All Parties
-                if (account.name === "Bank") {
-                  resetBankFilters();
-                }
-
-              }}
+              onClick={() =>
+                handleAccountSelect(account)
+              }
               className="grid w-full grid-cols-3 border-b border-[#e2dbd3] px-5 py-4 text-left text-sm transition last:border-b-0 hover:bg-[#faf8f5]"
             >
 
@@ -1017,6 +1019,8 @@ function ChartOfAccounts() {
 
           <div className="w-full max-w-lg rounded-2xl bg-[#faf8f5] shadow-2xl">
 
+            {/* Modal Header */}
+
             <div className="flex items-start justify-between border-b border-[#ddd4ca] px-7 py-6">
 
               <div>
@@ -1032,7 +1036,9 @@ function ChartOfAccounts() {
               </div>
 
               <button
-                onClick={() => setShowForm(false)}
+                onClick={() =>
+                  setShowForm(false)
+                }
                 className="text-[#756b63] transition hover:text-[#30251e]"
               >
                 <X size={24} />
@@ -1040,7 +1046,11 @@ function ChartOfAccounts() {
 
             </div>
 
+            {/* Modal Body */}
+
             <div className="space-y-6 px-7 py-7">
+
+              {/* Account Name */}
 
               <div>
 
@@ -1059,6 +1069,8 @@ function ChartOfAccounts() {
                 />
 
               </div>
+
+              {/* Account Type */}
 
               <div>
 
@@ -1094,6 +1106,8 @@ function ChartOfAccounts() {
               </div>
 
             </div>
+
+            {/* Modal Footer */}
 
             <div className="flex justify-end gap-3 border-t border-[#ddd4ca] px-7 py-5">
 
