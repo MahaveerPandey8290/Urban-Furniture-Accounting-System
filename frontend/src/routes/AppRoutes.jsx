@@ -3,8 +3,8 @@ import { Routes, Route } from "react-router-dom";
 // =========================
 // Admin
 // =========================
-import AdminLayout from "../components/layout/AdminLayout";
 
+import AdminLayout from "../components/layout/AdminLayout";
 import AdminDashboard from "../pages/admin/Dashboard";
 import AdminUsers from "../pages/admin/Users";
 import AdminContacts from "../pages/admin/Contacts";
@@ -18,233 +18,232 @@ import AdminSalesOrders from "../pages/admin/SalesOrders";
 // =========================
 // Authentication
 // =========================
+
 import Login from "../pages/auth/Login";
 import Signup from "../pages/auth/Signup";
 
 // =========================
 // Accountant / Invoicing User
 // =========================
-import AccountantLayout from "../components/layout/AccountantLayout";
 
+import AccountantLayout from "../components/layout/AccountantLayout";
 import AccountantDashboard from "../pages/invoicing_user/Dashboard";
 import AccountantSalesOrders from "../pages/invoicing_user/SalesOrders";
 import SaleInvoices from "../pages/invoicing_user/SaleInvoices";
 import Invoices from "../pages/invoicing_user/Invoices";
 import Bills from "../pages/invoicing_user/Bills";
-
 import AccountantPurchaseOrders from "../pages/invoicing_user/PurchaseOrders";
-
 import AccountantContacts from "../pages/invoicing_user/Contacts";
 import AccountantProducts from "../pages/invoicing_user/Products";
 import AccountantChartOfAccounts from "../pages/invoicing_user/ChartOfAccounts";
 import AccountantJournals from "../pages/invoicing_user/Journals";
 import JournalEntries from "../pages/invoicing_user/JournalEntries";
-
 import BalanceSheet from "../pages/invoicing_user/BalanceSheet";
 import ProfitAndLoss from "../pages/invoicing_user/ProfitAndLoss";
 import BudgetReport from "../pages/invoicing_user/BudgetReport";
 
-
 function AppRoutes() {
   return (
-      <Routes>
+    <Routes>
+
+      {/* =========================
+          AUTHENTICATION
+          ========================= */}
+
+      <Route path="/" element={<Login />} />
+
+      <Route path="/login" element={<Login />} />
+
+      <Route path="/signup" element={<Signup />} />
+
+
+      {/* =========================
+          ADMIN SECTION
+          ========================= */}
+
+      <Route path="/admin" element={<AdminLayout />}>
+
+        {/* Dashboard */}
+        <Route
+          index
+          element={<AdminDashboard />}
+        />
+
+        {/* Users */}
+        <Route
+          path="users"
+          element={<AdminUsers />}
+        />
+
+        {/* Contacts */}
+        <Route
+          path="contacts"
+          element={<AdminContacts />}
+        />
+
+        {/* Products */}
+        <Route
+          path="products"
+          element={<AdminProducts />}
+        />
+
+        {/* Chart of Accounts */}
+        <Route
+          path="accounts"
+          element={<AdminChartOfAccounts />}
+        />
+
+        {/* Journals */}
+        <Route
+          path="journals"
+          element={<AdminJournals />}
+        />
+
+        {/* Purchase Orders */}
+        <Route
+          path="purchase-orders"
+          element={<AdminPurchaseOrders />}
+        />
+
+        {/* Vendor Bills */}
+        <Route
+          path="vendor-bills"
+          element={<AdminVendorBills />}
+        />
+
+        {/* Sales Orders */}
+        <Route
+          path="sales-orders"
+          element={<AdminSalesOrders />}
+        />
+
+      </Route>
+
+
+      {/* =========================
+          ACCOUNTANT / INVOICING USER
+          ========================= */}
+
+      <Route
+        path="/invoicing_user"
+        element={<AccountantLayout />}
+      >
+
+        {/* Dashboard */}
+        <Route
+          index
+          element={<AccountantDashboard />}
+        />
+
 
         {/* =========================
-            AUTHENTICATION
-            ========================= */}
-
-        <Route path="/" element={<Login />} />
-
-        <Route path="/login" element={<Login />} />
-
-        <Route path="/signup" element={<Signup />} />
-
-
-        {/* =========================
-            ADMIN SECTION
-            ========================= */}
-
-        <Route path="/admin" element={<AdminLayout />}>
-
-          {/* Dashboard */}
-          <Route
-            index
-            element={<AdminDashboard />}
-          />
-
-          {/* Users */}
-          <Route
-            path="users"
-            element={<AdminUsers />}
-          />
-
-          {/* Contacts */}
-          <Route
-            path="contacts"
-            element={<AdminContacts />}
-          />
-
-          {/* Products */}
-          <Route
-            path="products"
-            element={<AdminProducts />}
-          />
-
-          {/* Chart of Accounts */}
-          <Route
-            path="accounts"
-            element={<AdminChartOfAccounts />}
-          />
-
-          {/* Journals */}
-          <Route
-            path="journals"
-            element={<AdminJournals />}
-          />
-
-          {/* Purchase Orders */}
-          <Route
-            path="purchase-orders"
-            element={<AdminPurchaseOrders />}
-          />
-
-          {/* Vendor Bills */}
-          <Route
-            path="vendor-bills"
-            element={<AdminVendorBills />}
-          />
-
-          {/* Sales Orders */}
-          <Route
-            path="sales-orders"
-            element={<AdminSalesOrders />}
-          />
-
-        </Route>
-
-        ...
-        {/* =========================
-            ACCOUNTANT / INVOICING USER
+            SALES
             ========================= */}
 
         <Route
-          path="/invoicing_user"
-          element={<AccountantLayout />}
-        >
+          path="sales-orders"
+          element={<AccountantSalesOrders />}
+        />
 
-          {/* Dashboard */}
-          <Route
-            index
-            element={<AccountantDashboard />}
-          />
+        <Route
+          path="sale-invoices"
+          element={<SaleInvoices />}
+        />
 
-          {/* =========================
-              SALES
-              ========================= */}
+        <Route
+          path="invoices"
+          element={<Invoices />}
+        />
 
-          <Route
-            path="sales-orders"
-            element={<AccountantSalesOrders />}
-          />
+        <Route
+          path="bills"
+          element={<Bills />}
+        />
 
-          <Route
-            path="sale-invoices"
-            element={<SaleInvoices />}
-          />
+        {/* Aliases */}
+        <Route
+          path="customer-bills"
+          element={<Bills />}
+        />
 
-          <Route
-            path="invoices"
-            element={<Invoices />}
-          />
+        <Route
+          path="sales-bills"
+          element={<Bills />}
+        />
 
-          <Route
-            path="bills"
-            element={<Bills />}
-          />
-
-          {/* Aliases */}
-          <Route
-            path="customer-bills"
-            element={<Bills />}
-          />
-
-          <Route
-            path="sales-bills"
-            element={<Bills />}
-          />
-
-          <Route
-            path="sales"
-            element={<Bills />}
-          />
-
-          {/* =========================
-              PURCHASE
-              ========================= */}
-
-          <Route
-            path="purchase-orders"
-            element={<AccountantPurchaseOrders />}
-          />
-
-          {/* =========================
-              ACCOUNT
-              ========================= */}
-
-          <Route
-            path="contacts"
-            element={<AccountantContacts />}
-          />
-
-          <Route
-            path="products"
-            element={<AccountantProducts />}
-          />
-
-          <Route
-            path="chart-of-accounts"
-            element={<AccountantChartOfAccounts />}
-          />
-
-          <Route
-            path="journals"
-            element={<AccountantJournals />}
-          />
-
-          <Route
-            path="journal-entries"
-            element={<JournalEntries />}
-          />
-
-          {/* =========================
-              REPORTS
-              ========================= */}
-
-          <Route
-            path="balance-sheet"
-            element={<BalanceSheet />}
-          />
-
-          <Route
-            path="profit-and-loss"
-            element={<ProfitAndLoss />}
-          />
-
-          <Route
-            path="budget-reports"
-            element={<BudgetReport />}
-          />
-
-          <Route
-            path="reports"
-            element={<BudgetReport />}
-          />
-
-        </Route>
-</Routes>
-        
+        <Route
+          path="sales"
+          element={<Bills />}
+        />
 
 
+        {/* =========================
+            PURCHASE
+            ========================= */}
+
+        <Route
+          path="purchase-orders"
+          element={<AccountantPurchaseOrders />}
+        />
+
+
+        {/* =========================
+            ACCOUNT
+            ========================= */}
+
+        <Route
+          path="contacts"
+          element={<AccountantContacts />}
+        />
+
+        <Route
+          path="products"
+          element={<AccountantProducts />}
+        />
+
+        <Route
+          path="chart-of-accounts"
+          element={<AccountantChartOfAccounts />}
+        />
+
+        <Route
+          path="journals"
+          element={<AccountantJournals />}
+        />
+
+        <Route
+          path="journal-entries"
+          element={<JournalEntries />}
+        />
+
+
+        {/* =========================
+            REPORTS
+            ========================= */}
+
+        <Route
+          path="balance-sheet"
+          element={<BalanceSheet />}
+        />
+
+        <Route
+          path="profit-and-loss"
+          element={<ProfitAndLoss />}
+        />
+
+        <Route
+          path="budget-reports"
+          element={<BudgetReport />}
+        />
+
+        <Route
+          path="reports"
+          element={<BudgetReport />}
+        />
+
+      </Route>
+
+    </Routes>
   );
 }
 
