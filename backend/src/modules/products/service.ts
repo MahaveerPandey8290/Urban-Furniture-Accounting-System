@@ -1,7 +1,7 @@
 import { ProductRepository } from './repository.js';
 import { CreateProductDTO, UpdateProductDTO, QueryProductDTO } from './dto.js';
 import { NotFoundError } from '../../core/errors.js';
-import Decimal from 'decimal.js-light';
+import { Decimal } from '../../core/money.js';
 
 export class ProductService {
   constructor(private repo: ProductRepository) {}

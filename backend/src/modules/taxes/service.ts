@@ -3,7 +3,7 @@ import { CreateTaxDto, UpdateTaxDto, QueryTaxDto } from './dto.js';
 import { NotFoundError } from '../../core/errors.js';
 import { BadRequestError } from '../../utils/errors.js';
 import { PrismaClient } from '@prisma/client';
-import Decimal from 'decimal.js-light';
+import { Decimal } from '../../core/money.js';
 
 export class TaxService {
   private repository: TaxRepository;

@@ -4,8 +4,7 @@ import { AuditService } from '../../core/audit.service.js';
 import { NotFoundError, ConflictError, ForbiddenError } from '../../core/errors.js';
 import prisma from '../../config/prisma.js';
 import type { PostEntryInput } from '../../types/index.js';
-import { Decimal } from 'decimal.js-light';
-import { round2 } from '../../core/money.js';
+import { Decimal, round2 } from '../../core/money.js';
 
 export class PaymentService {
   static async createPayment(dto: any, companyId: number, userId: number, requestId: string) {

@@ -1,8 +1,7 @@
 import prisma from '../../config/prisma.js';
 import type { PrismaTransactionClient } from '../../types/index.js';
 import { DocumentStatus } from '@prisma/client';
-import { Decimal } from 'decimal.js-light';
-import { round2, sumDecimals } from '../../core/money.js';
+import { Decimal, round2, sumDecimals } from '../../core/money.js';
 
 export class PurchaseOrderRepository {
   static async create(companyId: number, data: any, userId: number, client: PrismaTransactionClient = prisma) {

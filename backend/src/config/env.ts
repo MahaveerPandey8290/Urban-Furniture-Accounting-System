@@ -1,5 +1,5 @@
+import 'dotenv/config';
 import { z } from 'zod';
-
 /**
  * Zod-validated environment configuration.
  *

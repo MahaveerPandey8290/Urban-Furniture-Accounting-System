@@ -1,5 +1,4 @@
-import { Decimal } from 'decimal.js-light';
-import { round2, sumDecimals } from './money.js';
+import { Decimal, round2, sumDecimals } from './money.js';
 import { SequenceService } from './sequence.service.js';
 import { AuditService } from './audit.service.js';
 import {
