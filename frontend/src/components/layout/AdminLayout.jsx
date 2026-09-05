@@ -4,15 +4,19 @@ import Navbar from "./Navbar";
 
 function AdminLayout() {
   return (
-    <div className="admin-layout">
+    <div className="min-h-screen bg-cream">
 
+      {/* Fixed Sidebar */}
       <Sidebar />
 
-      <div className="main-section">
+      {/* Main Area */}
+      <div className="ml-[280px] min-h-screen">
 
+        {/* Navbar */}
         <Navbar />
 
-        <main className="page-content">
+        {/* Scrollable Content */}
+        <main className="min-h-[calc(100vh-76px)] overflow-y-auto p-8">
           <Outlet />
         </main>
 
