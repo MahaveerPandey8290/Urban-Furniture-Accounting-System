@@ -1,10 +1,11 @@
 import { Routes, Route } from "react-router-dom";
 
-// =========================
-// Admin
-// =========================
+// =====================================================
+// ADMIN
+// =====================================================
 
 import AdminLayout from "../components/layout/AdminLayout";
+
 import AdminDashboard from "../pages/admin/Dashboard";
 import AdminUsers from "../pages/admin/Users";
 import AdminContacts from "../pages/admin/Contacts";
@@ -14,30 +15,40 @@ import AdminJournals from "../pages/admin/Journals";
 import AdminPurchaseOrders from "../pages/admin/PurchaseOrders";
 import AdminVendorBills from "../pages/admin/VendorBills";
 import AdminSalesOrders from "../pages/admin/SalesOrders";
+import AdminPayments from "../pages/admin/Payments";
+import AdminBudgets from "../pages/admin/Budgets";
+import AdminReports from "../pages/admin/Reports";
 
-// =========================
-// Authentication
-// =========================
+// Customer Invoices - ADMIN
+import AdminCustomerInvoices from "../pages/admin/CustomerInvoices";
+
+// =====================================================
+// AUTHENTICATION
+// =====================================================
 
 import Login from "../pages/auth/Login";
 import Signup from "../pages/auth/Signup";
 
-// =========================
-// Accountant / Invoicing User
-// =========================
+// =====================================================
+// ACCOUNTANT / INVOICING USER
+// =====================================================
 
 import AccountantLayout from "../components/layout/AccountantLayout";
+
 import AccountantDashboard from "../pages/invoicing_user/Dashboard";
 import AccountantSalesOrders from "../pages/invoicing_user/SalesOrders";
 import SaleInvoices from "../pages/invoicing_user/SaleInvoices";
 import Invoices from "../pages/invoicing_user/Invoices";
 import Bills from "../pages/invoicing_user/Bills";
+
 import AccountantPurchaseOrders from "../pages/invoicing_user/PurchaseOrders";
+
 import AccountantContacts from "../pages/invoicing_user/Contacts";
 import AccountantProducts from "../pages/invoicing_user/Products";
 import AccountantChartOfAccounts from "../pages/invoicing_user/ChartOfAccounts";
 import AccountantJournals from "../pages/invoicing_user/Journals";
 import JournalEntries from "../pages/invoicing_user/JournalEntries";
+
 import BalanceSheet from "../pages/invoicing_user/BalanceSheet";
 import ProfitAndLoss from "../pages/invoicing_user/ProfitAndLoss";
 import BudgetReport from "../pages/invoicing_user/BudgetReport";
@@ -46,22 +57,30 @@ function AppRoutes() {
   return (
     <Routes>
 
-      {/* =========================
+      {/* =================================================
           AUTHENTICATION
-          ========================= */}
+      ================================================= */}
 
       <Route path="/" element={<Login />} />
 
-      <Route path="/login" element={<Login />} />
+      <Route
+        path="/login"
+        element={<Login />}
+      />
 
-      <Route path="/signup" element={<Signup />} />
+      <Route
+        path="/signup"
+        element={<Signup />}
+      />
 
+      {/* =================================================
+          ADMIN PANEL
+      ================================================= */}
 
-      {/* =========================
-          ADMIN SECTION
-          ========================= */}
-
-      <Route path="/admin" element={<AdminLayout />}>
+      <Route
+        path="/admin"
+        element={<AdminLayout />}
+      >
 
         {/* Dashboard */}
         <Route
@@ -117,12 +136,42 @@ function AppRoutes() {
           element={<AdminSalesOrders />}
         />
 
+<Route
+  path="payments"
+  element={<AdminPayments />}
+/>
+
+<Route
+  path="budgets"
+  element={<AdminBudgets />}
+/>
+
+<Route
+  path="reports"
+  element={<AdminReports />}
+/>
+
+        {/* =================================================
+            CUSTOMER INVOICES
+        ================================================= */}
+
+        {/* Main route */}
+        <Route
+          path="customer-invoices"
+          element={<AdminCustomerInvoices />}
+        />
+
+        {/* Alias: /admin/invoices */}
+        <Route
+          path="invoices"
+          element={<AdminCustomerInvoices />}
+        />
+
       </Route>
 
-
-      {/* =========================
-          ACCOUNTANT / INVOICING USER
-          ========================= */}
+      {/* =================================================
+          ACCOUNTANT / INVOICING USER PANEL
+      ================================================= */}
 
       <Route
         path="/invoicing_user"
@@ -135,10 +184,7 @@ function AppRoutes() {
           element={<AccountantDashboard />}
         />
 
-
-        {/* =========================
-            SALES
-            ========================= */}
+        {/* ================= SALES ================= */}
 
         <Route
           path="sales-orders"
@@ -160,7 +206,6 @@ function AppRoutes() {
           element={<Bills />}
         />
 
-        {/* Aliases */}
         <Route
           path="customer-bills"
           element={<Bills />}
@@ -176,20 +221,14 @@ function AppRoutes() {
           element={<Bills />}
         />
 
-
-        {/* =========================
-            PURCHASE
-            ========================= */}
+        {/* ================= PURCHASE ================= */}
 
         <Route
           path="purchase-orders"
           element={<AccountantPurchaseOrders />}
         />
 
-
-        {/* =========================
-            ACCOUNT
-            ========================= */}
+        {/* ================= ACCOUNT ================= */}
 
         <Route
           path="contacts"
@@ -216,10 +255,7 @@ function AppRoutes() {
           element={<JournalEntries />}
         />
 
-
-        {/* =========================
-            REPORTS
-            ========================= */}
+        {/* ================= REPORTS ================= */}
 
         <Route
           path="balance-sheet"
