@@ -18,7 +18,7 @@ function AccountantLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f6f2] flex text-[#24201a]">
+    <div className="min-h-screen bg-[#f7f6f2] flex text-[#24201a] overflow-x-hidden w-full max-w-[100vw]">
 
       {/* ================= FIXED DESKTOP SIDEBAR ================= */}
       <aside className="hidden md:flex flex-col justify-between fixed left-0 top-0 bottom-0 w-[270px] bg-[#241e18] text-white overflow-y-auto border-r border-[#1a1511] z-30 px-4 py-6">
@@ -58,7 +58,7 @@ function AccountantLayout() {
       </div>
 
       {/* ================= MAIN CONTENT AREA ================= */}
-      <div className="flex-1 md:ml-[270px] min-h-screen flex flex-col">
+      <div className="flex-1 min-w-0 max-w-full md:ml-[270px] min-h-screen flex flex-col">
 
         {/* Top Header Bar */}
         <header className="sticky top-0 z-20 h-16 bg-white border-b border-[#e7e3da] px-4 sm:px-8 flex items-center justify-between shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
@@ -110,7 +110,7 @@ function AccountantLayout() {
         </header>
 
         {/* Workspace content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
           <Outlet />
         </main>
       </div>
@@ -229,18 +229,18 @@ function SidebarContent({ onNavigate, onLogout }) {
               </NavLink>
 
               <NavLink
-                to="/invoicing_user/bills"
+                to="/invoicing_user/customer-bills"
                 onClick={onNavigate}
                 className={({ isActive }) =>
                   `flex items-center gap-2 px-3 py-1.5 rounded-lg transition ${
-                    isActive || isCurrent("/invoicing_user/customer-bills")
+                    isActive || isCurrent("/invoicing_user/invoices")
                       ? "bg-[#3e3228] text-white font-semibold"
                       : "text-white/70 hover:bg-white/5 hover:text-white"
                   }`
                 }
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60" />
-                <span>Bills</span>
+                <span>Customer Invoices</span>
               </NavLink>
             </div>
           </div>
@@ -264,6 +264,21 @@ function SidebarContent({ onNavigate, onLogout }) {
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60" />
                 <span>Purchase Order</span>
+              </NavLink>
+
+              <NavLink
+                to="/invoicing_user/bills"
+                onClick={onNavigate}
+                className={({ isActive }) =>
+                  `flex items-center gap-2 px-3 py-1.5 rounded-lg transition ${
+                    isActive || isCurrent("/invoicing_user/vendor-bills")
+                      ? "bg-[#3e3228] text-white font-semibold"
+                      : "text-white/70 hover:bg-white/5 hover:text-white"
+                  }`
+                }
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60" />
+                <span>Vendor Bills</span>
               </NavLink>
             </div>
           </div>
@@ -399,7 +414,7 @@ function SidebarContent({ onNavigate, onLogout }) {
                 }
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60" />
-                <span>Budget Report</span>
+                <span>Budget Reports</span>
               </NavLink>
             </div>
           </div>

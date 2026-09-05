@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Plus,
@@ -11,9 +11,26 @@ import {
   TrendingUp,
   X
 } from "lucide-react";
+import { getPurchaseOrders } from "../../utils/storage";
 
 function Dashboard() {
   const navigate = useNavigate();
+
+  // Load live purchase orders for dashboard counts
+  const purchaseOrders = useMemo(() => {
+    try {
+      return getPurchaseOrders();
+    } catch {
+      return [];
+    }
+  }, []);
+
+  const poStats = useMemo(() => {
+    const total = purchaseOrders.length;
+    const confirmed = purchaseOrders.filter((p) => p.status === "Confirmed").length;
+    const draft = purchaseOrders.filter((p) => p.status === "Draft" || !p.status).length;
+    return { total, confirmed, draft };
+  }, [purchaseOrders]);
 
   // Quick Action Modal State
   const [activeModal, setActiveModal] = useState(null); // 'sales' | 'purchase' | null
@@ -27,7 +44,7 @@ function Dashboard() {
       navigate("/invoicing_user/sale-invoices");
     } else if (activeModal === "purchase") {
       setActiveModal(null);
-      navigate("/invoicing_user/purchase-orders");
+      navigate("/invoicing_user/purchase-orders?action=new");
     }
   };
 
@@ -189,7 +206,7 @@ function Dashboard() {
             {/* Three Summary Blocks */}
             <div className="grid grid-cols-3 gap-3 mt-6">
 
-              {/* All: 12 */}
+              {/* All */}
               <div
                 onClick={() => navigate("/invoicing_user/purchase-orders")}
                 className="bg-[#faf8f4] border border-[#ebe6dc] hover:border-[#cfc6b6] rounded-xl p-3.5 text-center cursor-pointer transition"
@@ -198,39 +215,39 @@ function Dashboard() {
                   All
                 </span>
                 <p className="text-2xl sm:text-3xl font-bold text-[#211D19] mt-1.5">
-                  12
+                  {poStats.total}
                 </p>
                 <span className="text-xs text-[#716B63] mt-0.5 block">
                   Total records
                 </span>
               </div>
 
-              {/* Confirmed: 10 */}
+              {/* Confirmed */}
               <div
-                onClick={() => navigate("/invoicing_user/purchase-orders?status=confirmed")}
+                onClick={() => navigate("/invoicing_user/purchase-orders")}
                 className="bg-[#faf8f4] border border-[#ebe6dc] hover:border-[#cfc6b6] rounded-xl p-3.5 text-center cursor-pointer transition"
               >
                 <span className="text-xs font-semibold text-[#3e5335] tracking-wider uppercase">
                   Confirmed
                 </span>
                 <p className="text-2xl sm:text-3xl font-bold text-[#342921] mt-1.5">
-                  10
+                  {poStats.confirmed}
                 </p>
                 <span className="text-xs text-[#3e5335] mt-0.5 block">
                   Approved
                 </span>
               </div>
 
-              {/* Draft: 2 */}
+              {/* Draft */}
               <div
-                onClick={() => navigate("/invoicing_user/purchase-orders?status=draft")}
+                onClick={() => navigate("/invoicing_user/purchase-orders")}
                 className="bg-[#faf8f4] border border-[#ebe6dc] hover:border-[#cfc6b6] rounded-xl p-3.5 text-center cursor-pointer transition"
               >
                 <span className="text-xs font-semibold text-[#7c6352] tracking-wider uppercase">
                   Draft
                 </span>
                 <p className="text-2xl sm:text-3xl font-bold text-[#68584b] mt-1.5">
-                  2
+                  {poStats.draft}
                 </p>
                 <span className="text-xs text-[#7c6352] mt-0.5 block">
                   Awaiting review

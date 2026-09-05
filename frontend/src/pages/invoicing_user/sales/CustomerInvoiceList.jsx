@@ -1,4 +1,4 @@
-import { FileText, Plus, CheckCircle, Clock, AlertCircle, ArrowRight } from "lucide-react";
+import { FileText, Plus, CheckCircle, Clock, AlertCircle, ArrowRight, Ban, Link2 } from "lucide-react";
 import { formatCurrency, formatDate } from "../../../utils/formatters";
 
 function CustomerInvoiceList({
@@ -58,24 +58,28 @@ function CustomerInvoiceList({
 
   return (
     <div className="bg-white border border-[#e7e3da] rounded-2xl overflow-hidden shadow-xs">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
+      <div className="overflow-x-auto w-full">
+        <table className="w-full text-left text-sm border-collapse">
           <thead>
             <tr className="border-b border-[#e7e3da] bg-[#faf8f4] text-xs text-[#716B63] font-semibold uppercase tracking-wider select-none">
-              <th className="py-3.5 px-6">{isBills ? "BILL NO." : "INVOICE NO."}</th>
-              <th className="py-3.5 px-6">CUSTOMER</th>
-              <th className="py-3.5 px-6">{isBills ? "BILL DATE" : "INVOICE DATE"}</th>
-              <th className="py-3.5 px-6">DUE DATE</th>
-              <th className="py-3.5 px-6 text-right">TOTAL</th>
-              <th className="py-3.5 px-6 text-center">PAYMENT STATUS</th>
-              <th className="py-3.5 px-6 text-center">STATE</th>
-              <th className="py-3.5 px-6 text-right">ACTION</th>
+              <th className="py-3.5 px-4">{isBills ? "Customer Bill No." : "Customer Invoice No."}</th>
+              <th className="py-3.5 px-4">Customer</th>
+              <th className="py-3.5 px-4">{isBills ? "Bill Date" : "Invoice Date"}</th>
+              <th className="py-3.5 px-4">Due Date</th>
+              <th className="py-3.5 px-4 text-right">Total</th>
+              <th className="py-3.5 px-4 text-right">Amount Paid</th>
+              <th className="py-3.5 px-4 text-right">Amount Due</th>
+              <th className="py-3.5 px-4 text-center">Payment Status</th>
+              <th className="py-3.5 px-4 text-center">Sales Order Reference</th>
+              <th className="py-3.5 px-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#f5f2eb]">
             {invoices.map((inv) => {
               const paymentBadge = getPaymentBadge(inv.status);
-              const isConfirmed = inv.confirmationStatus === "Confirmed";
+              const total = Number(inv.total) || 0;
+              const paid = Number(inv.paidAmount) || 0;
+              const outstanding = Math.max(0, total - paid);
 
               return (
                 <tr
@@ -83,8 +87,8 @@ function CustomerInvoiceList({
                   onClick={() => onSelectInvoice(inv)}
                   className="hover:bg-[#faf8f4] transition cursor-pointer group"
                 >
-                  {/* 1. Invoice No. */}
-                  <td className="py-3.5 px-6 text-sm font-semibold text-[#211D19] group-hover:text-[#4d3f35] transition whitespace-nowrap">
+                  {/* 1. Customer Invoice No. */}
+                  <td className="py-3.5 px-4 text-sm font-semibold text-[#211D19] group-hover:text-[#4d3f35] transition whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#543b2b] opacity-40 group-hover:opacity-100 transition" />
                       <span>{inv.invoiceNo}</span>
@@ -92,50 +96,59 @@ function CustomerInvoiceList({
                   </td>
 
                   {/* 2. Customer */}
-                  <td className="py-3.5 px-6 text-sm text-[#211D19] font-medium">
+                  <td className="py-3.5 px-4 text-sm text-[#211D19] font-medium">
                     {inv.customerName || "-"}
                   </td>
 
                   {/* 3. Invoice Date */}
-                  <td className="py-3.5 px-6 text-sm text-[#716B63] whitespace-nowrap">
+                  <td className="py-3.5 px-4 text-sm text-[#716B63] whitespace-nowrap">
                     {formatDate(inv.invoiceDate)}
                   </td>
 
                   {/* 4. Due Date */}
-                  <td className="py-3.5 px-6 text-sm text-[#716B63] whitespace-nowrap">
+                  <td className="py-3.5 px-4 text-sm text-[#716B63] whitespace-nowrap">
                     {formatDate(inv.dueDate)}
                   </td>
 
                   {/* 5. Total */}
-                  <td className="py-3.5 px-6 text-right text-sm font-semibold text-[#211D19] whitespace-nowrap">
-                    {formatCurrency(inv.total)}
+                  <td className="py-3.5 px-4 text-right text-sm font-semibold text-[#211D19] whitespace-nowrap">
+                    {formatCurrency(total)}
                   </td>
 
-                  {/* 6. Payment Status */}
-                  <td className="py-3.5 px-6 text-center whitespace-nowrap">
+                  {/* 6. Amount Paid */}
+                  <td className="py-3.5 px-4 text-right text-sm font-semibold text-emerald-700 whitespace-nowrap">
+                    {formatCurrency(paid)}
+                  </td>
+
+                  {/* 7. Amount Due */}
+                  <td className="py-3.5 px-4 text-right text-sm font-bold text-[#342921] whitespace-nowrap">
+                    {formatCurrency(outstanding)}
+                  </td>
+
+                  {/* 8. Payment Status */}
+                  <td className="py-3.5 px-4 text-center whitespace-nowrap">
                     <span
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${paymentBadge.style}`}
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${paymentBadge.style}`}
                     >
                       {paymentBadge.icon}
                       <span>{paymentBadge.label}</span>
                     </span>
                   </td>
 
-                  {/* 7. Confirmation State */}
-                  <td className="py-3.5 px-6 text-center whitespace-nowrap">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium border ${
-                        isConfirmed
-                          ? "bg-[#eef3e8] text-[#3e5335] border-[#d3dfca]"
-                          : "bg-[#faf0e6] text-[#7a4e2d] border-[#e8d7c5]"
-                      }`}
-                    >
-                      {isConfirmed ? "Confirmed" : "Draft"}
-                    </span>
+                  {/* 9. Sales Order Reference */}
+                  <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                    {inv.soNumber ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-[#faf8f4] text-[#342921] border border-[#e7e3da]">
+                        <Link2 size={11} className="text-[#716B63]" />
+                        <span>{inv.soNumber}</span>
+                      </span>
+                    ) : (
+                      <span className="text-xs text-[#a89f91]">—</span>
+                    )}
                   </td>
 
-                  {/* 8. Action Arrow */}
-                  <td className="py-3.5 px-6 text-right text-[#a89f91] group-hover:text-[#342921] transition">
+                  {/* 10. Actions */}
+                  <td className="py-3.5 px-3 text-right text-[#a89f91] group-hover:text-[#342921] transition">
                     <ArrowRight size={16} className="inline ml-auto" />
                   </td>
                 </tr>

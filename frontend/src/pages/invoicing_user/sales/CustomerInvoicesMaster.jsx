@@ -8,13 +8,16 @@ import {
   Clock,
   AlertCircle,
   CreditCard,
-  DollarSign
+  DollarSign,
+  X,
+  ArrowLeft,
 } from "lucide-react";
 import {
   getCustomerInvoices,
   saveCustomerInvoices,
   getInvoicePayments,
   saveInvoicePayments,
+  generateNextInvoiceNumber,
   createAutomaticInvoiceJournalEntry,
   createAutomaticPaymentJournalEntry,
 } from "./salesService";
@@ -22,6 +25,7 @@ import CustomerInvoiceList from "./CustomerInvoiceList";
 import CustomerInvoiceForm from "./CustomerInvoiceForm";
 import InvoicePaymentModal from "./InvoicePaymentModal";
 import PrintableInvoiceModal from "./PrintableInvoiceModal";
+import Toast, { useToast } from "../../../components/common/Toast";
 
 function CustomerInvoicesMaster({ mode }) {
   const navigate = useNavigate();
@@ -33,10 +37,9 @@ function CustomerInvoicesMaster({ mode }) {
     location.pathname.includes("bills") ||
     location.pathname.endsWith("/sales");
   const entityTitle = isBills ? "Customer Bills" : "Customer Invoices";
-  const entitySingular = isBills ? "Customer Bill" : "Customer Invoice";
 
-  const [invoices, setInvoices] = useState([]);
-  const [payments, setPayments] = useState([]);
+  const [invoices, setInvoices] = useState(() => getCustomerInvoices());
+  const [payments, setPayments] = useState(() => getInvoicePayments());
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [viewMode, setViewMode] = useState("list"); // "list" | "form"
   const [searchTerm, setSearchTerm] = useState("");
@@ -45,8 +48,14 @@ function CustomerInvoicesMaster({ mode }) {
   // Modals state
   const [paymentModalInvoice, setPaymentModalInvoice] = useState(null);
   const [printModalInvoice, setPrintModalInvoice] = useState(null);
+  const { toastMessage, showToast } = useToast();
 
-  // Load invoices and payments on mount
+  // Next sequential invoice number
+  const nextInvoiceNo = useMemo(() => {
+    return generateNextInvoiceNumber(invoices);
+  }, [invoices]);
+
+  // Load invoices and payments on mount or route param change
   useEffect(() => {
     const invList = getCustomerInvoices();
     const payList = getInvoicePayments();
@@ -79,12 +88,13 @@ function CustomerInvoicesMaster({ mode }) {
   // Filtered invoices
   const filteredInvoices = useMemo(() => {
     return invoices.filter((inv) => {
+      const query = searchTerm.toLowerCase().trim();
       const matchSearch =
-        !searchTerm ||
-        inv.invoiceNo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        inv.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        inv.invoiceRef?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        inv.soNumber?.toLowerCase().includes(searchTerm.toLowerCase());
+        !query ||
+        inv.invoiceNo?.toLowerCase().includes(query) ||
+        inv.customerName?.toLowerCase().includes(query) ||
+        inv.invoiceRef?.toLowerCase().includes(query) ||
+        inv.soNumber?.toLowerCase().includes(query);
 
       const matchStatus =
         statusFilter === "ALL" || inv.status === statusFilter;
@@ -132,10 +142,11 @@ function CustomerInvoicesMaster({ mode }) {
     }
     persistInvoices(updated);
     setSelectedInvoice(invoiceData);
+    showToast(`${entityTitle} draft saved successfully.`);
   };
 
   const handleConfirmInvoice = (invoiceData) => {
-    // 1. Create automatic balanced Journal Entry
+    // 1. Create automatic balanced Journal Entry in Sales Journal
     createAutomaticInvoiceJournalEntry(invoiceData);
 
     // 2. Persist invoice as Confirmed
@@ -152,6 +163,16 @@ function CustomerInvoicesMaster({ mode }) {
     }
     persistInvoices(updated);
     setSelectedInvoice(confirmedData);
+    showToast(`Invoice ${confirmedData.invoiceNo} confirmed! Balanced Journal Entry created in Sales Journal.`);
+  };
+
+  const handleCancelInvoice = (id) => {
+    const updated = invoices.map((i) => (i.id === id ? { ...i, confirmationStatus: "Cancelled" } : o));
+    persistInvoices(updated);
+    if (selectedInvoice?.id === id) {
+      setSelectedInvoice((prev) => ({ ...prev, confirmationStatus: "Cancelled" }));
+    }
+    showToast("Invoice cancelled.");
   };
 
   // Payment Handlers
@@ -197,6 +218,7 @@ function CustomerInvoicesMaster({ mode }) {
     persistInvoices(updatedInvoicesList);
     setSelectedInvoice(updatedInvoice);
     setPaymentModalInvoice(null);
+    showToast(`Payment of Rs. ${Number(paymentData.amount).toLocaleString()} recorded. Status: ${nextStatus}.`);
   };
 
   // Traceability Handlers
@@ -204,8 +226,14 @@ function CustomerInvoicesMaster({ mode }) {
     navigate(`/invoicing_user/sales-orders?soId=${soRef}`);
   };
 
-  const handleOpenBudget = (budgetId) => {
-    navigate(`/invoicing_user/budget-reports`);
+  const handleOpenBudget = (budgetRef) => {
+    navigate(`/invoicing_user/budget-reports`, {
+      state: {
+        search: budgetRef,
+        analyticAccount: budgetRef,
+        budgetId: budgetRef,
+      },
+    });
   };
 
   const handleOpenPrint = (inv) => {
@@ -214,6 +242,7 @@ function CustomerInvoicesMaster({ mode }) {
 
   return (
     <div className="space-y-6">
+      <Toast message={toastMessage} />
 
       {/* Module Title & Breadcrumbs when in List view */}
       {viewMode === "list" && (
@@ -227,152 +256,133 @@ function CustomerInvoicesMaster({ mode }) {
             <h1 className="text-3xl font-semibold text-[#211D19] tracking-tight mt-1">
               {entityTitle}
             </h1>
-            <p className="text-sm text-[#716B63] mt-2">
-              {isBills
-                ? "Generate customer bills from confirmed Sales Orders, record payments, and sync with accounting."
-                : "Generate invoices from confirmed Sales Orders, record payments, and sync with accounting."}
+            <p className="text-sm text-[#716B63] mt-1">
+              Generate customer invoices, record partial or full payments, and automatically synchronize journal entries.
             </p>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               type="button"
+              onClick={() => navigate("/invoicing_user")}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-[#e7e3da] bg-white text-[#716B63] hover:text-[#211D19] hover:bg-[#faf8f4] text-sm font-medium transition cursor-pointer shadow-xs"
+              title="Back to Dashboard"
+            >
+              <ArrowLeft size={16} />
+              <span>Back</span>
+            </button>
+
+            <button
+              type="button"
               onClick={handleNewInvoice}
-              className="inline-flex items-center gap-2 px-4.5 py-2.5 rounded-lg bg-[#342921] text-white text-sm font-medium hover:bg-[#231b15] transition cursor-pointer shadow-xs"
+              className="inline-flex items-center gap-2 px-4.5 py-2.5 rounded-xl bg-[#342921] text-white text-sm font-semibold hover:bg-[#231b15] transition cursor-pointer shadow-xs"
             >
               <Plus size={16} />
-              <span>New {entitySingular}</span>
+              <span>New {isBills ? "Customer Bill" : "Customer Invoice"}</span>
             </button>
           </div>
         </div>
       )}
 
-      {/* Summary KPI Cards when in List view */}
+      {/* ================= VIEW 1: LIST VIEW ================= */}
       {viewMode === "list" && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Total Invoices / Bills */}
-          <div className="bg-white p-5 rounded-2xl border border-[#e7e3da] shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-[#716B63] uppercase tracking-wider">
-                Total {isBills ? "Bills" : "Invoices"}
-              </span>
-              <div className="w-8 h-8 rounded-lg bg-[#faf8f4] text-[#716B63] flex items-center justify-center">
+        <>
+          {/* Summary Metric Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white border border-[#e7e3da] p-5 rounded-2xl shadow-xs">
+              <div className="flex items-center justify-between text-[#716B63] text-xs font-semibold uppercase tracking-wider">
+                <span>Total Invoices</span>
                 <FileText size={16} />
               </div>
+              <p className="text-2xl font-bold text-[#211D19] mt-2">
+                {metrics.totalInvoices}
+              </p>
             </div>
-            <p className="text-2xl font-bold text-[#211D19] mt-2">
-              {metrics.totalInvoices}
-            </p>
-            <p className="text-xs text-[#716B63] mt-1">
-              Sales billing documents
-            </p>
-          </div>
 
-          {/* Invoiced Amount */}
-          <div className="bg-white p-5 rounded-2xl border border-[#e7e3da] shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-[#716B63] uppercase tracking-wider">
-                Invoiced Total
-              </span>
-              <div className="w-8 h-8 rounded-lg bg-[#faf8f4] text-[#342921] flex items-center justify-center">
+            <div className="bg-white border border-[#e7e3da] p-5 rounded-2xl shadow-xs">
+              <div className="flex items-center justify-between text-[#716B63] text-xs font-semibold uppercase tracking-wider">
+                <span>Total Receivables</span>
                 <DollarSign size={16} />
               </div>
+              <p className="text-2xl font-bold text-[#211D19] mt-2">
+                Rs. {metrics.totalAmount.toLocaleString()}
+              </p>
             </div>
-            <p className="text-2xl font-bold text-[#211D19] mt-2">
-              Rs. {metrics.totalAmount.toLocaleString()}
-            </p>
-            <p className="text-xs text-[#716B63] mt-1">
-              Gross sales receivables
-            </p>
-          </div>
 
-          {/* Outstanding Due */}
-          <div className="bg-white p-5 rounded-2xl border border-[#e7e3da] shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-[#8e392e] uppercase tracking-wider">
-                Outstanding
-              </span>
-              <div className="w-8 h-8 rounded-lg bg-[#fbf0ee] text-[#8e392e] flex items-center justify-center">
-                <AlertCircle size={16} />
-              </div>
-            </div>
-            <p className="text-2xl font-bold text-[#8e392e] mt-2">
-              Rs. {metrics.totalOutstanding.toLocaleString()}
-            </p>
-            <p className="text-xs text-[#716B63] mt-1">
-              Pending collections
-            </p>
-          </div>
-
-          {/* Total Collected */}
-          <div className="bg-white p-5 rounded-2xl border border-[#e7e3da] shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-[#3e5335] uppercase tracking-wider">
-                Collected
-              </span>
-              <div className="w-8 h-8 rounded-lg bg-[#eef3e8] text-[#3e5335] flex items-center justify-center">
+            <div className="bg-white border border-[#e7e3da] p-5 rounded-2xl shadow-xs">
+              <div className="flex items-center justify-between text-emerald-800 text-xs font-semibold uppercase tracking-wider">
+                <span>Total Paid</span>
                 <CheckCircle size={16} />
               </div>
+              <p className="text-2xl font-bold text-emerald-700 mt-2">
+                Rs. {metrics.totalPaid.toLocaleString()}
+              </p>
             </div>
-            <p className="text-2xl font-bold text-[#3e5335] mt-2">
-              Rs. {metrics.totalPaid.toLocaleString()}
-            </p>
-            <p className="text-xs text-[#716B63] mt-1">
-              Cash & Bank received
-            </p>
-          </div>
-        </div>
-      )}
 
-      {/* SEARCH AND FILTER BAR (List view) */}
-      {viewMode === "list" && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#e7e3da] shadow-xs">
-          {/* Search Input */}
-          <div className="relative w-full sm:w-80">
-            <Search
-              size={16}
-              className="absolute left-3.5 top-3 text-[#a89f91] pointer-events-none"
-            />
-            <input
-              type="text"
-              placeholder={`Search by ${isBills ? "Bill" : "Invoice"} No, Customer, SO...`}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full h-10 pl-10 pr-4 rounded-lg border border-[#e7e3da] bg-[#faf8f4] text-sm text-[#211D19] placeholder-[#a89f91] focus:bg-white focus:outline-none focus:border-[#342921]"
-            />
+            <div className="bg-white border border-[#e7e3da] p-5 rounded-2xl shadow-xs">
+              <div className="flex items-center justify-between text-amber-800 text-xs font-semibold uppercase tracking-wider">
+                <span>Total Outstanding</span>
+                <Clock size={16} />
+              </div>
+              <p className="text-2xl font-bold text-amber-800 mt-2">
+                Rs. {metrics.totalOutstanding.toLocaleString()}
+              </p>
+            </div>
           </div>
 
-          {/* Status Filter Buttons */}
-          <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
-            {["ALL", "Not Paid", "Partial", "Paid"].map((st) => (
-              <button
-                key={st}
-                type="button"
-                onClick={() => setStatusFilter(st)}
-                className={`px-3.5 py-2 rounded-lg text-xs font-medium transition cursor-pointer whitespace-nowrap ${
-                  statusFilter === st
-                    ? "bg-[#342921] text-white shadow-xs"
-                    : "bg-[#faf8f4] text-[#716B63] hover:bg-[#f0ece4]"
-                }`}
+          {/* Search and Filters Bar */}
+          <div className="bg-white border border-[#e7e3da] rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#a89f91]" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by invoice number, customer, or SO#..."
+                className="w-full pl-10 pr-9 py-2 rounded-xl border border-[#e7e3da] bg-[#faf8f4] text-xs font-medium text-[#211D19] focus:outline-hidden focus:border-[#342921] transition"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#a89f91] hover:text-[#211D19]"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-[#716B63] uppercase tracking-wider">Status:</span>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-3 py-2 rounded-xl border border-[#e7e3da] bg-[#faf8f4] text-xs font-medium text-[#211D19] focus:outline-hidden focus:border-[#342921] transition cursor-pointer"
               >
-                {st === "ALL" ? `All ${isBills ? "Bills" : "Invoices"}` : st}
-              </button>
-            ))}
+                <option value="ALL">All Payments</option>
+                <option value="Not Paid">Not Paid</option>
+                <option value="Partial">Partial</option>
+                <option value="Paid">Paid</option>
+              </select>
+            </div>
           </div>
-        </div>
+
+          {/* List Table */}
+          <CustomerInvoiceList
+            invoices={filteredInvoices}
+            onSelectInvoice={handleSelectInvoice}
+            onNewInvoice={handleNewInvoice}
+            isBills={isBills}
+          />
+        </>
       )}
 
-      {/* MAIN VIEW CONTENT */}
-      {viewMode === "list" ? (
-        <CustomerInvoiceList
-          invoices={filteredInvoices}
-          onSelectInvoice={handleSelectInvoice}
-          onNewInvoice={handleNewInvoice}
-          isBills={isBills}
-        />
-      ) : (
+      {/* ================= VIEW 2: FORM VIEW ================= */}
+      {viewMode === "form" && (
         <CustomerInvoiceForm
           invoice={selectedInvoice}
+          nextInvoiceNo={nextInvoiceNo}
+          payments={payments.filter((p) => p.invoiceId === selectedInvoice?.id)}
           onSave={handleSaveInvoice}
           onConfirm={handleConfirmInvoice}
           onOpenPayment={handleOpenPayment}
@@ -381,24 +391,22 @@ function CustomerInvoicesMaster({ mode }) {
           onBack={handleBackToList}
           onNew={handleNewInvoice}
           onOpenPrint={handleOpenPrint}
+          onCancelInvoice={handleCancelInvoice}
           isBills={isBills}
         />
       )}
 
-      {/* PAYMENT MODAL */}
+      {/* Payment Modal */}
       {paymentModalInvoice && (
         <InvoicePaymentModal
           invoice={paymentModalInvoice}
           onConfirmPayment={handleConfirmPayment}
           onClose={() => setPaymentModalInvoice(null)}
-          onOpenPrint={() => {
-            setPrintModalInvoice(paymentModalInvoice);
-            setPaymentModalInvoice(null);
-          }}
+          onOpenPrint={handleOpenPrint}
         />
       )}
 
-      {/* PRINTABLE PREVIEW MODAL */}
+      {/* Printable Invoice Modal */}
       {printModalInvoice && (
         <PrintableInvoiceModal
           invoice={printModalInvoice}
@@ -406,7 +414,6 @@ function CustomerInvoicesMaster({ mode }) {
           onClose={() => setPrintModalInvoice(null)}
         />
       )}
-
     </div>
   );
 }

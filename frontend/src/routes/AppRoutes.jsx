@@ -51,9 +51,7 @@ function AppRoutes() {
           ========================= */}
 
       <Route path="/" element={<Login />} />
-
       <Route path="/login" element={<Login />} />
-
       <Route path="/signup" element={<Signup />} />
 
 
@@ -62,61 +60,32 @@ function AppRoutes() {
           ========================= */}
 
       <Route path="/admin" element={<AdminLayout />}>
-
         {/* Dashboard */}
-        <Route
-          index
-          element={<AdminDashboard />}
-        />
+        <Route index element={<AdminDashboard />} />
 
         {/* Users */}
-        <Route
-          path="users"
-          element={<AdminUsers />}
-        />
+        <Route path="users" element={<AdminUsers />} />
 
         {/* Contacts */}
-        <Route
-          path="contacts"
-          element={<AdminContacts />}
-        />
+        <Route path="contacts" element={<AdminContacts />} />
 
         {/* Products */}
-        <Route
-          path="products"
-          element={<AdminProducts />}
-        />
+        <Route path="products" element={<AdminProducts />} />
 
         {/* Chart of Accounts */}
-        <Route
-          path="accounts"
-          element={<AdminChartOfAccounts />}
-        />
+        <Route path="accounts" element={<AdminChartOfAccounts />} />
 
         {/* Journals */}
-        <Route
-          path="journals"
-          element={<AdminJournals />}
-        />
+        <Route path="journals" element={<AdminJournals />} />
 
         {/* Purchase Orders */}
-        <Route
-          path="purchase-orders"
-          element={<AdminPurchaseOrders />}
-        />
+        <Route path="purchase-orders" element={<AdminPurchaseOrders />} />
 
         {/* Vendor Bills */}
-        <Route
-          path="vendor-bills"
-          element={<AdminVendorBills />}
-        />
+        <Route path="vendor-bills" element={<AdminVendorBills />} />
 
         {/* Sales Orders */}
-        <Route
-          path="sales-orders"
-          element={<AdminSalesOrders />}
-        />
-
+        <Route path="sales-orders" element={<AdminSalesOrders />} />
       </Route>
 
 
@@ -124,123 +93,62 @@ function AppRoutes() {
           ACCOUNTANT / INVOICING USER
           ========================= */}
 
-      <Route
-        path="/invoicing_user"
-        element={<AccountantLayout />}
-      >
-
+      <Route path="/invoicing_user" element={<AccountantLayout />}>
         {/* Dashboard */}
-        <Route
-          index
-          element={<AccountantDashboard />}
-        />
+        <Route index element={<AccountantDashboard />} />
+
+        {/* Sales */}
+        <Route path="sales-orders" element={<AccountantSalesOrders />} />
+        <Route path="sale-invoices" element={<SaleInvoices />} />
+        <Route path="invoices" element={<Invoices />} />
+        <Route path="customer-bills" element={<SaleInvoices />} />
+        <Route path="sales-bills" element={<SaleInvoices />} />
+        <Route path="sales" element={<SaleInvoices />} />
+
+        {/* Purchase */}
+        <Route path="purchase-orders" element={<AccountantPurchaseOrders />} />
+        <Route path="bills" element={<Bills />} />
+        <Route path="vendor-bills" element={<Bills />} />
+
+        {/* Account */}
+        <Route path="contacts" element={<AccountantContacts />} />
+        <Route path="products" element={<AccountantProducts />} />
+        <Route path="chart-of-accounts" element={<AccountantChartOfAccounts />} />
+        <Route path="journals" element={<AccountantJournals />} />
+        <Route path="journal-entries" element={<JournalEntries />} />
+
+        {/* Reports */}
+        <Route path="balance-sheet" element={<BalanceSheet />} />
+        <Route path="profit-and-loss" element={<ProfitAndLoss />} />
+        <Route path="budget-reports" element={<BudgetReport />} />
+        <Route path="reports" element={<BudgetReport />} />
+      </Route>
 
 
-        {/* =========================
-            SALES
-            ========================= */}
+      {/* =========================
+          HYPHENATED ALIAS: /invoicing-user
+          ========================= */}
 
-        <Route
-          path="sales-orders"
-          element={<AccountantSalesOrders />}
-        />
-
-        <Route
-          path="sale-invoices"
-          element={<SaleInvoices />}
-        />
-
-        <Route
-          path="invoices"
-          element={<Invoices />}
-        />
-
-        <Route
-          path="bills"
-          element={<Bills />}
-        />
-
-        {/* Aliases */}
-        <Route
-          path="customer-bills"
-          element={<Bills />}
-        />
-
-        <Route
-          path="sales-bills"
-          element={<Bills />}
-        />
-
-        <Route
-          path="sales"
-          element={<Bills />}
-        />
-
-
-        {/* =========================
-            PURCHASE
-            ========================= */}
-
-        <Route
-          path="purchase-orders"
-          element={<AccountantPurchaseOrders />}
-        />
-
-
-        {/* =========================
-            ACCOUNT
-            ========================= */}
-
-        <Route
-          path="contacts"
-          element={<AccountantContacts />}
-        />
-
-        <Route
-          path="products"
-          element={<AccountantProducts />}
-        />
-
-        <Route
-          path="chart-of-accounts"
-          element={<AccountantChartOfAccounts />}
-        />
-
-        <Route
-          path="journals"
-          element={<AccountantJournals />}
-        />
-
-        <Route
-          path="journal-entries"
-          element={<JournalEntries />}
-        />
-
-
-        {/* =========================
-            REPORTS
-            ========================= */}
-
-        <Route
-          path="balance-sheet"
-          element={<BalanceSheet />}
-        />
-
-        <Route
-          path="profit-and-loss"
-          element={<ProfitAndLoss />}
-        />
-
-        <Route
-          path="budget-reports"
-          element={<BudgetReport />}
-        />
-
-        <Route
-          path="reports"
-          element={<BudgetReport />}
-        />
-
+      <Route path="/invoicing-user" element={<AccountantLayout />}>
+        <Route index element={<AccountantDashboard />} />
+        <Route path="sales-orders" element={<AccountantSalesOrders />} />
+        <Route path="sale-invoices" element={<SaleInvoices />} />
+        <Route path="invoices" element={<Invoices />} />
+        <Route path="customer-bills" element={<SaleInvoices />} />
+        <Route path="sales-bills" element={<SaleInvoices />} />
+        <Route path="sales" element={<SaleInvoices />} />
+        <Route path="purchase-orders" element={<AccountantPurchaseOrders />} />
+        <Route path="bills" element={<Bills />} />
+        <Route path="vendor-bills" element={<Bills />} />
+        <Route path="contacts" element={<AccountantContacts />} />
+        <Route path="products" element={<AccountantProducts />} />
+        <Route path="chart-of-accounts" element={<AccountantChartOfAccounts />} />
+        <Route path="journals" element={<AccountantJournals />} />
+        <Route path="journal-entries" element={<JournalEntries />} />
+        <Route path="balance-sheet" element={<BalanceSheet />} />
+        <Route path="profit-and-loss" element={<ProfitAndLoss />} />
+        <Route path="budget-reports" element={<BudgetReport />} />
+        <Route path="reports" element={<BudgetReport />} />
       </Route>
 
     </Routes>

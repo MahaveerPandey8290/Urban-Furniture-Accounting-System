@@ -1,6 +1,7 @@
 // Sales Module Master Service & Accounting Automation
 import { getChartOfAccounts } from "../accounts/ChartOfAccountsMaster";
 import { getJournals } from "../journals/JournalMaster";
+import { INITIAL_JOURNAL_ENTRIES } from "../journal_entries/JournalEntriesMaster";
 
 export const STORAGE_KEY_SO = "urban_furniture_sales_orders_master";
 export const STORAGE_KEY_INVOICES = "urban_furniture_customer_invoices_master";
@@ -23,7 +24,7 @@ export const INITIAL_SALES_ORDERS = [
     customerId: "cnt-rahul",
     customerName: "Mr. Rahul",
     soDate: "2026-09-01",
-    status: "Confirmed", // Draft | Confirmed | Invoiced
+    status: "Confirmed", // Draft | Confirmed | Invoiced | Cancelled
     invoiceId: "inv-1",
     total: 6000,
     items: [
@@ -45,7 +46,7 @@ export const INITIAL_SALES_ORDERS = [
 export const INITIAL_CUSTOMER_INVOICES = [
   {
     id: "inv-1",
-    invoiceNo: "INV/2026/001",
+    invoiceNo: "INV/2026/00001",
     soId: "so-1",
     soNumber: "SO00001",
     customerId: "cnt-rahul",
@@ -54,7 +55,7 @@ export const INITIAL_CUSTOMER_INVOICES = [
     invoiceDate: "2026-09-01",
     dueDate: "2026-09-15",
     status: "Not Paid", // Not Paid | Partial | Paid
-    confirmationStatus: "Confirmed", // Draft | Confirmed
+    confirmationStatus: "Confirmed", // Draft | Confirmed | Cancelled
     total: 6000,
     paidAmount: 0,
     outstandingAmount: 6000,
@@ -75,6 +76,49 @@ export const INITIAL_CUSTOMER_INVOICES = [
   },
 ];
 
+/**
+ * Automatically generates the next SO Number in strict sequence:
+ * SO00001, SO00002, SO00003...
+ */
+export const generateNextSONumber = (existingOrders = []) => {
+  let maxSeq = 0;
+  existingOrders.forEach((o) => {
+    if (o?.soNumber) {
+      const match = o.soNumber.match(/SO(\d+)/i);
+      if (match) {
+        const val = parseInt(match[1], 10);
+        if (!isNaN(val) && val > maxSeq) {
+          maxSeq = val;
+        }
+      }
+    }
+  });
+  const nextSeq = maxSeq + 1;
+  return `SO${String(nextSeq).padStart(5, "0")}`;
+};
+
+/**
+ * Automatically generates the next Customer Invoice Number in strict sequence:
+ * INV/2026/00001, INV/2026/00002...
+ */
+export const generateNextInvoiceNumber = (existingInvoices = []) => {
+  const currentYear = new Date().getFullYear();
+  let maxSeq = 0;
+  existingInvoices.forEach((inv) => {
+    if (inv?.invoiceNo) {
+      const match = inv.invoiceNo.match(/INV\/\d{4}\/(\d+)/i);
+      if (match) {
+        const val = parseInt(match[1], 10);
+        if (!isNaN(val) && val > maxSeq) {
+          maxSeq = val;
+        }
+      }
+    }
+  });
+  const nextSeq = maxSeq + 1;
+  return `INV/${currentYear}/${String(nextSeq).padStart(5, "0")}`;
+};
+
 // Helper to get Customer list from Contact Master
 export const getCustomers = () => {
   let list = [];
@@ -91,10 +135,10 @@ export const getCustomers = () => {
   }
 
   const defaults = [
-    { id: "cnt-rahul", name: "Mr. Rahul", type: "Customer" },
-    { id: "cnt-raj", name: "Mr. Raj", type: "Customer" },
-    { id: "cnt-1", name: "Open Wood", type: "Customer" },
-    { id: "cnt-3", name: "Prestige Modern Lofts", type: "Customer" },
+    { id: "cnt-rahul", name: "Mr. Rahul", type: "Customer", email: "rahul@example.com" },
+    { id: "cnt-raj", name: "Mr. Raj", type: "Customer", email: "raj@example.com" },
+    { id: "cnt-1", name: "Open Wood", type: "Customer", email: "openwood21@example.com" },
+    { id: "cnt-3", name: "Prestige Modern Lofts", type: "Customer", email: "procurements@prestigelofts.com" },
   ];
 
   defaults.forEach((d) => {
@@ -140,20 +184,62 @@ export const getProducts = () => {
   return list;
 };
 
-// Helper to get Budget Projects
+// Helper to get Budget Projects (unifying both explicit projects and stored budgets)
 export const getBudgetProjects = () => {
+  const combined = [];
+  const namesSeen = new Set();
+
+  // 1. Saved budget projects
   try {
-    const saved = localStorage.getItem(STORAGE_KEY_BUDGETS);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
+    const savedProjects = localStorage.getItem(STORAGE_KEY_BUDGETS);
+    if (savedProjects) {
+      const parsed = JSON.parse(savedProjects);
+      if (Array.isArray(parsed)) {
+        parsed.forEach((p) => {
+          if (p.name && !namesSeen.has(p.name.toLowerCase())) {
+            namesSeen.add(p.name.toLowerCase());
+            combined.push(p);
+          }
+        });
       }
     }
   } catch (e) {
     console.error("Failed to load budget projects:", e);
   }
-  return DEFAULT_BUDGET_PROJECTS;
+
+  // 2. Budgets from budget master
+  try {
+    const savedBudgets = localStorage.getItem("urbanFurniture_budgets");
+    if (savedBudgets) {
+      const parsed = JSON.parse(savedBudgets);
+      if (Array.isArray(parsed)) {
+        parsed.forEach((b) => {
+          const label = b.analyticAccount || b.name;
+          if (label && !namesSeen.has(label.toLowerCase())) {
+            namesSeen.add(label.toLowerCase());
+            combined.push({
+              id: b.id,
+              name: label,
+              code: b.name,
+              department: b.department || "Operations",
+            });
+          }
+        });
+      }
+    }
+  } catch (e) {
+    console.error("Failed to load budgets master:", e);
+  }
+
+  // 3. Fallback defaults
+  DEFAULT_BUDGET_PROJECTS.forEach((d) => {
+    if (!namesSeen.has(d.name.toLowerCase())) {
+      namesSeen.add(d.name.toLowerCase());
+      combined.push(d);
+    }
+  });
+
+  return combined;
 };
 
 // Helper to get Sales Orders
@@ -237,6 +323,7 @@ export const saveInvoicePayments = (payments) => {
  * Automatically creates a balanced Journal Entry when Customer Invoice is Confirmed.
  * Debit: Debtors A/c (Asset)
  * Credit: Sales Income A/c (Income)
+ * Total Debit === Total Credit
  */
 export const createAutomaticInvoiceJournalEntry = (invoice) => {
   try {
@@ -245,7 +332,7 @@ export const createAutomaticInvoiceJournalEntry = (invoice) => {
     const journals = getJournals();
 
     // Resolve Sales Journal
-    const salesJournal = journals.find((j) => j.type === "SALES" || j.journalName.toLowerCase().includes("sales")) || {
+    const salesJournal = journals.find((j) => j.type === "SALES" || j.journalName?.toLowerCase().includes("sales")) || {
       id: "jour-1",
       journalName: "Sales",
     };
@@ -263,26 +350,34 @@ export const createAutomaticInvoiceJournalEntry = (invoice) => {
     const existingEntries = (() => {
       try {
         const saved = localStorage.getItem(STORAGE_KEY_JE);
-        return saved ? JSON.parse(saved) : [];
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
       } catch {
-        return [];
+        // ignore
       }
+      return INITIAL_JOURNAL_ENTRIES || [];
     })();
 
-    // Check if an entry for this invoice already exists
+    // Check if an entry for this invoice already exists to avoid duplication
     const alreadyExists = existingEntries.some(
       (e) => e.number === invoice.invoiceNo || e.invoiceId === invoice.id
     );
     if (alreadyExists) return;
 
     const total = Number(invoice.total) || 0;
+    if (total <= 0) return;
+
+    const dateStr = invoice.invoiceDate || new Date().toISOString().split("T")[0];
+    const displayDate = new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
     const newJournalEntry = {
       id: "je-inv-" + Date.now(),
       invoiceId: invoice.id,
       number: invoice.invoiceNo,
-      accountingDate: invoice.invoiceDate,
-      dateDisplay: new Date(invoice.invoiceDate).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      accountingDate: dateStr,
+      dateDisplay: displayDate,
       partnerId: invoice.customerId,
       partnerName: invoice.customerName,
       journalId: salesJournal.id,
@@ -323,6 +418,7 @@ export const createAutomaticInvoiceJournalEntry = (invoice) => {
  * Automatically creates a balanced Journal Entry when Invoice Payment is Confirmed.
  * If Cash: Debit Cash A/c, Credit Debtors A/c
  * If Bank: Debit Bank A/c, Credit Debtors A/c
+ * Total Debit === Total Credit
  */
 export const createAutomaticPaymentJournalEntry = (payment, invoice) => {
   try {
@@ -330,11 +426,11 @@ export const createAutomaticPaymentJournalEntry = (payment, invoice) => {
     const accounts = getChartOfAccounts();
     const journals = getJournals();
 
-    const isBank = payment.paymentVia?.toLowerCase() === "bank";
+    const isBank = String(payment.paymentVia || "").toLowerCase() === "bank";
 
     // Resolve Cash or Bank Journal
     const journalType = isBank ? "BANK" : "CASH";
-    const paymentJournal = journals.find((j) => j.type === journalType) || {
+    const paymentJournal = journals.find((j) => j.type === journalType || j.journalName?.toLowerCase().includes(journalType.toLowerCase())) || {
       id: isBank ? "jour-3" : "jour-4",
       journalName: isBank ? "Bank" : "Cash",
     };
@@ -356,22 +452,36 @@ export const createAutomaticPaymentJournalEntry = (payment, invoice) => {
     const existingEntries = (() => {
       try {
         const saved = localStorage.getItem(STORAGE_KEY_JE);
-        return saved ? JSON.parse(saved) : [];
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
       } catch {
-        return [];
+        // ignore
       }
+      return INITIAL_JOURNAL_ENTRIES || [];
     })();
 
+    // Check if an entry for this payment already exists
+    const alreadyExists = existingEntries.some(
+      (e) => e.paymentId === payment.id
+    );
+    if (alreadyExists) return;
+
     const amount = Number(payment.amount) || 0;
-    const paymentNumber = "PAY/" + (invoice.invoiceNo || String(Date.now()).slice(-4));
+    if (amount <= 0) return;
+
+    const paymentNumber = "PAY/" + (invoice.invoiceNo || String(Date.now()).slice(-4)) + "/" + String(Date.now()).slice(-3);
+    const dateStr = payment.date || new Date().toISOString().split("T")[0];
+    const displayDate = new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
     const newJournalEntry = {
       id: "je-pay-" + Date.now(),
       paymentId: payment.id,
       invoiceId: invoice.id,
       number: paymentNumber,
-      accountingDate: payment.date,
-      dateDisplay: new Date(payment.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      accountingDate: dateStr,
+      dateDisplay: displayDate,
       partnerId: payment.partnerId || invoice.customerId,
       partnerName: payment.partnerName || invoice.customerName,
       journalId: paymentJournal.id,
