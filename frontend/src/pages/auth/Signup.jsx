@@ -1,7 +1,8 @@
 import { Eye, EyeOff, Mail, Lock, User, UserPlus, ArrowRight, CheckCircle2, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import loginFurniture from "../../assets/login-furniture.png";
+import AuthHero from "../../components/auth/AuthHero";
+import AuthCard from "../../components/auth/AuthCard";
 
 function Signup() {
   const [formData, setFormData] = useState({
@@ -52,173 +53,41 @@ function Signup() {
     setError("");
     setSuccess(true);
 
-    // Temporary frontend mock signup
-    // Backend registration will be connected later
+    // Navigate directly to invoicing_user dashboard
     setTimeout(() => {
-      navigate("/login");
-    }, 1500);
+      navigate("/invoicing_user");
+    }, 600);
   };
 
   return (
     <div className="min-h-screen bg-[#f7f6f2] flex">
 
-      {/* ================= LEFT SIDE ================= */}
-      <div className="hidden lg:flex lg:w-[52%] relative overflow-hidden bg-[#211f17]">
+      {/* ================= LEFT HERO BANNER ================= */}
+      <AuthHero subtitle="Create your account to manage invoices, payments, vendors, and customers effortlessly." />
 
-        {/* Background Image */}
-        <img
-          src={loginFurniture}
-          alt="Urban Furniture"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-
-        {/* Dark Overlay */}
-        <div className="absolute inset-0 bg-black/45" />
-
-        {/* Content */}
-        <div className="relative z-10 flex flex-col justify-between w-full p-12 xl:p-16 text-white">
-
-          {/* Logo */}
-          <div>
-            <div className="flex items-center gap-4">
-
-              {/* Chair Icon */}
-              <div className="text-5xl font-light">
-                ♧
-              </div>
-
-              <div>
-                <h1 className="text-3xl xl:text-4xl tracking-[0.12em] font-medium">
-                  URBAN
-                </h1>
-
-                <h1 className="text-3xl xl:text-4xl tracking-[0.12em] font-medium">
-                  FURNITURE
-                </h1>
-              </div>
-
-            </div>
-
-            <p className="mt-2 text-sm tracking-[0.25em] text-white/80">
-              SPACES FOR A BETTER TOMORROW
-            </p>
+      {/* ================= RIGHT SIDE AUTH CARD ================= */}
+      <AuthCard
+        title="Create Account"
+        subtitle="Register as an invoicing user / accountant"
+      >
+        {/* Error Message */}
+        {error && (
+          <div className="mb-3.5 p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+            <AlertCircle size={15} className="shrink-0 text-red-500" />
+            <span>{error}</span>
           </div>
+        )}
 
-          {/* Main Text */}
-          <div className="max-w-xl">
-
-            <div className="w-10 h-[2px] bg-white mb-8" />
-
-            <h2 className="text-4xl xl:text-5xl font-medium leading-tight">
-              Accounting
-              <br />
-              Made Simple
-              <br />
-              for a Creative World
-            </h2>
-
-            <p className="mt-6 text-lg xl:text-xl text-white/85 leading-relaxed max-w-lg">
-              Create your account to manage invoices, payments, vendors,
-              and customers effortlessly.
-            </p>
-
-            {/* Features */}
-            <div className="mt-10 space-y-5">
-
-              <Feature
-                icon="▣"
-                title="Track"
-                description="Invoices & Bills"
-              />
-
-              <Feature
-                icon="▥"
-                title="Manage"
-                description="Customers & Vendors"
-              />
-
-              <Feature
-                icon="◔"
-                title="Get Insights"
-                description="with Real-time Reports"
-              />
-
-            </div>
+        {/* Success Message */}
+        {success && (
+          <div className="mb-3.5 p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+            <CheckCircle2 size={15} className="shrink-0 text-emerald-600" />
+            <span>Account created successfully! Redirecting...</span>
           </div>
+        )}
 
-          {/* Footer */}
-          <div className="flex items-center justify-between text-sm text-white/70">
-            <p>
-              © 2025 Urban Furniture. All rights reserved.
-            </p>
-
-            <p className="hidden xl:block">
-              Design&nbsp; | &nbsp;People&nbsp; | &nbsp;Spaces&nbsp; | &nbsp;Sustainability
-            </p>
-          </div>
-
-        </div>
-      </div>
-
-
-      {/* ================= RIGHT SIDE ================= */}
-      <div className="w-full lg:w-[48%] flex items-center justify-center relative overflow-hidden py-8 px-4">
-
-        {/* Decorative Background Shapes */}
-        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-[#e9e7db]/70" />
-        <div className="absolute -bottom-48 -left-32 w-[450px] h-[450px] rounded-full bg-[#eeede5]/70" />
-
-        {/* Signup Container */}
-        <div className="relative z-10 w-full max-w-[430px]">
-
-          {/* Logo Header */}
-          <div className="flex justify-center mb-3">
-            <div className="flex items-center justify-center gap-2.5">
-              <div className="text-3xl font-light text-[#1f241d]">
-                ♧
-              </div>
-              <div className="text-left">
-                <p className="text-xs font-semibold tracking-[0.25em] text-[#16191f] leading-tight">
-                  URBAN
-                </p>
-                <p className="text-xs font-semibold tracking-[0.25em] text-[#16191f] leading-tight">
-                  FURNITURE
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Off-White Card */}
-          <div className="bg-[#faf8f4] border border-[#e5e1d7] rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.04)] p-5 sm:p-6 backdrop-blur-sm">
-
-            {/* Heading */}
-            <div className="text-center mb-4">
-              <h2 className="text-xl sm:text-2xl font-semibold text-[#171a20]">
-                Create Account
-              </h2>
-              <p className="mt-1 text-xs text-[#6c7078]">
-                Register as an invoicing user / accountant
-              </p>
-            </div>
-
-            {/* Error Message */}
-            {error && (
-              <div className="mb-3.5 p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
-                <AlertCircle size={15} className="shrink-0 text-red-500" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            {/* Success Message */}
-            {success && (
-              <div className="mb-3.5 p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
-                <CheckCircle2 size={15} className="shrink-0 text-emerald-600" />
-                <span>Account created successfully! Redirecting...</span>
-              </div>
-            )}
-
-            {/* Signup Form */}
-            <form onSubmit={handleSignup} className="space-y-3">
+        {/* Signup Form */}
+        <form onSubmit={handleSignup} className="space-y-3">
 
               {/* Login ID */}
               <div>
@@ -478,58 +347,7 @@ function Signup() {
               </button>
 
             </form>
-
-          </div>
-
-          {/* Bottom Branding */}
-          <div className="mt-3.5 text-center">
-            <p className="text-[9px] tracking-[0.35em] text-[#9a9b95]">
-              BUILDING SPACES &bull; BUILDING TRUST
-            </p>
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-  );
-}
-
-
-/* Feature Component */
-
-function Feature({ icon, title, description }) {
-  return (
-    <div className="flex items-center gap-5">
-
-      <div
-        className="
-          w-14
-          h-14
-          rounded-xl
-          bg-white/15
-          backdrop-blur-sm
-          flex
-          items-center
-          justify-center
-          text-2xl
-        "
-      >
-        {icon}
-      </div>
-
-      <div>
-
-        <p className="text-lg font-medium">
-          {title}
-        </p>
-
-        <p className="text-white/80">
-          {description}
-        </p>
-
-      </div>
+      </AuthCard>
 
     </div>
   );
