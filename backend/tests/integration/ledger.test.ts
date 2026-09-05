@@ -49,8 +49,8 @@ describe('LedgerService.postEntry', () => {
 
     expect(entry.status).toBe('POSTED');
     expect(entry.number).toMatch(/^BNK\/\d{4}\/\d{4}$/);
-    expect(entry.totalDebit.toString()).toBe('500000.00');
-    expect(entry.totalCredit.toString()).toBe('500000.00');
+    expect(Number(entry.totalDebit)).toBe(500000);
+    expect(Number(entry.totalCredit)).toBe(500000);
   });
 
   it('throws UnbalancedEntryError for unbalanced lines — writes nothing', async () => {
@@ -188,16 +188,16 @@ describe('LedgerService.postEntry', () => {
     );
 
     // Reversal swaps debit/credit
-    expect(reversal.totalDebit.toString()).toBe('2000.00');
-    expect(reversal.totalCredit.toString()).toBe('2000.00');
+    expect(Number(reversal.totalDebit)).toBe(2000);
+    expect(Number(reversal.totalCredit)).toBe(2000);
 
     // Check the items are swapped
     const reversalItems = await testPrisma.journalItem.findMany({
       where: { entryId: reversal.id },
       orderBy: { sequence: 'asc' },
     });
-    expect(reversalItems[0]!.credit.toString()).toBe('2000.00');
-    expect(reversalItems[0]!.debit.toString()).toBe('0.00');
+    expect(Number(reversalItems[0]!.credit)).toBe(2000);
+    expect(Number(reversalItems[0]!.debit)).toBe(0);
 
     // Original untouched
     const refreshedOriginal = await testPrisma.journalEntry.findUnique({

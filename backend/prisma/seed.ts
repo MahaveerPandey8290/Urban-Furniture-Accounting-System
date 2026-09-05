@@ -18,13 +18,13 @@
  *  - 1 Opening journal entry (Dr Bank 500000, Cr Capital 500000)
  */
 
-import * as argon2 from 'argon2';
+import argon2 from 'argon2';
 import { PrismaClient } from '@prisma/client';
 import 'dotenv/config';
 
 const prisma = new PrismaClient();
 
-const ARGON2_OPTIONS: argon2.Options & { raw?: false } = {
+const ARGON2_OPTIONS = {
   type: argon2.argon2id,
   memoryCost: 19456,
   timeCost: 2,
@@ -311,7 +311,7 @@ async function main() {
       // Acquire sequence via advisory lock pattern (simplified for seed)
       await prisma.$transaction(async (tx) => {
         const lockKey = `${company.id}:${bankJournal.id}:${now.getFullYear()}`;
-        await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
 
         const seq = await tx.documentSequence.upsert({
           where: {

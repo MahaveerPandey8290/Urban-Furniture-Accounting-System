@@ -7,7 +7,7 @@
 import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import { AuthService } from '../../src/modules/auth/auth.service.js';
 import { testPrisma, truncateAll, seedMinimal } from '../fixtures/index.js';
-import * as argon2 from 'argon2';
+import argon2 from 'argon2';
 
 let fixtures: Awaited<ReturnType<typeof seedMinimal>>;
 
@@ -20,7 +20,7 @@ afterAll(async () => {
   await testPrisma.$disconnect();
 });
 
-const ARGON2_OPTIONS: argon2.Options & { raw?: false } = {
+const ARGON2_OPTIONS = {
   type: argon2.argon2id,
   memoryCost: 19456,
   timeCost: 2,
@@ -37,7 +37,7 @@ describe('AuthService.signup', () => {
       confirmPassword: 'Test@1234',
     }, fixtures.company.id);
 
-    expect(result.message).toContain('awaiting administrator approval');
+    expect(result.message).toContain('An administrator will review it shortly');
 
     const user = await testPrisma.user.findUnique({ where: { loginId: 'testuser1' } });
     expect(user).not.toBeNull();

@@ -218,7 +218,7 @@ export class LedgerService {
       );
 
       // Link the two entries
-      await client.journalEntry.update({
+      const updatedReversal = await client.journalEntry.update({
         where: { id: reversal.id },
         data: { reversalOfId: original.id },
       });
@@ -238,7 +238,7 @@ export class LedgerService {
         requestId,
       }, client);
 
-      return reversal;
+      return updatedReversal;
     };
 
     if (tx) return execute(tx);

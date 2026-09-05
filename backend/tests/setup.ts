@@ -9,17 +9,19 @@
  */
 
 import { beforeAll, afterAll } from 'vitest';
+import 'dotenv/config';
 
 // Silence pino in test runs (already set level: 'silent' when NODE_ENV=test)
 process.env['NODE_ENV'] = 'test';
 process.env['DATABASE_URL'] =
   process.env['TEST_DATABASE_URL'] ??
-  process.env['DATABASE_URL'] ??
-  'postgresql://postgres:password@localhost:5432/urbanfurniture_test';
+  'postgresql://postgres:maha8290@127.0.0.1:5432/urbanfurniture_test?schema=public';
 
 // JWT secrets for tests
-process.env['JWT_ACCESS_SECRET'] = 'test-access-secret-minimum-32-chars-long!!';
-process.env['JWT_REFRESH_SECRET'] = 'test-refresh-secret-minimum-32-chars-long!';
+process.env['JWT_ACCESS_SECRET'] =
+  process.env['JWT_ACCESS_SECRET'] ?? 'test-access-secret-minimum-32-chars-long!!';
+process.env['JWT_REFRESH_SECRET'] =
+  process.env['JWT_REFRESH_SECRET'] ?? 'test-refresh-secret-minimum-32-chars-long!';
 
 beforeAll(async () => {
   // Any global test setup can go here

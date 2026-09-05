@@ -35,7 +35,7 @@ export class SequenceService {
     // Acquire advisory lock - automatically released at transaction end
     // Lock key combines companyId, journalId, year to avoid cross-journal contention
     const lockKey = `${companyId}:${journalId}:${year}`;
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
 
     // Upsert the sequence row and increment atomically
     const result = await tx.documentSequence.upsert({

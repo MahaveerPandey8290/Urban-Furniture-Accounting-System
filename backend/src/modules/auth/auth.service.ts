@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import * as argon2 from 'argon2';
+import argon2 from 'argon2';
 import jwt from 'jsonwebtoken';
 import { env } from '../../config/env.js';
 import logger from '../../config/logger.js';
@@ -24,7 +24,7 @@ import type {
 
 // ─── Argon2 configuration ──────────────────────────────────────────────────────
 // From spec: argon2id, memoryCost 19456, timeCost 2, parallelism 1
-const ARGON2_OPTIONS: argon2.Options & { raw?: false } = {
+const ARGON2_OPTIONS = {
   type: argon2.argon2id,
   memoryCost: 19456,
   timeCost: 2,
@@ -185,6 +185,13 @@ export class AuthService {
 
     const user = await AuthRepository.findByLoginId(dto.loginId);
 
+    // Check lockout before verifying credentials
+    if (user && user.lockedUntil && user.lockedUntil > new Date()) {
+      throw new ForbiddenError(
+        'Too many failed attempts. Your account is locked for 15 minutes.'
+      );
+    }
+
     // Always run argon2 to prevent timing attacks even when user not found
     const hashToVerify = user?.passwordHash ?? DUMMY_HASH;
     let passwordValid = false;
@@ -212,13 +219,6 @@ export class AuthService {
         await AuthRepository.incrementFailedAttempts(user.id);
       }
       throw new UnauthorizedError(WRONG_CREDENTIALS_MSG);
-    }
-
-    // Check lockout (may have been locked on a previous attempt)
-    if (user.lockedUntil && user.lockedUntil > new Date()) {
-      throw new ForbiddenError(
-        'Too many failed attempts. Your account is locked for 15 minutes.'
-      );
     }
 
     // Check status with spec-exact messages
