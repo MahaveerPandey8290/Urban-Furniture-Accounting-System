@@ -62,4 +62,54 @@ main div[class*="rounded-xl"][class*="bg-white"][class*="border"]:not([role="dia
   transform: translateY(-2.5px);
   box-shadow: 0 12px 28px -4px rgba(45, 35, 27, 0.09), 0 4px 10px -2px rgba(45, 35, 27, 0.04);
   border-color: #cfc5b6;
+}
+
+/* =========================================================
+   Print Stylesheet for Clean Report Printing
+   ========================================================= */
+@media print {
+  /* Hide all dashboard navigation, sidebars, headers, action buttons, overlays */
+  aside,
+  header,
+  nav,
+  .print-hidden,
+  [data-print-hidden="true"] {
+    display: none !important;
+  }
+
+  /* Reset body and container backgrounds to pure white with dark print text */
+  html,
+  body,
+  #root,
+  .min-h-screen,
+  main,
+  div[class*="min-h-screen"],
+  div[class*="bg-[#f7f6f2]"],
+  div[class*="bg-[#F5F2EC]"],
+  div[class*="bg-[#faf8f4]"] {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    background-image: none !important;
+    color: #111827 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+  }
+
+  /* Eliminate sidebar offset margins */
+  .md\:ml-\[270px\],
+  .ml-\[280px\] {
+    margin-left: 0 !important;
+  }
+
+  /* Clean up card containers and borders for crisp paper print */
+  main div[class*="rounded-2xl"],
+  main div[class*="rounded-xl"] {
+    transform: none !important;
+    box-shadow: none !important;
+    border-color: #e5e7eb !important;
+    background-color: #ffffff !important;
+  }
 }

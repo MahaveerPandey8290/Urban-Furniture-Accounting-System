@@ -96,7 +96,8 @@ function ChartOfAccountsMaster() {
 
   // Home button handler
   const handleHome = () => {
-    navigate("/invoicing_user");
+    const isPathAdmin = window.location.pathname.startsWith("/admin");
+    navigate(isPathAdmin ? "/admin" : "/invoicing_user");
   };
 
   // Back button handler
@@ -105,7 +106,8 @@ function ChartOfAccountsMaster() {
       setCurrentView("list");
       setEditingAccount(null);
     } else {
-      navigate("/invoicing_user");
+      const isPathAdmin = window.location.pathname.startsWith("/admin");
+      navigate(isPathAdmin ? "/admin" : "/invoicing_user");
     }
   };
 

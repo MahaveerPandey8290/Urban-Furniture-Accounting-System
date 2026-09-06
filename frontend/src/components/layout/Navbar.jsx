@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
-function Navbar() {
+function Navbar({ onToggleSidebar, isSidebarOpen = true }) {
   const { user, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -29,15 +29,18 @@ function Navbar() {
   const initial = displayName.charAt(0).toUpperCase();
 
   return (
-    <header className="sticky top-0 z-30 flex h-[76px] items-center justify-between border-b border-[#DDD7CE] bg-[#FBFAF7] px-8">
+    <header className="sticky top-0 z-30 flex h-[76px] items-center justify-between border-b border-[#DDD7CE] bg-[#FBFAF7] px-8 print:hidden">
 
       {/* Left Side */}
       <div className="flex items-center gap-7">
 
         {/* Menu Button */}
         <button
-          className="text-[#403329] transition hover:text-[#30261F]"
-          title="Menu"
+          type="button"
+          onClick={onToggleSidebar}
+          className="text-[#403329] transition hover:text-[#30261F] cursor-pointer p-1.5 rounded-lg hover:bg-[#E9E5DE]"
+          title={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+          aria-label="Toggle sidebar"
         >
           <Menu size={23} strokeWidth={1.8} />
         </button>

@@ -231,17 +231,26 @@ function CustomerInvoicesMaster({ mode }) {
 
   // Traceability Handlers
   const handleOpenSO = (soRef) => {
-    navigate(`/invoicing_user/sales-orders?soId=${soRef}`);
+    const isPathAdmin = window.location.pathname.startsWith("/admin");
+    navigate(
+      isPathAdmin
+        ? `/admin/sales-orders?soId=${soRef}`
+        : `/invoicing_user/sales-orders?soId=${soRef}`
+    );
   };
 
   const handleOpenBudget = (budgetRef) => {
-    navigate(`/invoicing_user/budget-reports`, {
-      state: {
-        search: budgetRef,
-        analyticAccount: budgetRef,
-        budgetId: budgetRef,
-      },
-    });
+    const isPathAdmin = window.location.pathname.startsWith("/admin");
+    navigate(
+      isPathAdmin ? `/admin/budgets` : `/invoicing_user/budget-reports`,
+      {
+        state: {
+          search: budgetRef,
+          analyticAccount: budgetRef,
+          budgetId: budgetRef,
+        },
+      }
+    );
   };
 
   const handleOpenPrint = (inv) => {
@@ -272,7 +281,10 @@ function CustomerInvoicesMaster({ mode }) {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => navigate("/invoicing_user")}
+              onClick={() => {
+                const isPathAdmin = window.location.pathname.startsWith("/admin");
+                navigate(isPathAdmin ? "/admin" : "/invoicing_user");
+              }}
               className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-[#e7e3da] bg-white text-[#716B63] hover:text-[#211D19] hover:bg-[#faf8f4] text-sm font-medium transition cursor-pointer shadow-xs"
               title="Back to Dashboard"
             >

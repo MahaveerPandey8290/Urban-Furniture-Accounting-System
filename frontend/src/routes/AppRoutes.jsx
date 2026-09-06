@@ -1,4 +1,4 @@
-﻿import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "../components/ProtectedRoute";
 
 // Auth pages
@@ -21,7 +21,37 @@ import AdminBudgets from "../pages/admin/Budgets";
 import AdminReports from "../pages/admin/Reports";
 import AdminCustomerInvoices from "../pages/admin/CustomerInvoices";
 
+<<<<<<< HEAD
 // Accountant layout and pages
+=======
+// =====================================================
+// AUTHENTICATION
+// =====================================================
+
+import Login from "../pages/auth/Login";
+import Signup from "../pages/auth/Signup";
+
+// =====================================================
+// CUSTOMER PORTAL
+// =====================================================
+import CustomerLayout from "../components/layout/CustomerLayout";
+import CustomerDashboard from "../pages/customer/Dashboard";
+import MySalesOrders from "../pages/customer/MySalesOrders";
+import MyInvoices from "../pages/customer/MyInvoices";
+
+// =====================================================
+// VENDOR PORTAL
+// =====================================================
+import VendorLayout from "../components/layout/VendorLayout";
+import VendorDashboard from "../pages/vendor/Dashboard";
+import MyPurchaseOrders from "../pages/vendor/MyPurchaseOrders";
+import MyBills from "../pages/vendor/MyBills";
+
+// =====================================================
+// ACCOUNTANT / INVOICING USER
+// =====================================================
+
+>>>>>>> a2bb8a6db633f306a785fb7511d92161aa601278
 import AccountantLayout from "../components/layout/AccountantLayout";
 import AccountantDashboard from "../pages/invoicing_user/Dashboard";
 import AccountantSalesOrders from "../pages/invoicing_user/SalesOrders";
@@ -61,11 +91,21 @@ function AppRoutes() {
           <Route path="sales-orders" element={<AdminSalesOrders />} />
           <Route path="invoices" element={<AdminCustomerInvoices />} />
           <Route path="customer-invoices" element={<AdminCustomerInvoices />} />
+          <Route path="sale-invoices" element={<AdminCustomerInvoices />} />
           <Route path="payments" element={<AdminPayments />} />
           <Route path="budgets" element={<AdminBudgets />} />
           <Route path="reports" element={<AdminReports />} />
+
+          {/* Route Aliases for Sub-navigation */}
+          <Route path="bills" element={<AdminVendorBills />} />
+          <Route path="budget-reports" element={<AdminBudgets />} />
+          <Route path="chart-of-accounts" element={<AdminChartOfAccounts />} />
+          <Route path="journal-entries" element={<JournalEntries />} />
+          <Route path="balance-sheet" element={<BalanceSheet />} />
+          <Route path="profit-and-loss" element={<ProfitAndLoss />} />
         </Route>
       </Route>
+
 
       {/* Accountant / Invoicing User panel — requires ACCOUNTANT or CONTACT role */}
       <Route element={<ProtectedRoute roles={["ACCOUNTANT", "CONTACT"]} />}>
@@ -109,6 +149,26 @@ function AppRoutes() {
           <Route path="budget-reports" element={<BudgetReport />} />
           <Route path="reports" element={<BudgetReport />} />
         </Route>
+      </Route>
+
+      {/* =================================================
+          CUSTOMER PORTAL
+      ================================================= */}
+      <Route path="/customer" element={<CustomerLayout />}>
+        <Route index element={<CustomerDashboard />} />
+        <Route path="dashboard" element={<CustomerDashboard />} />
+        <Route path="sales-orders" element={<MySalesOrders />} />
+        <Route path="invoices" element={<MyInvoices />} />
+      </Route>
+
+      {/* =================================================
+          VENDOR PORTAL
+      ================================================= */}
+      <Route path="/vendor" element={<VendorLayout />}>
+        <Route index element={<VendorDashboard />} />
+        <Route path="dashboard" element={<VendorDashboard />} />
+        <Route path="purchase-orders" element={<MyPurchaseOrders />} />
+        <Route path="bills" element={<MyBills />} />
       </Route>
 
     </Routes>

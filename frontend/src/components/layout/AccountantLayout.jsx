@@ -11,11 +11,20 @@ import loginFurniture from "../../assets/login-furniture.png";
 
 function AccountantLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
 
   const handleLogout = () => {
     navigate("/login");
+  };
+
+  const toggleSidebar = () => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setMobileOpen((prev) => !prev);
+    } else {
+      setDesktopSidebarOpen((prev) => !prev);
+    }
   };
 
   const sidebarStyle = {
@@ -25,11 +34,15 @@ function AccountantLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f6f2] flex text-[#24201a] overflow-x-hidden w-full max-w-[100vw]">
+    <div className="min-h-screen bg-[#f7f6f2] flex text-[#24201a] overflow-x-hidden w-full max-w-[100vw] print:bg-white">
 
       {/* ================= FIXED DESKTOP SIDEBAR ================= */}
       <aside
-        className="hidden md:flex flex-col justify-between fixed left-0 top-0 bottom-0 w-[270px] bg-[#241e18] text-white overflow-y-auto border-r border-[#1a1511] z-30 px-4 py-6"
+        className={`hidden md:flex flex-col justify-between fixed left-0 top-0 bottom-0 w-[270px] bg-[#241e18] text-white overflow-y-auto border-r border-[#1a1511] z-30 px-4 py-6 transition-all duration-300 ease-in-out print:hidden ${
+          desktopSidebarOpen
+            ? "translate-x-0 opacity-100"
+            : "-translate-x-full opacity-0 pointer-events-none"
+        }`}
         style={sidebarStyle}
       >
         <SidebarContent onNavigate={() => {}} onLogout={handleLogout} />
@@ -39,13 +52,13 @@ function AccountantLayout() {
       {mobileOpen && (
         <div
           onClick={() => setMobileOpen(false)}
-          className="fixed inset-0 z-40 bg-black/50 md:hidden backdrop-blur-xs"
+          className="fixed inset-0 z-40 bg-black/50 md:hidden backdrop-blur-xs print:hidden"
         />
       )}
 
       {/* ================= MOBILE SLIDE-OVER SIDEBAR ================= */}
       <div
-        className={`fixed left-0 top-0 bottom-0 w-[280px] bg-[#241e18] text-white z-50 transform transition-transform duration-200 ease-in-out md:hidden flex flex-col justify-between px-4 py-6 overflow-y-auto ${
+        className={`fixed left-0 top-0 bottom-0 w-[280px] bg-[#241e18] text-white z-50 transform transition-transform duration-200 ease-in-out md:hidden flex flex-col justify-between px-4 py-6 overflow-y-auto print:hidden ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         style={sidebarStyle}
@@ -69,19 +82,24 @@ function AccountantLayout() {
       </div>
 
       {/* ================= MAIN CONTENT AREA ================= */}
-      <div className="flex-1 min-w-0 max-w-full md:ml-[270px] min-h-screen flex flex-col">
+      <div
+        className={`flex-1 min-w-0 max-w-full min-h-screen flex flex-col transition-all duration-300 ease-in-out print:m-0 print:p-0 ${
+          desktopSidebarOpen ? "md:ml-[270px]" : "md:ml-0"
+        }`}
+      >
 
         {/* Top Header Bar - Slightly Darker Rich Wood Finish */}
-        <header className="sticky top-0 z-20 h-16 bg-gradient-to-r from-[#2a1a0f] via-[#382315] to-[#26170d] border-b border-[#432a1a] px-4 sm:px-8 flex items-center justify-between shadow-[0_4px_16px_rgba(0,0,0,0.22)] text-[#f7f1ea]">
-          {/* Mobile hamburger button */}
+        <header className="sticky top-0 z-20 h-16 bg-gradient-to-r from-[#2a1a0f] via-[#382315] to-[#26170d] border-b border-[#432a1a] px-4 sm:px-8 flex items-center justify-between shadow-[0_4px_16px_rgba(0,0,0,0.22)] text-[#f7f1ea] print:hidden">
+          {/* Hamburger button (3 lines) to toggle sidebar on both mobile and desktop */}
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => setMobileOpen(true)}
-              className="md:hidden w-10 h-10 rounded-xl border border-[#482d1b] bg-[#362113] text-white hover:bg-[#482d1b] flex items-center justify-center cursor-pointer transition shadow-xs"
-              title="Open Navigation"
+              onClick={toggleSidebar}
+              className="w-10 h-10 rounded-xl border border-[#482d1b] bg-[#362113] text-white hover:bg-[#482d1b] hover:border-[#5a3922] flex items-center justify-center cursor-pointer transition shadow-xs group"
+              title={desktopSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+              aria-label="Toggle sidebar"
             >
-              <Menu size={18} />
+              <Menu size={20} className="group-hover:scale-105 transition-transform" />
             </button>
           </div>
 
@@ -132,7 +150,7 @@ function SidebarContent({ onNavigate, onLogout }) {
     <div className="flex flex-col h-full justify-between">
 
       <div>
-        {/* Brand Header: URBAN COMPANY in big bold typography without logo or yellow box */}
+        {/* Brand Header: URBAN FURNITURE in big bold typography without logo or yellow box */}
         <div
           onClick={() => {
             navigate("/invoicing_user");
@@ -144,7 +162,7 @@ function SidebarContent({ onNavigate, onLogout }) {
             URBAN
           </h1>
           <h1 className="text-[28px] font-black tracking-[4px] text-white leading-none mt-1.5">
-            COMPANY
+            FURNITURE
           </h1>
         </div>
 

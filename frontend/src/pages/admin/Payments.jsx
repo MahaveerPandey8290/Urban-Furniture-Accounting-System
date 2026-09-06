@@ -197,30 +197,24 @@ function Payments() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f5f1] px-8 py-8">
+    <div className="space-y-6">
 
       {/* =================================================
           PAGE HEADER
       ================================================= */}
-
-      <div className="border-b border-[#ded8d0] pb-6">
-
-        <div className="flex items-center gap-2 text-sm text-[#766d65]">
+      <div className="border-b border-[#e7e3da] pb-4">
+        <div className="flex items-center gap-1.5 text-sm text-[#716B63] mb-1">
           <span>Transactions</span>
           <span>/</span>
-          <span className="text-[#2f241e]">
-            Payments
-          </span>
+          <span className="text-[#211D19] font-semibold">Payments</span>
         </div>
 
-        <div className="mt-2 flex items-center justify-between">
-
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-semibold text-[#211914]">
+            <h1 className="text-3xl font-semibold text-[#211D19] tracking-tight">
               Payments
             </h1>
-
-            <p className="mt-1 text-[#766d65]">
+            <p className="mt-1 text-sm text-[#716B63]">
               Payment register against customer invoices and vendor bills
             </p>
           </div>
@@ -230,226 +224,159 @@ function Payments() {
               setForm(emptyForm);
               setShowNewPayment(true);
             }}
-            className="flex items-center gap-2 rounded-lg bg-[#34271f] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#47362b]"
+            className="inline-flex items-center gap-2 rounded-xl bg-[#342921] px-4.5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#251d17] shadow-xs cursor-pointer"
           >
-            <Plus size={18} />
-            New Payment
+            <Plus size={16} />
+            <span>New Payment</span>
           </button>
-
         </div>
       </div>
-
 
       {/* =================================================
           SUMMARY CARDS
       ================================================= */}
-
-      <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         {/* Received */}
-        <div className="rounded-xl border border-[#e1dcd5] bg-white p-5">
-
+        <div className="rounded-2xl border border-[#e7e3da] bg-white p-5 shadow-2xs hover:shadow-md transition">
           <div className="flex items-center justify-between">
-
             <div>
-              <p className="text-sm text-[#766d65]">
+              <p className="text-xs font-medium uppercase tracking-wider text-[#716B63]">
                 Total Received
               </p>
-
-              <p className="mt-2 text-2xl font-semibold text-[#211914]">
+              <p className="mt-2 text-2xl font-bold text-[#211D19]">
                 {formatCurrency(totalReceived)}
               </p>
             </div>
-
-            <div className="rounded-lg bg-[#edf5ea] p-3">
+            <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3">
               <ArrowLeft
-                size={20}
-                className="rotate-[-45deg] text-green-700"
+                size={18}
+                className="rotate-[-45deg] text-emerald-700"
               />
             </div>
-
           </div>
-
         </div>
 
-
         {/* Paid */}
-        <div className="rounded-xl border border-[#e1dcd5] bg-white p-5">
-
+        <div className="rounded-2xl border border-[#e7e3da] bg-white p-5 shadow-2xs hover:shadow-md transition">
           <div className="flex items-center justify-between">
-
             <div>
-              <p className="text-sm text-[#766d65]">
+              <p className="text-xs font-medium uppercase tracking-wider text-[#716B63]">
                 Total Paid
               </p>
-
-              <p className="mt-2 text-2xl font-semibold text-[#211914]">
+              <p className="mt-2 text-2xl font-bold text-[#211D19]">
                 {formatCurrency(totalPaid)}
               </p>
             </div>
-
-            <div className="rounded-lg bg-[#f8ece7] p-3">
+            <div className="rounded-xl bg-rose-50 border border-rose-200 p-3">
               <ArrowLeft
-                size={20}
-                className="rotate-[135deg] text-red-700"
+                size={18}
+                className="rotate-[135deg] text-rose-700"
               />
             </div>
-
           </div>
-
         </div>
 
-
         {/* Cash */}
-        <div className="rounded-xl border border-[#e1dcd5] bg-white p-5">
-
+        <div className="rounded-2xl border border-[#e7e3da] bg-white p-5 shadow-2xs hover:shadow-md transition">
           <div className="flex items-center justify-between">
-
             <div>
-              <p className="text-sm text-[#766d65]">
+              <p className="text-xs font-medium uppercase tracking-wider text-[#716B63]">
                 Cash Balance
               </p>
-
-              <p className="mt-2 text-2xl font-semibold text-[#211914]">
+              <p className="mt-2 text-2xl font-bold text-[#211D19]">
                 {formatCurrency(cashBalance)}
               </p>
             </div>
-
-            <div className="rounded-lg bg-[#f3eee8] p-3">
-              <Wallet size={20} />
+            <div className="rounded-xl bg-[#faf8f4] border border-[#e7e3da] p-3 text-[#342921]">
+              <Wallet size={18} />
             </div>
-
           </div>
-
         </div>
 
-
         {/* Bank */}
-        <div className="rounded-xl border border-[#e1dcd5] bg-white p-5">
-
+        <div className="rounded-2xl border border-[#e7e3da] bg-white p-5 shadow-2xs hover:shadow-md transition">
           <div className="flex items-center justify-between">
-
             <div>
-              <p className="text-sm text-[#766d65]">
+              <p className="text-xs font-medium uppercase tracking-wider text-[#716B63]">
                 Bank Balance
               </p>
-
-              <p className="mt-2 text-2xl font-semibold text-[#211914]">
+              <p className="mt-2 text-2xl font-bold text-[#211D19]">
                 {formatCurrency(bankBalance)}
               </p>
             </div>
-
-            <div className="rounded-lg bg-[#edf2f6] p-3">
-              <Landmark size={20} />
+            <div className="rounded-xl bg-[#faf8f4] border border-[#e7e3da] p-3 text-[#342921]">
+              <Landmark size={18} />
             </div>
-
           </div>
-
         </div>
-
       </div>
-
 
       {/* =================================================
           FILTER BAR
       ================================================= */}
-
-      <div className="mt-6 rounded-xl border border-[#e1dcd5] bg-white p-5">
-
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
-
+      <div className="rounded-2xl border border-[#e7e3da] bg-white p-4 sm:p-5 shadow-xs">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           {/* Search */}
-
           <div className="relative flex-1">
-
             <Search
-              size={19}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-[#80776f]"
+              size={17}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#716B63]"
             />
-
             <input
               type="text"
               placeholder="Search payment, customer, vendor or invoice..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg border border-[#d8d0c8] bg-white py-3 pl-11 pr-4 text-sm outline-none focus:border-[#5a4537]"
+              className="h-10 w-full rounded-xl border border-[#cfc6b6] bg-white py-2.5 pl-10 pr-4 text-sm text-[#211D19] outline-none transition focus:border-[#342921]"
             />
-
           </div>
 
-
           {/* Payment Type */}
-
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="rounded-lg border border-[#d8d0c8] bg-white px-4 py-3 text-sm outline-none"
+            className="h-10 rounded-xl border border-[#cfc6b6] bg-white px-3.5 text-sm text-[#211D19] outline-none transition focus:border-[#342921]"
           >
-            <option value="All">
-              All Payments
-            </option>
-
-            <option value="Received">
-              Received
-            </option>
-
-            <option value="Paid">
-              Paid
-            </option>
+            <option value="All">All Payments</option>
+            <option value="Received">Received</option>
+            <option value="Paid">Paid</option>
           </select>
 
-
           {/* Account */}
-
           <select
             value={accountFilter}
             onChange={(e) => setAccountFilter(e.target.value)}
-            className="rounded-lg border border-[#d8d0c8] bg-white px-4 py-3 text-sm outline-none"
+            className="h-10 rounded-xl border border-[#cfc6b6] bg-white px-3.5 text-sm text-[#211D19] outline-none transition focus:border-[#342921]"
           >
-            <option value="All">
-              All Accounts
-            </option>
-
-            <option value="Cash">
-              Cash
-            </option>
-
-            <option value="Bank">
-              Bank
-            </option>
+            <option value="All">All Accounts</option>
+            <option value="Cash">Cash</option>
+            <option value="Bank">Bank</option>
           </select>
-
         </div>
-
       </div>
-
 
       {/* =================================================
           PAYMENT REGISTER
       ================================================= */}
-
-      <div className="mt-6 overflow-hidden rounded-xl border border-[#e1dcd5] bg-white">
-
-        <div className="border-b border-[#e1dcd5] px-6 py-5">
-
-          <h2 className="text-lg font-semibold text-[#211914]">
-            Payment Register
-          </h2>
-
-          <p className="mt-1 text-sm text-[#766d65]">
-            Payments registered against invoices and bills
-          </p>
-
+      <div className="overflow-hidden rounded-2xl border border-[#e7e3da] bg-white shadow-2xs">
+        <div className="border-b border-[#e7e3da] px-6 py-4 bg-[#faf8f4]/60 flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-bold text-[#211D19]">
+              Payment Register
+            </h2>
+            <p className="text-xs text-[#716B63]">
+              Payments registered against invoices and bills
+            </p>
+          </div>
+          <span className="text-xs font-semibold text-[#716B63]">
+            Showing {filteredPayments.length} payments
+          </span>
         </div>
 
-
         <div className="overflow-x-auto">
-
           <table className="w-full min-w-[1100px]">
-
-            <thead className="bg-[#faf8f5]">
-
-              <tr className="border-b border-[#e1dcd5] text-left text-xs uppercase tracking-wider text-[#766d65]">
+            <thead className="bg-[#faf8f4]/80">
+              <tr className="border-b border-[#e7e3da] text-left text-xs uppercase tracking-wider text-[#716B63] font-semibold">
 
                 <th className="px-6 py-4">
                   Payment No.
@@ -662,9 +589,9 @@ function Payments() {
 
                       <button
                         onClick={() => setSelectedPayment(payment)}
-                        className="inline-flex items-center gap-2 rounded-lg border border-[#ddd5cc] px-3 py-2 text-sm text-[#514840] hover:bg-[#f5f1ec]"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-[#e7e3da] px-3 py-1.5 text-xs font-semibold text-[#514840] hover:bg-[#faf8f4] hover:text-[#211D19] transition cursor-pointer"
                       >
-                        <Eye size={16} />
+                        <Eye size={14} />
                         View
                       </button>
 
@@ -691,31 +618,31 @@ function Payments() {
 
       {showNewPayment && (
 
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]">
 
-          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white border border-[#e7e3da] shadow-2xl">
 
             {/* Modal Header */}
 
-            <div className="flex items-center justify-between border-b border-[#e1dcd5] px-6 py-5">
+            <div className="flex items-center justify-between border-b border-[#e7e3da] bg-[#faf8f4] px-6 py-5">
 
               <div>
 
-                <h2 className="text-xl font-semibold text-[#211914]">
+                <h2 className="text-xl font-bold text-[#211D19]">
                   Register Payment
                 </h2>
 
-                <p className="mt-1 text-sm text-[#766d65]">
-                  Register payment against an invoice or bill
+                <p className="mt-0.5 text-xs text-[#716B63]">
+                  Register payment against a validated invoice or bill
                 </p>
 
               </div>
 
               <button
                 onClick={() => setShowNewPayment(false)}
-                className="rounded-lg p-2 hover:bg-[#f4f0eb]"
+                className="rounded-lg p-2 text-[#716B63] hover:bg-[#f4ede4] hover:text-[#211D19] transition cursor-pointer"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
 
             </div>
@@ -725,14 +652,14 @@ function Payments() {
 
             <form
               onSubmit={handleSavePayment}
-              className="space-y-6 p-6"
+              className="space-y-5 p-6"
             >
 
               {/* Payment Type */}
 
               <div>
 
-                <label className="mb-2 block text-sm font-medium text-[#41372f]">
+                <label className="mb-2 block text-xs font-semibold text-[#211D19]">
                   Payment Type
                 </label>
 
@@ -743,10 +670,10 @@ function Payments() {
                     onClick={() =>
                       handleFormChange("type", "Received")
                     }
-                    className={`rounded-lg border px-4 py-3 text-sm font-medium ${
+                    className={`rounded-xl border px-4 py-2.5 text-sm font-semibold transition cursor-pointer ${
                       form.type === "Received"
-                        ? "border-[#34271f] bg-[#34271f] text-white"
-                        : "border-[#d8d0c8] text-[#514840]"
+                        ? "border-[#342921] bg-[#342921] text-white shadow-xs"
+                        : "border-[#cfc6b6] bg-white text-[#716B63] hover:bg-[#faf8f4]"
                     }`}
                   >
                     Payment Received
@@ -757,10 +684,10 @@ function Payments() {
                     onClick={() =>
                       handleFormChange("type", "Paid")
                     }
-                    className={`rounded-lg border px-4 py-3 text-sm font-medium ${
+                    className={`rounded-xl border px-4 py-2.5 text-sm font-semibold transition cursor-pointer ${
                       form.type === "Paid"
-                        ? "border-[#34271f] bg-[#34271f] text-white"
-                        : "border-[#d8d0c8] text-[#514840]"
+                        ? "border-[#342921] bg-[#342921] text-white shadow-xs"
+                        : "border-[#cfc6b6] bg-white text-[#716B63] hover:bg-[#faf8f4]"
                     }`}
                   >
                     Payment Paid
@@ -1095,19 +1022,19 @@ function Payments() {
 
               {/* Buttons */}
 
-              <div className="flex justify-end gap-3 border-t border-[#e1dcd5] pt-5">
+              <div className="flex justify-end gap-3 border-t border-[#e7e3da] pt-4">
 
                 <button
                   type="button"
                   onClick={() => setShowNewPayment(false)}
-                  className="rounded-lg border border-[#d8d0c8] px-5 py-3 text-sm font-medium text-[#514840] hover:bg-[#f5f1ec]"
+                  className="rounded-xl border border-[#cfc6b6] px-4 py-2 text-sm font-semibold text-[#716B63] hover:bg-[#faf8f4] transition cursor-pointer"
                 >
                   Cancel
                 </button>
 
                 <button
                   type="submit"
-                  className="rounded-lg bg-[#34271f] px-5 py-3 text-sm font-medium text-white hover:bg-[#47362b]"
+                  className="rounded-xl bg-[#342921] px-5 py-2 text-sm font-semibold text-white hover:bg-[#251d17] transition shadow-xs cursor-pointer"
                 >
                   Register Payment
                 </button>
@@ -1129,21 +1056,21 @@ function Payments() {
 
       {selectedPayment && (
 
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]">
 
-          <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl">
+          <div className="w-full max-w-xl rounded-2xl bg-white border border-[#e7e3da] shadow-2xl overflow-hidden">
 
             {/* Header */}
 
-            <div className="flex items-center justify-between border-b border-[#e1dcd5] px-6 py-5">
+            <div className="flex items-center justify-between border-b border-[#e7e3da] bg-[#faf8f4] px-6 py-5">
 
               <div>
 
-                <p className="text-sm text-[#766d65]">
+                <p className="text-xs font-semibold uppercase tracking-wider text-[#716B63]">
                   Payment Details
                 </p>
 
-                <h2 className="mt-1 text-2xl font-semibold text-[#211914]">
+                <h2 className="mt-0.5 text-xl font-bold text-[#211D19]">
                   {selectedPayment.paymentNo}
                 </h2>
 
@@ -1151,9 +1078,9 @@ function Payments() {
 
               <button
                 onClick={() => setSelectedPayment(null)}
-                className="rounded-lg p-2 hover:bg-[#f4f0eb]"
+                className="rounded-lg p-2 text-[#716B63] hover:bg-[#f4ede4] hover:text-[#211D19] transition cursor-pointer"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
 
             </div>
@@ -1161,7 +1088,7 @@ function Payments() {
 
             {/* Details */}
 
-            <div className="grid grid-cols-1 gap-5 p-6 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2">
 
               <Detail
                 label="Payment Type"
@@ -1208,17 +1135,17 @@ function Payments() {
 
             {/* Amount */}
 
-            <div className="mx-6 rounded-xl bg-[#f7f4ef] p-5">
+            <div className="mx-6 rounded-xl bg-[#faf8f4] border border-[#e7e3da] p-4">
 
-              <p className="text-sm text-[#766d65]">
+              <p className="text-xs uppercase tracking-wider font-semibold text-[#716B63]">
                 Payment Amount
               </p>
 
               <p
-                className={`mt-2 text-3xl font-semibold ${
+                className={`mt-1 text-2xl font-bold ${
                   selectedPayment.type === "Received"
-                    ? "text-green-700"
-                    : "text-red-700"
+                    ? "text-emerald-700"
+                    : "text-rose-700"
                 }`}
               >
                 {selectedPayment.type === "Received"
@@ -1232,24 +1159,24 @@ function Payments() {
 
             {/* Notes */}
 
-            <div className="p-6">
+            <div className="px-6 py-4">
 
-              <p className="text-sm font-medium text-[#41372f]">
+              <p className="text-xs font-semibold text-[#716B63]">
                 Notes
               </p>
 
-              <p className="mt-2 text-sm text-[#766d65]">
+              <p className="mt-1 text-sm text-[#211D19]">
                 {selectedPayment.notes}
               </p>
 
             </div>
 
 
-            <div className="flex justify-end border-t border-[#e1dcd5] p-5">
+            <div className="flex justify-end border-t border-[#e7e3da] p-4 bg-[#faf8f4]/60">
 
               <button
                 onClick={() => setSelectedPayment(null)}
-                className="rounded-lg bg-[#34271f] px-5 py-3 text-sm font-medium text-white"
+                className="rounded-xl bg-[#342921] px-5 py-2 text-sm font-semibold text-white hover:bg-[#251d17] transition shadow-xs cursor-pointer"
               >
                 Close
               </button>
