@@ -21,15 +21,6 @@ import AdminBudgets from "../pages/admin/Budgets";
 import AdminReports from "../pages/admin/Reports";
 import AdminCustomerInvoices from "../pages/admin/CustomerInvoices";
 
-<<<<<<< HEAD
-// Accountant layout and pages
-=======
-// =====================================================
-// AUTHENTICATION
-// =====================================================
-
-import Login from "../pages/auth/Login";
-import Signup from "../pages/auth/Signup";
 
 // =====================================================
 // CUSTOMER PORTAL
@@ -51,7 +42,6 @@ import MyBills from "../pages/vendor/MyBills";
 // ACCOUNTANT / INVOICING USER
 // =====================================================
 
->>>>>>> a2bb8a6db633f306a785fb7511d92161aa601278
 import AccountantLayout from "../components/layout/AccountantLayout";
 import AccountantDashboard from "../pages/invoicing_user/Dashboard";
 import AccountantSalesOrders from "../pages/invoicing_user/SalesOrders";

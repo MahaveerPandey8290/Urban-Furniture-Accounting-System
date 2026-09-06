@@ -1,7 +1,6 @@
 // Sales Module Master Service & Accounting Automation
 import { getChartOfAccounts } from "../accounts/ChartOfAccountsMaster";
 import { getJournals } from "../journals/JournalMaster";
-import { INITIAL_JOURNAL_ENTRIES } from "../journal_entries/JournalEntriesMaster";
 
 export const STORAGE_KEY_SO = "urban_furniture_sales_orders_master";
 export const STORAGE_KEY_INVOICES = "urban_furniture_customer_invoices_master";
@@ -343,7 +342,7 @@ export const createAutomaticInvoiceJournalEntry = (invoice) => {
       } catch {
         // ignore
       }
-      return INITIAL_JOURNAL_ENTRIES || [];
+      return [];
     })();
 
     // Check if an entry for this invoice already exists to avoid duplication
@@ -445,7 +444,7 @@ export const createAutomaticPaymentJournalEntry = (payment, invoice) => {
       } catch {
         // ignore
       }
-      return INITIAL_JOURNAL_ENTRIES || [];
+      return [];
     })();
 
     // Check if an entry for this payment already exists
