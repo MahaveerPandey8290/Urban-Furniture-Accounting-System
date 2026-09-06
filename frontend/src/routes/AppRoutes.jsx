@@ -4,6 +4,7 @@ import ProtectedRoute from "../components/ProtectedRoute";
 // Auth pages
 import Login from "../pages/auth/Login";
 import Signup from "../pages/auth/Signup";
+import ForgotPassword from "../pages/auth/ForgotPassword";
 
 // Admin layout and pages
 import AdminLayout from "../components/layout/AdminLayout";
@@ -65,6 +66,8 @@ function AppRoutes() {
       {/* Public auth routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ForgotPassword />} />
       <Route path="/" element={<Navigate to="/login" replace />} />
 
       {/* Admin panel — requires ADMIN role */}
