@@ -1,8 +1,45 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileText, CreditCard, ArrowRight } from "lucide-react";
+import api from "../../services/api";
+import { formatCurrency } from "../../utils/formatters";
 
 function CustomerDashboard() {
   const navigate = useNavigate();
+  const [activeOrdersCount, setActiveOrdersCount] = useState(0);
+  const [totalOutstanding, setTotalOutstanding] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      setLoading(true);
+      try {
+        const [soRes, invRes] = await Promise.all([
+          api.get("/sales-orders?limit=100").catch(() => ({ data: [] })),
+          api.get("/invoices?documentType=CUSTOMER_INVOICE&limit=100").catch(() => ({ data: [] })),
+        ]);
+
+        const orders = Array.isArray(soRes.data) ? soRes.data : [];
+        const invoices = Array.isArray(invRes.data) ? invRes.data : [];
+
+        const activeOrders = orders.filter(
+          (o) => o.status !== "CANCELLED" && o.status !== "Cancelled"
+        );
+        setActiveOrdersCount(activeOrders.length);
+
+        const outstanding = invoices.reduce(
+          (sum, inv) => sum + Number(inv.amountDue || 0),
+          0
+        );
+        setTotalOutstanding(outstanding);
+      } catch (err) {
+        console.error("Failed to load customer dashboard stats:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
 
   return (
     <div className="w-full space-y-6">
@@ -29,7 +66,9 @@ function CustomerDashboard() {
               </div>
             </div>
             <div className="mt-6">
-              <p className="text-3xl font-bold text-[#211D19]">3</p>
+              <p className="text-3xl font-bold text-[#211D19]">
+                {loading ? "..." : activeOrdersCount}
+              </p>
               <p className="text-sm text-[#716B63] mt-1">Active orders</p>
             </div>
           </div>
@@ -58,7 +97,9 @@ function CustomerDashboard() {
               </div>
             </div>
             <div className="mt-6">
-              <p className="text-3xl font-bold text-[#211D19]">₹ 45,000</p>
+              <p className="text-3xl font-bold text-[#211D19]">
+                {loading ? "..." : formatCurrency(totalOutstanding)}
+              </p>
               <p className="text-sm text-[#716B63] mt-1">Total Outstanding</p>
             </div>
           </div>

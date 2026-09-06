@@ -130,12 +130,8 @@ function Users() {
     try {
       const res = await api.patch(`/users/${id}/approve`);
       fetchUsers();
-      if (res.data?.tempPassword) {
-        setTempPasswordModal({
-          loginId: `User #${id}`,
-          tempPassword: res.data.tempPassword,
-        });
-      }
+      setActionSuccess(res.data?.message || "User verified and approved successfully.");
+      setTimeout(() => setActionSuccess(""), 4000);
     } catch (err) {
       alert(err.response?.data?.message || "Failed to approve user.");
     }
@@ -209,6 +205,22 @@ function Users() {
                 <X size={18} />
               </button>
             </div>
+          </div>
+        )}
+
+        {/* SUCCESS NOTIFICATION */}
+        {actionSuccess && (
+          <div className="flex items-center justify-between rounded-xl border border-green-200 bg-green-50 px-5 py-4 text-green-900">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="text-green-700" size={20} />
+              <p className="text-sm font-medium">{actionSuccess}</p>
+            </div>
+            <button
+              onClick={() => setActionSuccess("")}
+              className="text-green-700 hover:text-green-900 cursor-pointer"
+            >
+              <X size={18} />
+            </button>
           </div>
         )}
 

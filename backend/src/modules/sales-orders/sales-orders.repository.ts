@@ -62,6 +62,10 @@ export class SalesOrderRepository {
       where,
       take: limit + 1,
       ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}),
+      include: {
+        customer: true,
+        lines: { include: { product: true } }
+      },
       orderBy: { id: 'desc' }
     });
   }

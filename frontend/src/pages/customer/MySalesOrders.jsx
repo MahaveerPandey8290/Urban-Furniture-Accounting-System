@@ -1,18 +1,31 @@
 import { useState, useEffect } from "react";
-import { getSalesOrders } from "../invoicing_user/sales/salesService";
+import api from "../../services/api";
 
 function MySalesOrders() {
   const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const allOrders = getSalesOrders();
-      // In a real app, we filter by the logged-in customer's ID.
-      // For mock purposes, we will just show orders that have "customer" in name or show all if none.
-      setOrders(allOrders);
-    } catch (e) {
-      console.error(e);
-    }
+    const fetchOrders = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get("/sales-orders?limit=100");
+        const raw = Array.isArray(res.data) ? res.data : [];
+        const mapped = raw.map((so) => ({
+          id: so.id,
+          soNumber: so.number,
+          date: so.orderDate ? new Date(so.orderDate).toLocaleDateString("en-IN") : "-",
+          total: Number(so.grandTotal || 0),
+          status: so.status === "CONFIRMED" ? "Confirmed" : so.status === "CANCELLED" ? "Cancelled" : "Draft",
+        }));
+        setOrders(mapped);
+      } catch (e) {
+        console.error("Failed to load customer sales orders:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrders();
   }, []);
 
   return (

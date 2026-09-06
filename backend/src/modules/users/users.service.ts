@@ -115,25 +115,27 @@ export class UsersService {
   }
 
   /**
-   * Approve a pending user — set ACTIVE, generate temp password.
+   * Approve a pending user — verify and set ACTIVE.
+   * For external signups, the user already chose their password at registration.
+   * Do NOT generate a temporary password or overwrite their password.
    */
   static async approveUser(
     targetId: number,
     adminId: number,
     companyId: number,
     requestId?: string
-  ): Promise<{ tempPassword: string }> {
+  ): Promise<{ message: string }> {
     const target = await UsersRepository.findById(targetId, companyId);
     if (!target) throw new NotFoundError('User not found');
     if (target.status !== 'PENDING') {
       throw new ForbiddenError('Only PENDING users can be approved');
     }
 
-    const tempPassword = await AuthService.generateAndSetTempPassword(
-      targetId,
-      companyId,
-      requestId
-    );
+    await UsersRepository.updateStatus(targetId, {
+      status: 'ACTIVE',
+      approvedById: adminId,
+      approvedAt: new Date(),
+    });
 
     await AuditService.log({
       companyId,
@@ -142,11 +144,11 @@ export class UsersService {
       entityId: String(targetId),
       action: 'APPROVE_USER',
       before: { status: 'PENDING' },
-      after: { status: 'ACTIVE', credentialsIssued: true },
+      after: { status: 'ACTIVE', verified: true },
       requestId,
     });
 
-    return { tempPassword };
+    return { message: 'User approved successfully' };
   }
 
   /**

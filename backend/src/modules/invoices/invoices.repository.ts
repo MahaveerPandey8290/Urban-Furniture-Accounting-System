@@ -67,6 +67,10 @@ export class InvoiceRepository {
       where,
       take: limit + 1,
       ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}),
+      include: {
+        partner: true,
+        lines: { include: { product: true } }
+      },
       orderBy: { id: 'desc' }
     });
   }

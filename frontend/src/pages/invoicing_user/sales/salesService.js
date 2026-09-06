@@ -8,72 +8,13 @@ export const STORAGE_KEY_PAYMENTS = "urban_furniture_invoice_payments_master";
 export const STORAGE_KEY_BUDGETS = "urban_furniture_budget_analytics_master";
 
 // Default Budget Analytics Projects
-export const DEFAULT_BUDGET_PROJECTS = [
-  { id: "ba-1", name: "Project 1", code: "PRJ-001", department: "Commercial" },
-  { id: "ba-2", name: "Project 2", code: "PRJ-002", department: "Residential" },
-  { id: "ba-3", name: "Executive Suite Setup", code: "PRJ-003", department: "Corporate" },
-  { id: "ba-4", name: "Showroom Renovation", code: "PRJ-004", department: "Retail" },
-];
+export const DEFAULT_BUDGET_PROJECTS = [];
 
 // Initial Sales Orders matching wireframe
-export const INITIAL_SALES_ORDERS = [
-  {
-    id: "so-1",
-    soNumber: "SO00001",
-    customerId: "cnt-rahul",
-    customerName: "Mr. Rahul",
-    soDate: "2026-09-01",
-    status: "Confirmed", // Draft | Confirmed | Invoiced | Cancelled
-    invoiceId: "inv-1",
-    total: 6000,
-    items: [
-      {
-        id: "so-item-1",
-        productId: "prod-table",
-        productName: "Table",
-        budgetId: "ba-1",
-        budgetName: "Project 1",
-        quantity: 3,
-        unitPrice: 2000,
-        total: 6000,
-      },
-    ],
-  },
-];
+export const INITIAL_SALES_ORDERS = [];
 
 // Initial Customer Invoices matching wireframe
-export const INITIAL_CUSTOMER_INVOICES = [
-  {
-    id: "inv-1",
-    invoiceNo: "INV/2026/00001",
-    soId: "so-1",
-    soNumber: "SO00001",
-    customerId: "cnt-rahul",
-    customerName: "Mr. Rahul",
-    invoiceRef: "ABC-26-001",
-    invoiceDate: "2026-09-01",
-    dueDate: "2026-09-15",
-    status: "Not Paid", // Not Paid | Partial | Paid
-    confirmationStatus: "Confirmed", // Draft | Confirmed | Cancelled
-    total: 6000,
-    paidAmount: 0,
-    outstandingAmount: 6000,
-    items: [
-      {
-        id: "inv-item-1",
-        productId: "prod-table",
-        productName: "Table",
-        accountId: "coa-5", // Sales Income A/c
-        accountName: "Sales Income A/c",
-        budgetId: "ba-1",
-        budgetName: "Project 1",
-        quantity: 3,
-        unitPrice: 2000,
-        total: 6000,
-      },
-    ],
-  },
-];
+export const INITIAL_CUSTOMER_INVOICES = [];
 
 /**
  * Automatically generates the next SO Number in strict sequence:

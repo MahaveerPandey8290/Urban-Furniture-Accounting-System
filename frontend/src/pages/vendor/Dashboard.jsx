@@ -1,8 +1,40 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileText, CreditCard, ArrowRight } from "lucide-react";
+import api from "../../services/api";
+import { formatCurrency } from "../../utils/formatters";
 
 function VendorDashboard() {
   const navigate = useNavigate();
+  const [poCount, setPoCount] = useState(0);
+  const [pendingPayment, setPendingPayment] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchVendorStats = async () => {
+      setLoading(true);
+      try {
+        const [poRes, billRes] = await Promise.all([
+          api.get("/purchase-orders?limit=100").catch(() => ({ data: [] })),
+          api.get("/invoices?documentType=VENDOR_BILL&limit=100").catch(() => ({ data: [] })),
+        ]);
+
+        const pos = Array.isArray(poRes.data) ? poRes.data : [];
+        const bills = Array.isArray(billRes.data) ? billRes.data : [];
+
+        const pendingOrders = pos.filter((p) => p.status !== "CANCELLED" && p.status !== "Cancelled");
+        setPoCount(pendingOrders.length);
+
+        const totalPending = bills.reduce((sum, b) => sum + Number(b.amountDue || 0), 0);
+        setPendingPayment(totalPending);
+      } catch (err) {
+        console.error("Failed to load vendor dashboard stats:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchVendorStats();
+  }, []);
 
   return (
     <div className="w-full space-y-6">
@@ -29,7 +61,9 @@ function VendorDashboard() {
               </div>
             </div>
             <div className="mt-6">
-              <p className="text-3xl font-bold text-[#211D19]">2</p>
+              <p className="text-3xl font-bold text-[#211D19]">
+                {loading ? "..." : poCount}
+              </p>
               <p className="text-sm text-[#716B63] mt-1">Pending fulfillment</p>
             </div>
           </div>
@@ -58,7 +92,9 @@ function VendorDashboard() {
               </div>
             </div>
             <div className="mt-6">
-              <p className="text-3xl font-bold text-[#211D19]">₹ 24,000</p>
+              <p className="text-3xl font-bold text-[#211D19]">
+                {loading ? "..." : formatCurrency(pendingPayment)}
+              </p>
               <p className="text-sm text-[#716B63] mt-1">Pending payment to you</p>
             </div>
           </div>

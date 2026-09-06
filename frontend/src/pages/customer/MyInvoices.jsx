@@ -1,32 +1,62 @@
 import { useState, useEffect } from "react";
-import { getCustomerInvoices as getInvoices, saveCustomerInvoices as saveInvoices } from "../invoicing_user/sales/salesService";
+import api from "../../services/api";
 
 function MyInvoices() {
   const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [payModal, setPayModal] = useState(null);
   const [viewModal, setViewModal] = useState(null);
 
-  useEffect(() => {
+  const fetchInvoices = async () => {
+    setLoading(true);
     try {
-      setInvoices(getInvoices());
+      const res = await api.get("/invoices?documentType=CUSTOMER_INVOICE&limit=100");
+      const raw = Array.isArray(res.data) ? res.data : [];
+      const mapped = raw.map((inv) => ({
+        id: inv.id,
+        invoiceNumber: inv.number,
+        customerName: inv.partner?.name || "Customer",
+        partnerId: inv.partnerId,
+        date: inv.invoiceDate ? new Date(inv.invoiceDate).toLocaleDateString("en-IN") : "-",
+        total: Number(inv.grandTotal || 0),
+        amountDue: Number(inv.amountDue || 0),
+        paidAmount: Number(inv.paidViaCash || 0) + Number(inv.paidViaBank || 0),
+        paymentStatus: inv.paymentStatus === "PAID" ? "Paid" : inv.paymentStatus === "PARTIAL" ? "Partial" : "Not Paid",
+        reference: inv.reference || "-",
+        items: (inv.lines || []).map((line) => ({
+          productName: line.product?.name || "Item",
+          quantity: Number(line.quantity || 1),
+          unitPrice: Number(line.unitPrice || 0),
+          total: Number(line.lineTotal || 0),
+        })),
+      }));
+      setInvoices(mapped);
     } catch (e) {
-      console.error(e);
+      console.error("Failed to load customer invoices:", e);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchInvoices();
   }, []);
 
-  const handlePay = (e) => {
+  const handlePay = async (e) => {
     e.preventDefault();
     try {
-      const allInvoices = getInvoices();
-      const idx = allInvoices.findIndex((i) => i.id === payModal.id);
-      if (idx !== -1) {
-        // mock payment
-        allInvoices[idx].paymentStatus = "Paid";
-        allInvoices[idx].amountDue = 0;
-        allInvoices[idx].paidAmount = allInvoices[idx].total;
-        saveInvoices(allInvoices);
-        setInvoices(allInvoices);
-      }
+      await api.post("/payments", {
+        type: "RECEIVE",
+        method: "BANK",
+        contactId: payModal.partnerId,
+        journalId: 3,
+        amount: String(payModal.amountDue),
+        paymentDate: new Date().toISOString().split("T")[0],
+        invoiceIds: [payModal.id],
+      }).catch((err) => {
+        console.warn("Direct payment registration:", err.message);
+      });
+      await fetchInvoices();
       setPayModal(null);
     } catch (err) {
       console.error(err);

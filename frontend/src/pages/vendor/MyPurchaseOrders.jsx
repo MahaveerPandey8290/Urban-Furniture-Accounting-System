@@ -1,16 +1,31 @@
 import { useState, useEffect } from "react";
-import { getPurchaseOrders } from "../../utils/storage";
+import api from "../../services/api";
 
 function MyPurchaseOrders() {
   const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const allOrders = getPurchaseOrders();
-      setOrders(allOrders);
-    } catch (e) {
-      console.error(e);
-    }
+    const fetchPOs = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get("/purchase-orders?limit=100");
+        const raw = Array.isArray(res.data) ? res.data : [];
+        const mapped = raw.map((po) => ({
+          id: po.id,
+          poNumber: po.number,
+          date: po.orderDate ? new Date(po.orderDate).toLocaleDateString("en-IN") : "-",
+          total: Number(po.grandTotal || 0),
+          status: po.status === "CONFIRMED" ? "Confirmed" : po.status === "CANCELLED" ? "Cancelled" : "Draft",
+        }));
+        setOrders(mapped);
+      } catch (e) {
+        console.error("Failed to load vendor purchase orders:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPOs();
   }, []);
 
   return (

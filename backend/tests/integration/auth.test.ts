@@ -6,6 +6,7 @@
 
 import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import { AuthService } from '../../src/modules/auth/auth.service.js';
+import { UsersService } from '../../src/modules/users/users.service.js';
 import { testPrisma, truncateAll, seedMinimal } from '../fixtures/index.js';
 
 let fixtures: Awaited<ReturnType<typeof seedMinimal>>;
@@ -53,6 +54,56 @@ describe('AuthService.signup', () => {
     const user = await testPrisma.user.findUnique({ where: { loginId: 'hacker1' } });
     expect(user!.role).toBe('ACCOUNTANT');
     expect(user!.status).toBe('PENDING');
+  });
+
+  it('external user signs up with own password, admin approves/verifies without generating random password, user can log in with original password', async () => {
+    const signupPassword = 'UserCustom@2026';
+    await AuthService.signup({
+      name: 'External Staff',
+      loginId: 'externalstaff1',
+      email: 'staff@example.com',
+      password: signupPassword,
+      confirmPassword: signupPassword,
+    }, fixtures.company.id);
+
+    const pendingUser = await testPrisma.user.findUnique({ where: { loginId: 'externalstaff1' } });
+    expect(pendingUser).not.toBeNull();
+    expect(pendingUser!.status).toBe('PENDING');
+    const originalHash = pendingUser!.passwordHash;
+
+    // Login fails while PENDING
+    await expect(
+      AuthService.login({ loginId: 'externalstaff1', password: signupPassword })
+    ).rejects.toMatchObject({
+      httpStatus: 403,
+      message: 'Your account is awaiting administrator approval.',
+    });
+
+    // Admin approves/verifies the user
+    const approveResult = await UsersService.approveUser(
+      pendingUser!.id,
+      fixtures.adminUser.id,
+      fixtures.company.id
+    );
+
+    // Verify response does not have tempPassword
+    expect((approveResult as any).tempPassword).toBeUndefined();
+    expect(approveResult.message).toContain('User approved successfully');
+
+    // Verify DB user state
+    const approvedUser = await testPrisma.user.findUnique({ where: { loginId: 'externalstaff1' } });
+    expect(approvedUser!.status).toBe('ACTIVE');
+    expect(approvedUser!.passwordHash).toBe(originalHash); // original password retained!
+    expect(approvedUser!.mustChangePassword).toBe(false);
+    expect(approvedUser!.approvedById).toBe(fixtures.adminUser.id);
+
+    // User can now log in with their original chosen password!
+    const loginResult = await AuthService.login({
+      loginId: 'externalstaff1',
+      password: signupPassword,
+    });
+    expect(loginResult.accessToken).toBeTruthy();
+    expect(loginResult.mustChangePassword).toBe(false);
   });
 });
 

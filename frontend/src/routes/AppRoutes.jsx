@@ -108,6 +108,8 @@ function AppRoutes() {
           <Route path="sale-invoices" element={<SaleInvoices />} />
           <Route path="invoices" element={<Invoices />} />
           <Route path="sales" element={<SaleInvoices />} />
+          <Route path="customer-bills" element={<SaleInvoices />} />
+          <Route path="customer-invoices" element={<SaleInvoices />} />
           <Route path="purchase-orders" element={<AccountantPurchaseOrders />} />
           <Route path="bills" element={<Bills />} />
           <Route path="vendor-bills" element={<Bills />} />
@@ -129,6 +131,8 @@ function AppRoutes() {
           <Route path="sale-invoices" element={<SaleInvoices />} />
           <Route path="invoices" element={<Invoices />} />
           <Route path="sales" element={<SaleInvoices />} />
+          <Route path="customer-bills" element={<SaleInvoices />} />
+          <Route path="customer-invoices" element={<SaleInvoices />} />
           <Route path="purchase-orders" element={<AccountantPurchaseOrders />} />
           <Route path="bills" element={<Bills />} />
           <Route path="vendor-bills" element={<Bills />} />

@@ -1,64 +1,93 @@
 import { useState, useEffect } from "react";
-import { getVendorBills, saveVendorBills } from "../../utils/storage";
+import api from "../../services/api";
 
 function MyBills() {
   const [bills, setBills] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [uploadModal, setUploadModal] = useState(false);
   const [newBill, setNewBill] = useState({ amount: "", reference: "" });
   const [viewModal, setViewModal] = useState(null);
   const [payModal, setPayModal] = useState(null);
 
-  const handlePay = (e) => {
+  const fetchBills = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get("/invoices?documentType=VENDOR_BILL&limit=100");
+      const raw = Array.isArray(res.data) ? res.data : [];
+      const mapped = raw.map((b) => ({
+        id: b.id,
+        billNumber: b.number,
+        partnerId: b.partnerId,
+        vendorName: b.partner?.name || "Vendor",
+        date: b.invoiceDate ? new Date(b.invoiceDate).toLocaleDateString("en-IN") : "-",
+        dueDate: b.dueDate ? new Date(b.dueDate).toLocaleDateString("en-IN") : "-",
+        reference: b.reference || "-",
+        total: Number(b.grandTotal || 0),
+        amountDue: Number(b.amountDue || 0),
+        paidAmount: Number(b.paidViaCash || 0) + Number(b.paidViaBank || 0),
+        status: b.status === "CONFIRMED" ? "Confirmed" : b.status === "CANCELLED" ? "Cancelled" : "Draft",
+        paymentStatus: b.paymentStatus === "PAID" ? "Paid" : b.paymentStatus === "PARTIAL" ? "Partial" : "Not Paid",
+        items: (b.lines || []).map((line) => ({
+          productName: line.product?.name || "Item",
+          quantity: Number(line.quantity || 1),
+          unitPrice: Number(line.unitPrice || 0),
+          total: Number(line.lineTotal || 0),
+        })),
+      }));
+      setBills(mapped);
+    } catch (e) {
+      console.error("Failed to load vendor bills:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBills();
+  }, []);
+
+  const handlePay = async (e) => {
     e.preventDefault();
     try {
-      const allBills = getVendorBills();
-      const idx = allBills.findIndex((b) => b.id === payModal.id);
-      if (idx !== -1) {
-        allBills[idx].paymentStatus = "Paid";
-        allBills[idx].amountDue = 0;
-        allBills[idx].paidAmount = allBills[idx].total;
-        saveVendorBills(allBills);
-        setBills(allBills);
-      }
+      await api.post("/payments", {
+        type: "SEND",
+        method: "BANK",
+        contactId: payModal.partnerId,
+        journalId: 3,
+        amount: String(payModal.amountDue),
+        paymentDate: new Date().toISOString().split("T")[0],
+        invoiceIds: [payModal.id],
+      }).catch((err) => {
+        console.warn("Direct payment registration:", err.message);
+      });
+      await fetchBills();
       setPayModal(null);
     } catch (err) {
       console.error(err);
     }
   };
 
-  useEffect(() => {
-    try {
-      setBills(getVendorBills());
-    } catch (e) {
-      console.error(e);
-    }
-  }, []);
-
-  const handleUpload = (e) => {
+  const handleUpload = async (e) => {
     e.preventDefault();
     try {
-      const allBills = getVendorBills();
-      const nextId = "bill-" + Date.now();
-      const nextNum = "BILL/2026/" + String(allBills.length + 1).padStart(5, '0');
-      
-      const createdBill = {
-        id: nextId,
-        billNumber: nextNum,
-        vendorId: "v-mock",
-        vendorName: "Vendor (You)",
-        date: new Date().toISOString().split("T")[0],
-        dueDate: new Date(Date.now() + 15 * 86400000).toISOString().split("T")[0],
-        total: Number(newBill.amount),
-        amountDue: Number(newBill.amount),
-        paidAmount: 0,
-        status: "Draft",
-        paymentStatus: "Not Paid",
-        reference: newBill.reference
-      };
-
-      allBills.push(createdBill);
-      saveVendorBills(allBills);
-      setBills(allBills);
+      await api.post("/invoices", {
+        documentType: "VENDOR_BILL",
+        contactId: 1,
+        journalId: 2,
+        invoiceDate: new Date().toISOString().split("T")[0],
+        reference: newBill.reference || "Vendor Upload",
+        lines: [
+          {
+            description: newBill.reference || "Materials & Supplies",
+            quantity: "1",
+            unitPrice: String(newBill.amount),
+            accountId: 6,
+          },
+        ],
+      }).catch((err) => {
+        console.warn("Bill creation via API:", err.message);
+      });
+      await fetchBills();
       setUploadModal(false);
       setNewBill({ amount: "", reference: "" });
     } catch (err) {
