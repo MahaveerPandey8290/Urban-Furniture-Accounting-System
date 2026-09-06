@@ -1,93 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Search, Eye, FileDown, ArrowLeft } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import api from "../../services/api";
 
 function VendorBills() {
-  // --------------------------------------------------
-  // SAMPLE VENDOR BILLS
-  // --------------------------------------------------
-
-  const [bills, setBills] = useState([
-    {
-      id: 1,
-      billNo: "VB/2026/001",
-      billDate: "05 Sep 2026",
-      dueDate: "20 Sep 2026",
-
-      vendor: {
-        name: "ABC Furniture Supplier",
-        address: "Industrial Area, Jaipur",
-        phone: "9876543210",
-        gstin: "08ABCDE1234F1Z5",
-      },
-
-      purchaseOrder: "PO/2026/001",
-
-      items: [
-        {
-          name: "Wooden Chair",
-          quantity: 20,
-          rate: 1500,
-        },
-        {
-          name: "Dining Table",
-          quantity: 5,
-          rate: 8000,
-        },
-      ],
-
-      gst: 18,
-      status: "Unpaid",
-    },
-
-    {
-      id: 2,
-      billNo: "VB/2026/002",
-      billDate: "06 Sep 2026",
-      dueDate: "21 Sep 2026",
-
-      vendor: {
-        name: "XYZ Wood Supplier",
-        address: "Sitapura Industrial Area, Jaipur",
-        phone: "9876501234",
-        gstin: "08XYZAB5678C1Z2",
-      },
-
-      purchaseOrder: "PO/2026/002",
-
-      items: [
-        {
-          name: "Wooden Sheet",
-          quantity: 10,
-          rate: 2500,
-        },
-      ],
-
-      gst: 18,
-      status: "Paid",
-    },
-  ]);
-
-  // --------------------------------------------------
-  // STATES
-  // --------------------------------------------------
-
+  const [bills, setBills] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [vendors, setVendors] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [taxes, setTaxes] = useState([]);
+  const [accounts, setAccounts] = useState([]);
   const [search, setSearch] = useState("");
-
-  const [selectedBill, setSelectedBill] =
-    useState(null);
-
-  const [showForm, setShowForm] =
-    useState(false);
+  const [selectedBill, setSelectedBill] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [error, setError] = useState("");
 
   const [formData, setFormData] = useState({
+    partnerId: "",
     vendorName: "",
     vendorAddress: "",
     vendorPhone: "",
     vendorGstin: "",
-    billDate: "",
-    dueDate: "",
+    billDate: new Date().toISOString().split("T")[0],
+    dueDate: new Date(Date.now() + 15 * 86400000).toISOString().split("T")[0],
     purchaseOrder: "",
     gst: 18,
     status: "Unpaid",
@@ -95,92 +31,102 @@ function VendorBills() {
 
   const [items, setItems] = useState([
     {
+      productId: "",
       name: "",
       quantity: 1,
       rate: 0,
     },
   ]);
 
-  // --------------------------------------------------
-  // CALCULATE ITEM AMOUNT
-  // --------------------------------------------------
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [bRes, vRes, pRes, tRes, aRes] = await Promise.all([
+        api.get("/invoices?type=VENDOR_BILL"),
+        api.get("/contacts?type=VENDOR&limit=100").catch(() => ({ data: { items: [] } })),
+        api.get("/products?limit=100").catch(() => ({ data: { items: [] } })),
+        api.get("/taxes").catch(() => ({ data: { items: [] } })),
+        api.get("/accounts").catch(() => ({ data: { items: [] } })),
+      ]);
+
+      // invoices returns a direct array; contacts/products/taxes/accounts return { items: [] }
+      const mapped = (Array.isArray(bRes.data) ? bRes.data : []).map((b) => ({
+        id: b.id,
+        billNo: b.number,
+        billDate: new Date(b.invoiceDate).toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }),
+        dueDate: new Date(b.dueDate).toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }),
+        vendor: {
+          name: b.partner?.name || "Vendor",
+          address: b.partner?.street || b.partner?.city || "",
+          phone: b.partner?.mobile || "",
+          gstin: "",
+        },
+        purchaseOrder: b.sourceOrderId ? `PO-${b.sourceOrderId}` : "-",
+        items: (b.lines || []).map((l) => ({
+          name: l.product?.name || "Item",
+          quantity: Number(l.quantity) || 1,
+          rate: Number(l.unitPrice) || 0,
+        })),
+        gst: 18,
+        status: b.paymentStatus === "PAID" ? "Paid" : b.status === "CONFIRMED" ? "Confirmed" : "Unpaid",
+        rawStatus: b.status,
+      }));
+
+      setBills(mapped);
+      setVendors(vRes.data.items || []);
+      setProducts(pRes.data.items || []);
+      setTaxes(tRes.data.items || []);
+      setAccounts(aRes.data.items || []);
+    } catch {
+      // Error toasted by api.js interceptor
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const getItemAmount = (item) => {
-    return (
-      Number(item.quantity || 0) *
-      Number(item.rate || 0)
-    );
+    return Number(item.quantity || 0) * Number(item.rate || 0);
   };
-
-  // --------------------------------------------------
-  // CALCULATE SUBTOTAL
-  // --------------------------------------------------
 
   const getSubtotal = (billItems) => {
-    return billItems.reduce(
-      (total, item) =>
-        total + getItemAmount(item),
-      0
-    );
+    return (billItems || []).reduce((total, item) => total + getItemAmount(item), 0);
   };
 
-  // --------------------------------------------------
-  // CALCULATE GST
-  // --------------------------------------------------
-
-  const getGSTAmount = (
-    subtotal,
-    gstPercentage
-  ) => {
-    return (
-      (subtotal *
-        Number(gstPercentage || 0)) /
-      100
-    );
+  const getGSTAmount = (subtotal, gstPercentage) => {
+    return (subtotal * Number(gstPercentage || 0)) / 100;
   };
-
-  // --------------------------------------------------
-  // CALCULATE GRAND TOTAL
-  // --------------------------------------------------
 
   const getGrandTotal = (bill) => {
-    const subtotal = getSubtotal(
-      bill.items
-    );
-
-    const gstAmount = getGSTAmount(
-      subtotal,
-      bill.gst
-    );
-
+    const subtotal = getSubtotal(bill.items);
+    const gstAmount = getGSTAmount(subtotal, bill.gst);
     return subtotal + gstAmount;
   };
 
-  // --------------------------------------------------
-  // SEARCH
-  // --------------------------------------------------
-
   const filteredBills = bills.filter(
     (bill) =>
-      bill.billNo
-        .toLowerCase()
-        .includes(search.toLowerCase()) ||
-      bill.vendor.name
-        .toLowerCase()
-        .includes(search.toLowerCase()) ||
-      bill.purchaseOrder
-        .toLowerCase()
-        .includes(search.toLowerCase())
+      (bill.billNo || "").toLowerCase().includes(search.toLowerCase()) ||
+      (bill.vendor?.name || "").toLowerCase().includes(search.toLowerCase()) ||
+      (bill.purchaseOrder || "").toLowerCase().includes(search.toLowerCase())
   );
-
-  // ==================================================
-  // ADD ITEM
-  // ==================================================
 
   const addItem = () => {
     setItems([
       ...items,
       {
+        productId: "",
         name: "",
         quantity: 1,
         rate: 0,
@@ -188,146 +134,89 @@ function VendorBills() {
     ]);
   };
 
-  // ==================================================
-  // UPDATE ITEM
-  // ==================================================
-
-  const updateItem = (
-    index,
-    field,
-    value
-  ) => {
+  const updateItem = (index, field, value) => {
     const updatedItems = [...items];
-
-    if (
-      field === "name"
-    ) {
-      updatedItems[index][field] =
-        value;
+    if (field === "productId") {
+      const selectedProd = products.find((p) => String(p.id) === String(value));
+      updatedItems[index].productId = value;
+      updatedItems[index].name = selectedProd?.name || "";
+      updatedItems[index].rate = selectedProd?.cost || 0;
+    } else if (field === "name") {
+      updatedItems[index][field] = value;
     } else {
-      updatedItems[index][field] =
-        Number(value);
+      updatedItems[index][field] = Number(value);
     }
-
     setItems(updatedItems);
   };
 
-  // ==================================================
-  // REMOVE ITEM
-  // ==================================================
-
   const removeItem = (index) => {
-    if (items.length === 1) {
-      return;
-    }
-
-    setItems(
-      items.filter(
-        (_, i) => i !== index
-      )
-    );
+    if (items.length === 1) return;
+    setItems(items.filter((_, i) => i !== index));
   };
 
-  // ==================================================
-  // CREATE BILL
-  // ==================================================
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
-    if (
-      !formData.vendorName.trim()
-    ) {
-      alert("Please enter vendor name.");
+    if (!formData.partnerId) {
+      setError("Please select a vendor.");
       return;
     }
 
-    if (!formData.billDate) {
-      alert("Please select bill date.");
-      return;
+    const defaultTaxId = taxes[0]?.id || 1;
+    const defaultAccountId = accounts.find((a) => a.type === "EXPENSE")?.id || accounts[0]?.id || 1;
+
+    const lines = items.map((item, idx) => ({
+      sequence: idx,
+      productId: item.productId ? Number(item.productId) : (products[0]?.id || 1),
+      accountId: defaultAccountId,
+      quantity: Number(item.quantity) || 1,
+      unitPrice: Number(item.rate) || 0,
+      taxId: defaultTaxId,
+    }));
+
+    try {
+      await api.post("/invoices", {
+        documentType: "VENDOR_BILL",
+        partnerId: Number(formData.partnerId),
+        invoiceDate: formData.billDate || new Date().toISOString(),
+        dueDate: formData.dueDate || new Date().toISOString(),
+        lines,
+      });
+
+      setShowForm(false);
+      setFormData({
+        partnerId: "",
+        vendorName: "",
+        vendorAddress: "",
+        vendorPhone: "",
+        vendorGstin: "",
+        billDate: new Date().toISOString().split("T")[0],
+        dueDate: new Date(Date.now() + 15 * 86400000).toISOString().split("T")[0],
+        purchaseOrder: "",
+        gst: 18,
+        status: "Unpaid",
+      });
+      setItems([{ productId: "", name: "", quantity: 1, rate: 0 }]);
+      fetchData();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to create vendor bill.");
     }
-
-    const validItems =
-      items.filter(
-        (item) =>
-          item.name.trim() &&
-          item.quantity > 0 &&
-          item.rate >= 0
-      );
-
-    if (validItems.length === 0) {
-      alert(
-        "Please add at least one item."
-      );
-      return;
-    }
-
-    const newBill = {
-      id: Date.now(),
-
-      billNo: `VB/2026/${String(
-        bills.length + 1
-      ).padStart(3, "0")}`,
-
-      billDate:
-        formData.billDate,
-
-      dueDate:
-        formData.dueDate,
-
-      vendor: {
-        name:
-          formData.vendorName,
-
-        address:
-          formData.vendorAddress,
-
-        phone:
-          formData.vendorPhone,
-
-        gstin:
-          formData.vendorGstin,
-      },
-
-      purchaseOrder:
-        formData.purchaseOrder,
-
-      items: validItems,
-
-      gst:
-        Number(formData.gst),
-
-      status:
-        formData.status,
-    };
-
-    setBills([
-      ...bills,
-      newBill,
-    ]);
-
-    setFormData({
-      vendorName: "",
-      vendorAddress: "",
-      vendorPhone: "",
-      vendorGstin: "",
-      billDate: "",
-      dueDate: "",
-      purchaseOrder: "",
-      gst: 18,
-      status: "Unpaid",
-    });
-
-    setItems([
-      {
-        name: "",
-        quantity: 1,
-        rate: 0,
-      },
-    ]);
-
-    setShowForm(false);
   };
+
+  const handleConfirmBill = async (billId) => {
+    try {
+      await api.patch(`/invoices/${billId}/confirm`);
+      fetchData();
+      if (selectedBill) {
+        setSelectedBill((prev) => ({ ...prev, status: "Confirmed", rawStatus: "CONFIRMED" }));
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to confirm vendor bill.");
+    }
+  };
+
+
 
   // ==================================================
   // GENERATE PDF
@@ -747,6 +636,14 @@ function VendorBills() {
           </div>
 
           <div className="flex gap-3">
+            {selectedBill.rawStatus === "DRAFT" && (
+              <button
+                onClick={() => handleConfirmBill(selectedBill.id)}
+                className="flex items-center gap-2 px-5 py-2.5 bg-emerald-800 text-white rounded-lg hover:bg-emerald-900 transition font-medium text-sm cursor-pointer"
+              >
+                Confirm Bill
+              </button>
+            )}
 
             <button
               onClick={() =>

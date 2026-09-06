@@ -22,6 +22,13 @@ export class UsersController {
     } catch (err) { next(err); }
   }
 
+  static async listAll(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const users = await UsersService.listAll(req.companyId);
+      res.json({ data: users });
+    } catch (err) { next(err); }
+  }
+
   static async approveUser(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const targetId = Number(req.params['id']);

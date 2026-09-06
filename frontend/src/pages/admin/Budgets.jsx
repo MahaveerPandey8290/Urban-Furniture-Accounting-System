@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   ArrowLeft,
   Plus,
@@ -19,55 +19,12 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-const initialBudgets = [
-  {
-    id: 1,
-    name: "January 2026",
-    startDate: "2026-01-01",
-    endDate: "2026-01-31",
-    responsible: "Admin",
-    status: "Confirmed",
-    revised: false,
-    originalBudget: null,
-    rows: [
-      {
-        analytic: "Furniture",
-        type: "Expense",
-        committed: 200000,
-        achieved: 10000,
-      },
-      {
-        analytic: "Marketing",
-        type: "Expense",
-        committed: 100000,
-        achieved: 25000,
-      },
-    ],
-  },
-  {
-    id: 2,
-    name: "February 2026",
-    startDate: "2026-02-01",
-    endDate: "2026-02-28",
-    responsible: "Admin",
-    status: "Draft",
-    revised: false,
-    originalBudget: null,
-    rows: [
-      {
-        analytic: "Furniture",
-        type: "Expense",
-        committed: 150000,
-        achieved: 30000,
-      },
-    ],
-  },
-];
+import api from "../../services/api";
 
 const emptyRow = {
   analytic: "Furniture",
-  type: "Expense",
+  analyticAccountId: "",
+  type: "EXPENSE",
   committed: "",
   achieved: "",
 };
@@ -75,18 +32,23 @@ const emptyRow = {
 function Budgets() {
   const navigate = useNavigate();
 
-  const [budgets, setBudgets] = useState(initialBudgets);
+  const [budgets, setBudgets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [analytics, setAnalytics] = useState([]);
+  const [responsibles, setResponsibles] = useState([]);
   const [view, setView] = useState("list");
 
   const [mode, setMode] = useState("report");
   const [selectedBudget, setSelectedBudget] = useState(null);
 
   const [search, setSearch] = useState("");
+  const [error, setError] = useState("");
 
   const [form, setForm] = useState({
     name: "",
     startDate: "",
     endDate: "",
+    responsibleId: "",
     responsible: "",
     rows: [{ ...emptyRow }],
   });
@@ -94,50 +56,86 @@ function Budgets() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [budgetToCancel, setBudgetToCancel] = useState(null);
 
+  const fetchBudgetsData = async () => {
+    setLoading(true);
+    try {
+      const [bRes, aRes, cRes] = await Promise.all([
+        api.get("/budgets"),
+        api.get("/analytic-accounts").catch(() => ({ data: { items: [] } })),
+        api.get("/contacts?limit=100").catch(() => ({ data: { items: [] } })),
+      ]);
+
+      // budgets returns a direct array
+      const rawBudgets = Array.isArray(bRes.data) ? bRes.data : [];
+      const mapped = rawBudgets.map((b) => ({
+        id: b.id,
+        name: b.name,
+        startDate: b.startDate.split("T")[0],
+        endDate: b.endDate.split("T")[0],
+        responsible: b.responsible?.name || "Admin",
+        responsibleId: b.responsibleId,
+        status: b.status === "CONFIRMED" ? "Confirmed" : b.status === "DRAFT" ? "Draft" : b.status,
+        rawStatus: b.status,
+        revised: false,
+        originalBudget: null,
+        rows: (b.lines || []).map((l) => ({
+          analytic: l.analyticAccount?.name || "General",
+          analyticAccountId: l.analyticAccountId,
+          type: l.type === "INCOME" ? "Income" : "Expense",
+          committed: Number(l.committedAmount) || 0,
+          achieved: 0,
+        })),
+      }));
+
+      // analytic-accounts and contacts return { items: [] }
+      const rawAnalytics = aRes.data?.items || [];
+      const rawContacts = cRes.data?.items || [];
+      setBudgets(mapped);
+      setAnalytics(rawAnalytics);
+      setResponsibles(rawContacts);
+    } catch {
+      // Error toasted by api.js interceptor
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  useEffect(() => {
+    fetchBudgetsData();
+  }, []);
+
   /* =========================================================
      HELPERS
   ========================================================= */
 
   const calculatePercentage = (committed, achieved) => {
     if (!committed || Number(committed) === 0) return 0;
-
-    return Math.round(
-      (Number(achieved || 0) / Number(committed)) * 100
-    );
+    return Math.round((Number(achieved || 0) / Number(committed)) * 100);
   };
 
   const calculateBudget = (budget) => {
-    const committed = budget.rows.reduce(
+    const committed = (budget.rows || []).reduce(
       (sum, row) => sum + Number(row.committed || 0),
       0
     );
-
-    const achieved = budget.rows.reduce(
+    const achieved = (budget.rows || []).reduce(
       (sum, row) => sum + Number(row.achieved || 0),
       0
     );
-
     const balance = committed - achieved;
+    const percentage = committed > 0 ? Math.round((achieved / committed) * 100) : 0;
 
-    const percentage =
-      committed > 0 ? Math.round((achieved / committed) * 100) : 0;
-
-    return {
-      committed,
-      achieved,
-      balance,
-      percentage,
-    };
+    return { committed, achieved, balance, percentage };
   };
 
   const filteredBudgets = useMemo(() => {
     return budgets.filter((budget) => {
       const value = search.toLowerCase();
-
       return (
-        budget.name.toLowerCase().includes(value) ||
-        budget.responsible.toLowerCase().includes(value) ||
-        budget.status.toLowerCase().includes(value)
+        (budget.name || "").toLowerCase().includes(value) ||
+        (budget.responsible || "").toLowerCase().includes(value) ||
+        (budget.status || "").toLowerCase().includes(value)
       );
     });
   }, [budgets, search]);
@@ -156,12 +154,16 @@ function Budgets() {
   const handleRowChange = (index, field, value) => {
     setForm((prev) => {
       const rows = [...prev.rows];
-
       rows[index] = {
         ...rows[index],
         [field]: value,
       };
-
+      if (field === "analyticAccountId") {
+        const found = analytics.find((a) => String(a.id) === String(value));
+        if (found) {
+          rows[index].analytic = found.name;
+        }
+      }
       return {
         ...prev,
         rows,
@@ -178,7 +180,6 @@ function Budgets() {
 
   const removeBudgetRow = (index) => {
     if (form.rows.length === 1) return;
-
     setForm((prev) => ({
       ...prev,
       rows: prev.rows.filter((_, i) => i !== index),
@@ -194,59 +195,59 @@ function Budgets() {
       name: "",
       startDate: "",
       endDate: "",
+      responsibleId: responsibles[0]?.id ? String(responsibles[0].id) : "",
       responsible: "",
-      rows: [{ ...emptyRow }],
+      rows: [{ ...emptyRow, analyticAccountId: analytics[0]?.id ? String(analytics[0].id) : "" }],
     });
-
     setMode("new");
     setSelectedBudget(null);
   };
 
-  const createBudget = (status = "Draft") => {
+  const createBudget = async (status = "Draft") => {
     if (!form.name || !form.startDate || !form.endDate) {
       alert("Please enter Budget Name, Start Date and End Date.");
       return;
     }
 
-    const newBudget = {
-      id: Date.now(),
-      name: form.name,
-      startDate: form.startDate,
-      endDate: form.endDate,
-      responsible: form.responsible || "Admin",
-      status,
-      revised: false,
-      originalBudget: null,
-      rows: form.rows.map((row) => ({
-        ...row,
-        committed: Number(row.committed || 0),
-        achieved: Number(row.achieved || 0),
-      })),
-    };
+    const defaultAnalyticId = analytics[0]?.id || 1;
+    const defaultRespId = Number(form.responsibleId) || responsibles[0]?.id || 1;
 
-    setBudgets((prev) => [newBudget, ...prev]);
+    const lines = form.rows.map((r) => ({
+      analyticAccountId: r.analyticAccountId ? Number(r.analyticAccountId) : defaultAnalyticId,
+      type: r.type ? r.type.toUpperCase() : "EXPENSE",
+      committedAmount: Number(r.committed) || 0,
+    }));
 
-    setSelectedBudget(newBudget);
-    setMode("detail");
+    try {
+      await api.post("/budgets", {
+        name: form.name,
+        startDate: form.startDate,
+        endDate: form.endDate,
+        responsibleId: defaultRespId,
+        lines,
+      });
+
+      fetchBudgetsData();
+      setMode("report");
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to create budget.");
+    }
   };
 
   /* =========================================================
      CONFIRM
   ========================================================= */
 
-  const confirmBudget = (budget) => {
-    const updated = {
-      ...budget,
-      status: "Confirmed",
-    };
-
-    setBudgets((prev) =>
-      prev.map((item) =>
-        item.id === budget.id ? updated : item
-      )
-    );
-
-    setSelectedBudget(updated);
+  const confirmBudget = async (budget) => {
+    try {
+      await api.patch(`/budgets/${budget.id}/confirm`);
+      fetchBudgetsData();
+      if (selectedBudget) {
+        setSelectedBudget((prev) => ({ ...prev, status: "Confirmed" }));
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to confirm budget.");
+    }
   };
 
   /* =========================================================

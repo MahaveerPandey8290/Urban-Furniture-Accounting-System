@@ -1,7 +1,7 @@
-import SalesOrdersMaster from "./sales/SalesOrdersMaster";
+import AdminSalesOrders from "../admin/SalesOrders";
 
 function SalesOrders() {
-  return <SalesOrdersMaster />;
+  return <AdminSalesOrders />;
 }
 
 export default SalesOrders;

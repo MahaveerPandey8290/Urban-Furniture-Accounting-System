@@ -20,6 +20,7 @@ router.use(requireAuth, requireActive, requirePasswordSet, requireRole('ADMIN'))
  *     tags: [Users]
  */
 router.post('/', validate(CreateUserDto), UsersController.createUser);
+router.get('/', UsersController.listAll);
 
 /**
  * @swagger

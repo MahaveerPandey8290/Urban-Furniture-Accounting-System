@@ -1,112 +1,94 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Plus,
   Search,
   ArrowLeft,
   Trash2,
 } from "lucide-react";
+import api from "../../services/api";
 
 function PurchaseOrders() {
-  // --------------------------------------------------
-  // PURCHASE ORDERS DATA
-  // --------------------------------------------------
-
-  const [orders, setOrders] = useState([
-    {
-      id: 1,
-      orderNo: "PO/2026/001",
-      date: "05 Sep 2026",
-      vendor: "ABC Furniture Supplier",
-
-      items: [
-        {
-          name: "Wooden Chair",
-          quantity: 20,
-          rate: 1500,
-        },
-        {
-          name: "Dining Table",
-          quantity: 5,
-          rate: 8000,
-        },
-      ],
-
-      status: "Pending",
-    },
-
-    {
-      id: 2,
-      orderNo: "PO/2026/002",
-      date: "06 Sep 2026",
-      vendor: "XYZ Wood Supplier",
-
-      items: [
-        {
-          name: "Wooden Sheet",
-          quantity: 10,
-          rate: 2500,
-        },
-      ],
-
-      status: "Received",
-    },
-  ]);
-
-  // --------------------------------------------------
-  // STATES
-  // --------------------------------------------------
-
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [vendors, setVendors] = useState([]);
+  const [products, setProducts] = useState([]);
   const [showForm, setShowForm] = useState(false);
-
   const [selectedOrder, setSelectedOrder] = useState(null);
-
   const [search, setSearch] = useState("");
+  const [error, setError] = useState("");
 
   const [formData, setFormData] = useState({
-    vendor: "",
-    date: "",
-    status: "Pending",
+    vendorId: "",
+    date: new Date().toISOString().split("T")[0],
+    status: "DRAFT",
   });
 
   const [items, setItems] = useState([
     {
+      productId: "",
       name: "",
       quantity: 1,
       rate: 0,
     },
   ]);
 
-  // --------------------------------------------------
-  // ITEM TOTAL
-  // --------------------------------------------------
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [poRes, vRes, pRes] = await Promise.all([
+        api.get("/purchase-orders"),
+        api.get("/contacts?type=VENDOR&limit=100").catch(() => ({ data: { items: [] } })),
+        api.get("/products?limit=100").catch(() => ({ data: { items: [] } })),
+      ]);
+
+      // purchase-orders returns a direct array
+      const rawPOs = Array.isArray(poRes.data) ? poRes.data : [];
+      const mapped = rawPOs.map((po) => ({
+        id: po.id,
+        orderNo: po.number,
+        date: new Date(po.orderDate).toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }),
+        vendor: po.vendor?.name || "Vendor",
+        vendorId: po.vendorId,
+        items: (po.lines || []).map((l) => ({
+          name: l.product?.name || "Item",
+          quantity: Number(l.quantity) || 1,
+          rate: Number(l.unitPrice) || 0,
+        })),
+        status: po.status,
+      }));
+
+      setOrders(mapped);
+      // contacts and products return { items: [] }
+      setVendors(vRes.data.items || []);
+      setProducts(pRes.data.items || []);
+    } catch {
+      // Error toasted by api.js interceptor
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const getItemTotal = (item) => {
-    return (
-      Number(item.quantity || 0) *
-      Number(item.rate || 0)
-    );
+    return Number(item.quantity || 0) * Number(item.rate || 0);
   };
-
-  // --------------------------------------------------
-  // GRAND TOTAL
-  // --------------------------------------------------
 
   const getGrandTotal = (orderItems) => {
-    return orderItems.reduce(
-      (total, item) =>
-        total + getItemTotal(item),
-      0
-    );
+    return (orderItems || []).reduce((total, item) => total + getItemTotal(item), 0);
   };
-
-  // --------------------------------------------------
-  // ADD ITEM
-  // --------------------------------------------------
 
   const addItem = () => {
     setItems([
       ...items,
       {
+        productId: "",
         name: "",
         quantity: 1,
         rate: 0,
@@ -114,122 +96,78 @@ function PurchaseOrders() {
     ]);
   };
 
-  // --------------------------------------------------
-  // REMOVE ITEM
-  // --------------------------------------------------
-
   const removeItem = (index) => {
-    if (items.length === 1) {
-      return;
-    }
-
-    setItems(
-      items.filter((_, i) => i !== index)
-    );
+    if (items.length === 1) return;
+    setItems(items.filter((_, i) => i !== index));
   };
 
-  // --------------------------------------------------
-  // UPDATE ITEM
-  // --------------------------------------------------
-
-  const updateItem = (
-    index,
-    field,
-    value
-  ) => {
+  const updateItem = (index, field, value) => {
     const updatedItems = [...items];
-
-    if (field === "name") {
+    if (field === "productId") {
+      const selectedProd = products.find((p) => String(p.id) === String(value));
+      updatedItems[index].productId = value;
+      updatedItems[index].name = selectedProd?.name || "";
+      updatedItems[index].rate = selectedProd?.cost || 0;
+    } else if (field === "name") {
       updatedItems[index][field] = value;
     } else {
-      updatedItems[index][field] =
-        Number(value);
+      updatedItems[index][field] = Number(value);
     }
-
     setItems(updatedItems);
   };
 
-  // --------------------------------------------------
-  // CREATE PURCHASE
-  // --------------------------------------------------
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
-    if (!formData.vendor.trim()) {
-      alert("Please enter vendor name.");
+    if (!formData.vendorId) {
+      setError("Please select a vendor.");
       return;
     }
 
-    if (!formData.date) {
-      alert("Please select purchase date.");
-      return;
+    const validLines = items.map((item, idx) => ({
+      sequence: idx,
+      productId: item.productId ? Number(item.productId) : (products[0]?.id || 1),
+      quantity: Number(item.quantity) || 1,
+      unitPrice: Number(item.rate) || 0,
+    }));
+
+    try {
+      await api.post("/purchase-orders", {
+        vendorId: Number(formData.vendorId),
+        orderDate: formData.date || new Date().toISOString(),
+        lines: validLines,
+      });
+
+      setShowForm(false);
+      setFormData({
+        vendorId: "",
+        date: new Date().toISOString().split("T")[0],
+        status: "DRAFT",
+      });
+      setItems([{ productId: "", name: "", quantity: 1, rate: 0 }]);
+      fetchData();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to create purchase order.");
     }
-
-    const validItems = items.filter(
-      (item) =>
-        item.name.trim() &&
-        item.quantity > 0 &&
-        item.rate >= 0
-    );
-
-    if (validItems.length === 0) {
-      alert("Please add at least one item.");
-      return;
-    }
-
-    const newOrder = {
-      id: Date.now(),
-
-      orderNo: `PO/2026/${String(
-        orders.length + 1
-      ).padStart(3, "0")}`,
-
-      date: formData.date,
-
-      vendor: formData.vendor,
-
-      items: validItems,
-
-      status: formData.status,
-    };
-
-    setOrders([
-      ...orders,
-      newOrder,
-    ]);
-
-    // Reset form
-
-    setFormData({
-      vendor: "",
-      date: "",
-      status: "Pending",
-    });
-
-    setItems([
-      {
-        name: "",
-        quantity: 1,
-        rate: 0,
-      },
-    ]);
-
-    setShowForm(false);
   };
 
-  // --------------------------------------------------
-  // SEARCH
-  // --------------------------------------------------
+  const handleConfirmOrder = async (orderId) => {
+    try {
+      await api.patch(`/purchase-orders/${orderId}/confirm`);
+      fetchData();
+      if (selectedOrder) {
+        setSelectedOrder((prev) => ({ ...prev, status: "CONFIRMED" }));
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to confirm purchase order.");
+    }
+  };
 
   const filteredOrders = orders.filter(
     (order) =>
-      order.vendor
-        .toLowerCase()
-        .includes(search.toLowerCase()) ||
-      order.orderNo
-        .toLowerCase()
-        .includes(search.toLowerCase())
+      (order.vendor || "").toLowerCase().includes(search.toLowerCase()) ||
+      (order.orderNo || "").toLowerCase().includes(search.toLowerCase())
   );
 
   // ==================================================
@@ -303,17 +241,25 @@ function PurchaseOrders() {
 
             </div>
 
-            <span
-              className={`px-4 py-2 rounded-full text-sm font-medium ${
-                selectedOrder.status ===
-                "Received"
-                  ? "bg-green-50 text-green-700"
-                  : "bg-yellow-50 text-yellow-700"
-              }`}
-            >
-              {selectedOrder.status}
-            </span>
-
+            <div className="flex items-center gap-3">
+              {selectedOrder.status === "DRAFT" && (
+                <button
+                  onClick={() => handleConfirmOrder(selectedOrder.id)}
+                  className="px-4 py-2 bg-[#49392f] text-white text-xs font-semibold rounded-lg hover:bg-[#382b23] transition cursor-pointer"
+                >
+                  Confirm Order
+                </button>
+              )}
+              <span
+                className={`px-4 py-2 rounded-full text-sm font-medium ${
+                  selectedOrder.status === "CONFIRMED" || selectedOrder.status === "Received"
+                    ? "bg-green-50 text-green-700"
+                    : "bg-yellow-50 text-yellow-700"
+                }`}
+              >
+                {selectedOrder.status}
+              </span>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

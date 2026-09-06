@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowLeft,
   Grid2X2,
@@ -8,65 +8,54 @@ import {
   Upload,
   X,
   Pencil,
+  Trash2,
 } from "lucide-react";
-
-const initialContacts = [
-  {
-    id: 1,
-    name: "Open Wood",
-    type: "Customer",
-    email: "openwood21@example.com",
-    mobile: "+91 9009009009",
-    street: "MG Road",
-    city: "Jaipur",
-    state: "Rajasthan",
-    country: "India",
-    pincode: "302001",
-    image: "",
-  },
-  {
-    id: 2,
-    name: "Joey Wills",
-    type: "Vendor",
-    email: "joey.wills@example.com",
-    mobile: "+91 8080808080",
-    street: "Main Street",
-    city: "Delhi",
-    state: "Delhi",
-    country: "India",
-    pincode: "110001",
-    image: "",
-  },
-];
+import api from "../../services/api";
 
 const emptyForm = {
   name: "",
-  type: "Customer",
+  type: "CUSTOMER",
   email: "",
   mobile: "",
   street: "",
   city: "",
   state: "",
-  country: "",
+  country: "India",
   pincode: "",
   image: "",
 };
 
 function Contacts() {
-  const [contacts, setContacts] = useState(initialContacts);
-
+  const [contacts, setContacts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [view, setView] = useState("list");
-
   const [showForm, setShowForm] = useState(false);
-
   const [editingId, setEditingId] = useState(null);
-
   const [search, setSearch] = useState("");
-
   const [form, setForm] = useState(emptyForm);
+  const [error, setError] = useState("");
+
+  const fetchContacts = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get("/contacts?limit=100");
+      // Backend returns { items: [...] }
+      setContacts(res.data.items || []);
+    } catch {
+      // Error toasted by api.js interceptor
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchContacts();
+  }, []);
 
   const filteredContacts = contacts.filter((contact) =>
-    contact.name.toLowerCase().includes(search.toLowerCase())
+    (contact.name || "").toLowerCase().includes(search.toLowerCase()) ||
+    (contact.email || "").toLowerCase().includes(search.toLowerCase()) ||
+    (contact.city || "").toLowerCase().includes(search.toLowerCase())
   );
 
   // -----------------------------
@@ -75,6 +64,7 @@ function Contacts() {
   const handleNew = () => {
     setForm(emptyForm);
     setEditingId(null);
+    setError("");
     setShowForm(true);
   };
 
@@ -82,8 +72,20 @@ function Contacts() {
   // OPEN EDIT FORM
   // -----------------------------
   const handleEdit = (contact) => {
-    setForm(contact);
+    setForm({
+      name: contact.name || "",
+      type: contact.type || "CUSTOMER",
+      email: contact.email || "",
+      mobile: contact.mobile || "",
+      street: contact.street || "",
+      city: contact.city || "",
+      state: contact.state || "",
+      country: contact.country || "India",
+      pincode: contact.pincode || "",
+      image: "",
+    });
     setEditingId(contact.id);
+    setError("");
     setShowForm(true);
   };
 
@@ -92,11 +94,11 @@ function Contacts() {
   // -----------------------------
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     setForm((prev) => ({
       ...prev,
       [name]: value,
     }));
+    setError("");
   };
 
   // -----------------------------
@@ -104,11 +106,8 @@ function Contacts() {
   // -----------------------------
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
-
     if (!file) return;
-
     const imageUrl = URL.createObjectURL(file);
-
     setForm((prev) => ({
       ...prev,
       image: imageUrl,
@@ -118,38 +117,53 @@ function Contacts() {
   // -----------------------------
   // SAVE CONTACT
   // -----------------------------
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.name || !form.email || !form.mobile) {
-      alert("Please fill Name, Email and Mobile.");
+    if (!form.name.trim()) {
+      setError("Please fill in contact name.");
       return;
     }
 
-    if (editingId) {
-      setContacts((prev) =>
-        prev.map((contact) =>
-          contact.id === editingId
-            ? {
-                ...form,
-                id: editingId,
-              }
-            : contact
-        )
-      );
-    } else {
-      setContacts((prev) => [
-        ...prev,
-        {
-          ...form,
-          id: Date.now(),
-        },
-      ]);
-    }
+    const payload = {
+      name: form.name.trim(),
+      type: form.type.toUpperCase(),
+      email: form.email?.trim() || undefined,
+      mobile: form.mobile?.trim() || undefined,
+      street: form.street?.trim() || undefined,
+      city: form.city?.trim() || undefined,
+      state: form.state?.trim() || undefined,
+      country: form.country?.trim() || undefined,
+      pincode: form.pincode?.trim() || undefined,
+    };
 
-    setShowForm(false);
-    setEditingId(null);
-    setForm(emptyForm);
+    try {
+      if (editingId) {
+        await api.put(`/contacts/${editingId}`, payload);
+      } else {
+        await api.post("/contacts", payload);
+      }
+
+      setShowForm(false);
+      setEditingId(null);
+      setForm(emptyForm);
+      fetchContacts();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to save contact.");
+    }
+  };
+
+  // -----------------------------
+  // ARCHIVE / DELETE CONTACT
+  // -----------------------------
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to archive this contact?")) return;
+    try {
+      await api.delete(`/contacts/${id}`);
+      fetchContacts();
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to archive contact.");
+    }
   };
 
   // -----------------------------

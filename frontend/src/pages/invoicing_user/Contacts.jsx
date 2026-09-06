@@ -6,89 +6,13 @@ import ContactKanban from "./contacts/ContactKanban";
 import ContactForm from "./contacts/ContactForm";
 import Toast, { useToast } from "../../components/common/Toast";
 import ViewToggle from "../../components/common/ViewToggle";
-
-const STORAGE_KEY = "urban_furniture_contacts_master";
-
-const INITIAL_CONTACTS = [
-  {
-    id: "cnt-1",
-    name: "Open Wood",
-    type: "Customer",
-    email: "openwood21@example.com",
-    phone: "+91 9090909090",
-    street: "Plot 42, Timber Craft Industrial Estate, Outer Ring Road",
-    city: "Bengaluru",
-    state: "Karnataka",
-    country: "India",
-    pincode: "560103",
-    image: null,
-  },
-  {
-    id: "cnt-2",
-    name: "Joey Wills",
-    type: "Vendor",
-    email: "joey.wills@example.com",
-    phone: "+91 8080808080",
-    street: "Suite 304, Regent Heritage Square, MG Road",
-    city: "Mumbai",
-    state: "Maharashtra",
-    country: "India",
-    pincode: "400001",
-    image: null,
-  },
-  {
-    id: "cnt-3",
-    name: "Prestige Modern Lofts",
-    type: "Customer",
-    email: "procurements@prestigelofts.com",
-    phone: "+91 98450 12345",
-    street: "Tower 8, Horizon Financial District",
-    city: "Hyderabad",
-    state: "Telangana",
-    country: "India",
-    pincode: "500081",
-    image: null,
-  },
-  {
-    id: "cnt-4",
-    name: "Studio Arch Interiors",
-    type: "Vendor",
-    email: "contact@studioarch.in",
-    phone: "+91 97330 99881",
-    street: "14 Design Guild Avenue, Koregaon Park",
-    city: "Pune",
-    state: "Maharashtra",
-    country: "India",
-    pincode: "411001",
-    image: null,
-  },
-];
+import api from "../../services/api";
 
 function Contacts() {
   const navigate = useNavigate();
 
-  // Load contacts from localStorage or initialize with mock data
-  const [contacts, setContacts] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((item) => ({
-            ...item,
-            type: item.type || "Customer",
-            image:
-              typeof item.image === "string" && item.image.includes("unsplash.com")
-                ? null
-                : item.image || null,
-          }));
-        }
-      }
-    } catch (e) {
-      console.error("Failed to load contacts from storage:", e);
-    }
-    return INITIAL_CONTACTS;
-  });
+  const [contacts, setContacts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Views: 'list' (default) | 'kanban' | 'form'
   const [currentView, setCurrentView] = useState("list");
@@ -105,14 +29,35 @@ function Contacts() {
   const [selectedIds, setSelectedIds] = useState([]);
   const { toastMessage, showToast } = useToast();
 
-  // Persist contacts whenever they change
-  useEffect(() => {
+  const fetchContacts = async () => {
+    setLoading(true);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(contacts));
-    } catch (e) {
-      console.error("Failed to save contacts to storage:", e);
+      const res = await api.get("/contacts?limit=100");
+      // Backend returns { items: [...] }
+      const mapped = (res.data.items || []).map((c) => ({
+        id: c.id,
+        name: c.name,
+        type: c.type === "CUSTOMER" ? "Customer" : c.type === "VENDOR" ? "Vendor" : "Both",
+        email: c.email || "",
+        phone: c.mobile || "",
+        street: c.street || "",
+        city: c.city || "",
+        state: c.state || "",
+        country: c.country || "India",
+        pincode: c.pincode || "",
+        image: c.profileImageUrl || null,
+      }));
+      setContacts(mapped);
+    } catch {
+      showToast("Failed to load contacts", "error");
+    } finally {
+      setLoading(false);
     }
-  }, [contacts]);
+  };
+
+  useEffect(() => {
+    fetchContacts();
+  }, []);
 
   // Switch to Form View for creating a new Contact
   const handleNewContact = () => {
@@ -143,26 +88,30 @@ function Contacts() {
   };
 
   // Save contact (Confirm button in form)
-  const handleSaveContact = (formData) => {
-    if (formData.id) {
-      // Update existing record
-      setContacts((prev) =>
-        prev.map((c) => (c.id === formData.id ? { ...formData } : c))
-      );
-      showToast("Contact updated successfully");
-    } else {
-      // Create new record
-      const newRecord = {
-        ...formData,
-        id: "cnt-" + Date.now(),
-      };
-      setContacts((prev) => [newRecord, ...prev]);
-      showToast("Contact created successfully");
-    }
+  const handleSaveContact = async (formData) => {
+    const payload = {
+      name: formData.name,
+      type: formData.type === "Vendor" ? "VENDOR" : formData.type === "Both" ? "BOTH" : "CUSTOMER",
+      email: formData.email || undefined,
+      mobile: formData.phone || undefined,
+      address: formData.street || undefined,
+    };
 
-    // Return to the previous browse view (list or kanban)
-    setCurrentView(previousBrowseView);
-    setEditingContact(null);
+    try {
+      if (formData.id && typeof formData.id === "number") {
+        await api.put(`/contacts/${formData.id}`, payload);
+        showToast("Contact updated successfully");
+      } else {
+        await api.post("/contacts", payload);
+        showToast("Contact created successfully");
+      }
+      await fetchContacts();
+      setCurrentView(previousBrowseView);
+      setEditingContact(null);
+    } catch (err) {
+      console.error("Failed to save contact:", err);
+      showToast(err.response?.data?.message || "Failed to save contact", "error");
+    }
   };
 
   // Filtered contacts based on search query
@@ -197,11 +146,16 @@ function Contacts() {
   };
 
   // Delete contact
-  const handleDeleteContact = (contactId) => {
+  const handleDeleteContact = async (contactId) => {
     if (window.confirm("Are you sure you want to delete this contact?")) {
-      setContacts((prev) => prev.filter((c) => c.id !== contactId));
-      setSelectedIds((prev) => prev.filter((id) => id !== contactId));
-      showToast("Contact deleted successfully");
+      try {
+        await api.delete(`/contacts/${contactId}`);
+        showToast("Contact deleted successfully");
+        await fetchContacts();
+      } catch (err) {
+        console.error("Failed to delete contact:", err);
+        showToast(err.response?.data?.message || "Failed to delete contact", "error");
+      }
     }
   };
 

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   Plus,
   Search,
@@ -18,332 +18,94 @@ import {
   CreditCard,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import api from "../../services/api";
 
 function Journals() {
   const navigate = useNavigate();
 
   const [search, setSearch] = useState("");
   const [selectedJournal, setSelectedJournal] = useState(null);
-
-  // =========================================================
-  // JOURNAL MASTER DATA
-  // =========================================================
-
-  const journals = [
-    {
-      id: 1,
-      name: "Sales",
-      type: "Sales",
-      icon: ShoppingCart,
-      defaultAccount: "Sales Income A/c",
-    },
-    {
-      id: 2,
-      name: "Purchase",
-      type: "Purchase",
-      icon: ShoppingBag,
-      defaultAccount: "Purchases Expense A/c",
-    },
-    {
-      id: 3,
-      name: "Bank",
-      type: "Bank",
-      icon: Landmark,
-      defaultAccount: "Bank A/c",
-    },
-    {
-      id: 4,
-      name: "Cash",
-      type: "Cash",
-      icon: WalletCards,
-      defaultAccount: "Cash A/c",
-    },
-  ];
-
-  // =========================================================
-  // SAMPLE TRANSACTIONS
-  // =========================================================
-  //
-  // In the future these will come from your backend/API.
-  //
-  // Sales:
-  // Sales Order -> Customer Invoice -> Payment
-  //
-  // Purchase:
-  // Purchase Order -> Vendor Bill -> Payment
-  //
-  // Bank/Cash:
-  // Payment transactions
-  //
-  // =========================================================
-
-  const transactions = [
-    // =========================
-    // SALES
-    // =========================
-
-    {
-      id: 1,
-      journal: "Sales",
-      date: "05 Sep 2026",
-      reference: "INV-001",
-      party: "Raj Furniture",
-      partyType: "Customer",
-
-      product: "Office Chair",
-      quantity: 5,
-      unitPrice: 5000,
-      total: 25000,
-
-      paymentStatus: "Paid",
-      paymentMode: "Cash",
-
-      debitAccount: "Cash A/c",
-      creditAccount: "Sales Income A/c",
-
-      debit: 25000,
-      credit: 25000,
-
-      description: "Sale of 5 Office Chairs",
-    },
-
-    {
-      id: 2,
-      journal: "Sales",
-      date: "04 Sep 2026",
-      reference: "INV-002",
-      party: "Urban Interiors",
-      partyType: "Customer",
-
-      product: "Wooden Table",
-      quantity: 3,
-      unitPrice: 6000,
-      total: 18000,
-
-      paymentStatus: "Paid",
-      paymentMode: "Bank",
-
-      debitAccount: "Bank A/c",
-      creditAccount: "Sales Income A/c",
-
-      debit: 18000,
-      credit: 18000,
-
-      description: "Sale of 3 Wooden Tables",
-    },
-
-    {
-      id: 3,
-      journal: "Sales",
-      date: "02 Sep 2026",
-      reference: "INV-003",
-      party: "Modern Home",
-      partyType: "Customer",
-
-      product: "Sofa",
-      quantity: 2,
-      unitPrice: 15000,
-      total: 30000,
-
-      paymentStatus: "Not Paid",
-      paymentMode: "Credit",
-
-      debitAccount: "Debtors A/c",
-      creditAccount: "Sales Income A/c",
-
-      debit: 30000,
-      credit: 30000,
-
-      description: "Credit sale of 2 Sofas",
-    },
-
-    // =========================
-    // PURCHASE
-    // =========================
-
-    {
-      id: 4,
-      journal: "Purchase",
-      date: "03 Sep 2026",
-      reference: "PUR-021",
-      party: "ABC Wood Suppliers",
-      partyType: "Vendor",
-
-      product: "Wooden Panels",
-      quantity: 10,
-      unitPrice: 3500,
-      total: 35000,
-
-      paymentStatus: "Paid",
-      paymentMode: "Bank",
-
-      debitAccount: "Purchases Expense A/c",
-      creditAccount: "Bank A/c",
-
-      debit: 35000,
-      credit: 35000,
-
-      description: "Purchase of Wooden Panels",
-    },
-
-    {
-      id: 5,
-      journal: "Purchase",
-      date: "01 Sep 2026",
-      reference: "PUR-020",
-      party: "WoodCraft Suppliers",
-      partyType: "Vendor",
-
-      product: "Plywood Sheets",
-      quantity: 20,
-      unitPrice: 1100,
-      total: 22000,
-
-      paymentStatus: "Paid",
-      paymentMode: "Bank",
-
-      debitAccount: "Purchases Expense A/c",
-      creditAccount: "Bank A/c",
-
-      debit: 22000,
-      credit: 22000,
-
-      description: "Purchase of Plywood Sheets",
-    },
-
-    // =========================
-    // BANK
-    // =========================
-
-    {
-      id: 6,
-      journal: "Bank",
-      date: "04 Sep 2026",
-      reference: "INV-002",
-      party: "Urban Interiors",
-      partyType: "Customer",
-
-      product: "Wooden Table",
-      quantity: 3,
-      unitPrice: 6000,
-      total: 18000,
-
-      paymentStatus: "Received",
-      paymentMode: "Bank",
-
-      debitAccount: "Bank A/c",
-      creditAccount: "Debtors A/c",
-
-      debit: 18000,
-      credit: 0,
-
-      description: "Payment received from customer",
-    },
-
-    {
-      id: 7,
-      journal: "Bank",
-      date: "03 Sep 2026",
-      reference: "PUR-021",
-      party: "ABC Wood Suppliers",
-      partyType: "Vendor",
-
-      product: "Wooden Panels",
-      quantity: 10,
-      unitPrice: 3500,
-      total: 35000,
-
-      paymentStatus: "Paid",
-      paymentMode: "Bank",
-
-      debitAccount: "Creditors A/c",
-      creditAccount: "Bank A/c",
-
-      debit: 0,
-      credit: 35000,
-
-      description: "Payment made to vendor",
-    },
-
-    {
-      id: 8,
-      journal: "Bank",
-      date: "30 Aug 2026",
-      reference: "BANK-004",
-      party: "Bank Transfer",
-      partyType: "Internal",
-
-      product: "-",
-      quantity: 0,
-      unitPrice: 0,
-      total: 10000,
-
-      paymentStatus: "Completed",
-      paymentMode: "Bank",
-
-      debitAccount: "Bank A/c",
-      creditAccount: "Cash A/c",
-
-      debit: 10000,
-      credit: 0,
-
-      description: "Cash deposited into bank",
-    },
-
-    // =========================
-    // CASH
-    // =========================
-
-    {
-      id: 9,
-      journal: "Cash",
-      date: "05 Sep 2026",
-      reference: "INV-001",
-      party: "Raj Furniture",
-      partyType: "Customer",
-
-      product: "Office Chair",
-      quantity: 5,
-      unitPrice: 5000,
-      total: 25000,
-
-      paymentStatus: "Received",
-      paymentMode: "Cash",
-
-      debitAccount: "Cash A/c",
-      creditAccount: "Debtors A/c",
-
-      debit: 25000,
-      credit: 0,
-
-      description: "Cash received from customer",
-    },
-
-    {
-      id: 10,
-      journal: "Cash",
-      date: "29 Aug 2026",
-      reference: "CASH-003",
-      party: "Office Expense",
-      partyType: "Expense",
-
-      product: "-",
-      quantity: 0,
-      unitPrice: 0,
-      total: 5000,
-
-      paymentStatus: "Paid",
-      paymentMode: "Cash",
-
-      debitAccount: "Other Expense A/c",
-      creditAccount: "Cash A/c",
-
-      debit: 5000,
-      credit: 0,
-
-      description: "Office expense paid in cash",
-    },
-  ];
+  const [journals, setJournals] = useState([]);
+  const [entries, setEntries] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const getIcon = (type) => {
+    switch (type) {
+      case "SALES":
+        return ShoppingCart;
+      case "PURCHASE":
+        return ShoppingBag;
+      case "BANK":
+        return Landmark;
+      case "CASH":
+        return WalletCards;
+      default:
+        return BookOpen;
+    }
+  };
+
+  const fetchJournalsData = async () => {
+    setLoading(true);
+    try {
+      const [jRes, eRes] = await Promise.all([
+        api.get("/journals"),
+        api.get("/journal-entries").catch(() => ({ data: [] })),
+      ]);
+
+      // journals returns { items: [] }
+      const jList = (jRes.data.items || []).map((j) => ({
+        id: j.id,
+        name: j.name,
+        type: j.type,
+        icon: getIcon(j.type),
+        defaultAccount: j.defaultAccount?.name || "None",
+      }));
+
+      setJournals(jList);
+      // journal-entries returns a direct array
+      setEntries(Array.isArray(eRes.data) ? eRes.data : []);
+    } catch {
+      // Error toasted by api.js interceptor
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchJournalsData();
+  }, []);
+
+  // Map backend journal entries into transaction presentation objects
+  const transactions = useMemo(() => {
+    return entries.map((e) => {
+      const firstItem = e.items?.[0] || {};
+      const secondItem = e.items?.[1] || {};
+      return {
+        id: e.id,
+        journalId: e.journalId,
+        journal: e.journal?.name || "General",
+        date: new Date(e.entryDate).toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }),
+        reference: e.number || e.reference || "-",
+        party: e.partner?.name || "-",
+        partyType: e.partner?.type || "-",
+        product: firstItem.product?.name || "-",
+        quantity: Number(firstItem.quantity) || 0,
+        unitPrice: Number(firstItem.unitPrice) || 0,
+        total: Number(e.totalDebit) || 0,
+        paymentStatus: e.status,
+        paymentMode: e.journal?.type === "BANK" ? "Bank" : "Cash",
+        debitAccount: firstItem.account?.name || "-",
+        creditAccount: secondItem.account?.name || "-",
+        debit: Number(e.totalDebit) || 0,
+        credit: Number(e.totalCredit) || 0,
+        description: e.narration || e.reference || `Entry ${e.number}`,
+      };
+    });
+  }, [entries]);
 
   // =========================================================
   // SEARCH JOURNALS

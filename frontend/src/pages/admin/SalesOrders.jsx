@@ -1,106 +1,30 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Plus,
   Search,
   ArrowLeft,
   Trash2,
 } from "lucide-react";
+import api from "../../services/api";
 
 function SalesOrders() {
-  // ==================================================
-  // SAMPLE SALES ORDERS
-  // ==================================================
-
-  const [orders, setOrders] = useState([
-    {
-      id: 1,
-      orderNo: "SO/2026/001",
-      date: "05 Sep 2026",
-
-      customer: {
-        name: "Rahul Sharma",
-        phone: "9876543210",
-        email: "rahul@gmail.com",
-        address: "Jaipur, Rajasthan",
-      },
-
-      items: [
-        {
-          name: "Office Chair",
-          quantity: 5,
-          unitPrice: 4000,
-          tax: 18,
-        },
-        {
-          name: "Wooden Table",
-          quantity: 2,
-          unitPrice: 8000,
-          tax: 18,
-        },
-      ],
-
-      payment: {
-        method: "Bank",
-        bankName: "HDFC Bank",
-        referenceNo: "TXN458921",
-        dueDate: "",
-      },
-
-      status: "Confirmed",
-    },
-
-    {
-      id: 2,
-      orderNo: "SO/2026/002",
-      date: "06 Sep 2026",
-
-      customer: {
-        name: "Priya Verma",
-        phone: "9988776655",
-        email: "priya@gmail.com",
-        address: "Udaipur, Rajasthan",
-      },
-
-      items: [
-        {
-          name: "Dining Chair",
-          quantity: 10,
-          unitPrice: 2500,
-          tax: 18,
-        },
-      ],
-
-      payment: {
-        method: "Cash",
-        bankName: "",
-        referenceNo: "",
-        dueDate: "",
-      },
-
-      status: "Pending",
-    },
-  ]);
-
-  // ==================================================
-  // STATES
-  // ==================================================
-
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [customers, setCustomers] = useState([]);
+  const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
-
-  const [showForm, setShowForm] =
-    useState(false);
-
-  const [selectedOrder, setSelectedOrder] =
-    useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [error, setError] = useState("");
 
   const [formData, setFormData] = useState({
+    customerId: "",
     customerName: "",
     customerPhone: "",
     customerEmail: "",
     customerAddress: "",
-    date: "",
-    status: "Pending",
-
+    date: new Date().toISOString().split("T")[0],
+    status: "DRAFT",
     paymentMethod: "Cash",
     bankName: "",
     referenceNo: "",
@@ -109,6 +33,7 @@ function SalesOrders() {
 
   const [items, setItems] = useState([
     {
+      productId: "",
       name: "",
       quantity: 1,
       unitPrice: 0,
@@ -116,80 +41,96 @@ function SalesOrders() {
     },
   ]);
 
-  // ==================================================
-  // CALCULATIONS
-  // ==================================================
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [soRes, cRes, pRes] = await Promise.all([
+        api.get("/sales-orders"),
+        api.get("/contacts?type=CUSTOMER&limit=100").catch(() => ({ data: { items: [] } })),
+        api.get("/products?limit=100").catch(() => ({ data: { items: [] } })),
+      ]);
+
+      // sales-orders returns a direct array; contacts/products return { items: [] }
+      const mapped = (Array.isArray(soRes.data) ? soRes.data : []).map((so) => ({
+        id: so.id,
+        orderNo: so.number,
+        date: new Date(so.orderDate).toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }),
+        customer: {
+          name: so.customer?.name || "Customer",
+          phone: so.customer?.mobile || "",
+          email: so.customer?.email || "",
+          address: so.customer?.city || "",
+        },
+        items: (so.lines || []).map((l) => ({
+          name: l.product?.name || "Product",
+          quantity: Number(l.quantity) || 1,
+          unitPrice: Number(l.unitPrice) || 0,
+          tax: 18,
+        })),
+        payment: {
+          method: "Bank",
+          bankName: "",
+          referenceNo: "",
+          dueDate: "",
+        },
+        status: so.status,
+      }));
+
+      setOrders(mapped);
+      setCustomers(cRes.data.items || []);
+      setProducts(pRes.data.items || []);
+    } catch {
+      // Error toasted by api.js interceptor
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const getItemSubtotal = (item) => {
-    return (
-      Number(item.quantity || 0) *
-      Number(item.unitPrice || 0)
-    );
+    return Number(item.quantity || 0) * Number(item.unitPrice || 0);
   };
 
   const getItemTax = (item) => {
-    const subtotal =
-      getItemSubtotal(item);
-
-    return (
-      (subtotal *
-        Number(item.tax || 0)) /
-      100
-    );
+    const subtotal = getItemSubtotal(item);
+    return (subtotal * Number(item.tax || 0)) / 100;
   };
 
   const getItemTotal = (item) => {
-    return (
-      getItemSubtotal(item) +
-      getItemTax(item)
-    );
+    return getItemSubtotal(item) + getItemTax(item);
   };
 
   const getSubtotal = (orderItems) => {
-    return orderItems.reduce(
-      (total, item) =>
-        total + getItemSubtotal(item),
-      0
-    );
+    return (orderItems || []).reduce((total, item) => total + getItemSubtotal(item), 0);
   };
 
   const getTotalTax = (orderItems) => {
-    return orderItems.reduce(
-      (total, item) =>
-        total + getItemTax(item),
-      0
-    );
+    return (orderItems || []).reduce((total, item) => total + getItemTax(item), 0);
   };
 
   const getGrandTotal = (orderItems) => {
-    return (
-      getSubtotal(orderItems) +
-      getTotalTax(orderItems)
-    );
+    return getSubtotal(orderItems) + getTotalTax(orderItems);
   };
-
-  // ==================================================
-  // SEARCH
-  // ==================================================
 
   const filteredOrders = orders.filter(
     (order) =>
-      order.orderNo
-        .toLowerCase()
-        .includes(search.toLowerCase()) ||
-      order.customer.name
-        .toLowerCase()
-        .includes(search.toLowerCase())
+      (order.orderNo || "").toLowerCase().includes(search.toLowerCase()) ||
+      (order.customer?.name || "").toLowerCase().includes(search.toLowerCase())
   );
-
-  // ==================================================
-  // ADD PRODUCT
-  // ==================================================
 
   const addItem = () => {
     setItems([
       ...items,
       {
+        productId: "",
         name: "",
         quantity: 1,
         unitPrice: 0,
@@ -198,217 +139,89 @@ function SalesOrders() {
     ]);
   };
 
-  // ==================================================
-  // REMOVE PRODUCT
-  // ==================================================
-
   const removeItem = (index) => {
-    if (items.length === 1) {
-      return;
-    }
-
-    setItems(
-      items.filter(
-        (_, itemIndex) =>
-          itemIndex !== index
-      )
-    );
+    if (items.length === 1) return;
+    setItems(items.filter((_, itemIndex) => itemIndex !== index));
   };
 
-  // ==================================================
-  // UPDATE PRODUCT
-  // ==================================================
-
-  const updateItem = (
-    index,
-    field,
-    value
-  ) => {
+  const updateItem = (index, field, value) => {
     const updatedItems = [...items];
-
-    if (field === "name") {
-      updatedItems[index][field] =
-        value;
+    if (field === "productId") {
+      const selectedProd = products.find((p) => String(p.id) === String(value));
+      updatedItems[index].productId = value;
+      updatedItems[index].name = selectedProd?.name || "";
+      updatedItems[index].unitPrice = selectedProd?.salesPrice || 0;
+    } else if (field === "name") {
+      updatedItems[index][field] = value;
     } else {
-      updatedItems[index][field] =
-        Number(value);
+      updatedItems[index][field] = Number(value);
     }
-
     setItems(updatedItems);
   };
 
-  // ==================================================
-  // UPDATE FORM
-  // ==================================================
-
-  const updateForm = (
-    field,
-    value
-  ) => {
+  const updateForm = (field, value) => {
     setFormData({
       ...formData,
       [field]: value,
     });
   };
 
-  // ==================================================
-  // CREATE SALES ORDER
-  // ==================================================
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
-    if (
-      !formData.customerName.trim()
-    ) {
-      alert(
-        "Please enter customer name."
-      );
+    if (!formData.customerId) {
+      setError("Please select a customer.");
       return;
     }
 
-    // MOBILE NUMBER VALIDATION
-    if (
-      formData.customerPhone.length !==
-      10
-    ) {
-      alert(
-        "Please enter a valid 10 digit mobile number."
-      );
-      return;
+    const lines = items.map((item, idx) => ({
+      sequence: idx,
+      productId: item.productId ? Number(item.productId) : (products[0]?.id || 1),
+      quantity: Number(item.quantity) || 1,
+      unitPrice: Number(item.unitPrice) || 0,
+    }));
+
+    try {
+      await api.post("/sales-orders", {
+        customerId: Number(formData.customerId),
+        orderDate: formData.date || new Date().toISOString(),
+        lines,
+      });
+
+      setShowForm(false);
+      setFormData({
+        customerId: "",
+        customerName: "",
+        customerPhone: "",
+        customerEmail: "",
+        customerAddress: "",
+        date: new Date().toISOString().split("T")[0],
+        status: "DRAFT",
+        paymentMethod: "Cash",
+        bankName: "",
+        referenceNo: "",
+        dueDate: "",
+      });
+      setItems([{ productId: "", name: "", quantity: 1, unitPrice: 0, tax: 18 }]);
+      fetchData();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to create sales order.");
     }
-
-    if (!formData.date) {
-      alert(
-        "Please select order date."
-      );
-      return;
-    }
-
-    const validItems =
-      items.filter(
-        (item) =>
-          item.name.trim() &&
-          item.quantity > 0 &&
-          item.unitPrice >= 0
-      );
-
-    if (validItems.length === 0) {
-      alert(
-        "Please add at least one product."
-      );
-      return;
-    }
-
-    // BANK VALIDATION
-
-    if (
-      formData.paymentMethod ===
-        "Bank" &&
-      !formData.bankName.trim()
-    ) {
-      alert(
-        "Please enter bank name."
-      );
-      return;
-    }
-
-    // CREDIT VALIDATION
-
-    if (
-      formData.paymentMethod ===
-        "Credit / Due" &&
-      !formData.dueDate
-    ) {
-      alert(
-        "Please select due date."
-      );
-      return;
-    }
-
-    const newOrder = {
-      id: Date.now(),
-
-      orderNo: `SO/2026/${String(
-        orders.length + 1
-      ).padStart(3, "0")}`,
-
-      date: formData.date,
-
-      customer: {
-        name:
-          formData.customerName,
-
-        phone:
-          formData.customerPhone,
-
-        email:
-          formData.customerEmail,
-
-        address:
-          formData.customerAddress,
-      },
-
-      items: validItems,
-
-      payment: {
-        method:
-          formData.paymentMethod,
-
-        bankName:
-          formData.paymentMethod ===
-          "Bank"
-            ? formData.bankName
-            : "",
-
-        referenceNo:
-          formData.paymentMethod ===
-          "Bank"
-            ? formData.referenceNo
-            : "",
-
-        dueDate:
-          formData.paymentMethod ===
-          "Credit / Due"
-            ? formData.dueDate
-            : "",
-      },
-
-      status: formData.status,
-    };
-
-    setOrders([
-      ...orders,
-      newOrder,
-    ]);
-
-    // RESET FORM
-
-    setFormData({
-      customerName: "",
-      customerPhone: "",
-      customerEmail: "",
-      customerAddress: "",
-      date: "",
-      status: "Pending",
-
-      paymentMethod: "Cash",
-      bankName: "",
-      referenceNo: "",
-      dueDate: "",
-    });
-
-    setItems([
-      {
-        name: "",
-        quantity: 1,
-        unitPrice: 0,
-        tax: 18,
-      },
-    ]);
-
-    setShowForm(false);
   };
+
+  const handleConfirmOrder = async (orderId) => {
+    try {
+      await api.patch(`/sales-orders/${orderId}/confirm`);
+      fetchData();
+      if (selectedOrder) {
+        setSelectedOrder((prev) => ({ ...prev, status: "CONFIRMED" }));
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to confirm sales order.");
+    }
+  };
+
 
   // ==================================================
   // DETAILS PAGE
@@ -492,17 +305,25 @@ function SalesOrders() {
 
             </div>
 
-            <span
-              className={`px-4 py-2 rounded-full text-sm font-medium ${
-                selectedOrder.status ===
-                "Confirmed"
-                  ? "bg-green-50 text-green-700"
-                  : "bg-yellow-50 text-yellow-700"
-              }`}
-            >
-              {selectedOrder.status}
-            </span>
-
+            <div className="flex items-center gap-3">
+              {selectedOrder.status === "DRAFT" && (
+                <button
+                  onClick={() => handleConfirmOrder(selectedOrder.id)}
+                  className="px-4 py-2 bg-[#49392f] text-white text-xs font-semibold rounded-lg hover:bg-[#382b23] transition cursor-pointer"
+                >
+                  Confirm Order
+                </button>
+              )}
+              <span
+                className={`px-4 py-2 rounded-full text-sm font-medium ${
+                  selectedOrder.status === "CONFIRMED" || selectedOrder.status === "Confirmed"
+                    ? "bg-green-50 text-green-700"
+                    : "bg-yellow-50 text-yellow-700"
+                }`}
+              >
+                {selectedOrder.status}
+              </span>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -9,7 +9,7 @@ BEGIN
       NEW.id, d, c;
   END IF;
   RETURN NEW;
-END; $$ LANGUAGE plpgsql;
+END; $$ LANGUAGE plpgsql; 
 
 CREATE CONSTRAINT TRIGGER trg_entry_balanced
   AFTER INSERT OR UPDATE ON "JournalEntry"

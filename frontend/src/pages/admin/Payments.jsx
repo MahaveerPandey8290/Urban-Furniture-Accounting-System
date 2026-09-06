@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   Plus,
   Search,
@@ -13,158 +13,98 @@ import {
   CreditCard,
   CheckCircle,
 } from "lucide-react";
+import api from "../../services/api";
 
 function Payments() {
-  // =====================================================
-  // SAMPLE PAYMENT DATA
-  // =====================================================
-
-  const [payments, setPayments] = useState([
-    {
-      id: 1,
-      paymentNo: "PAY-001",
-      date: "05 Sep 2026",
-      type: "Received",
-      partyType: "Customer",
-      party: "Raj Furniture",
-      documentType: "Invoice",
-      documentNo: "INV-001",
-      amount: 25000,
-      account: "Cash",
-      paymentMethod: "Cash",
-      reference: "CASH-001",
-      notes: "Payment received against customer invoice",
-      status: "Completed",
-    },
-    {
-      id: 2,
-      paymentNo: "PAY-002",
-      date: "04 Sep 2026",
-      type: "Received",
-      partyType: "Customer",
-      party: "Urban Interiors",
-      documentType: "Invoice",
-      documentNo: "INV-002",
-      amount: 45000,
-      account: "Bank",
-      paymentMethod: "Online Transfer",
-      reference: "BANK-001",
-      notes: "Customer payment received through bank",
-      status: "Completed",
-    },
-    {
-      id: 3,
-      paymentNo: "PAY-003",
-      date: "03 Sep 2026",
-      type: "Paid",
-      partyType: "Vendor",
-      party: "ABC Wood Suppliers",
-      documentType: "Bill",
-      documentNo: "BILL-021",
-      amount: 35000,
-      account: "Bank",
-      paymentMethod: "Online Transfer",
-      reference: "BANK-002",
-      notes: "Vendor payment against purchase bill",
-      status: "Completed",
-    },
-    {
-      id: 4,
-      paymentNo: "PAY-004",
-      date: "02 Sep 2026",
-      type: "Received",
-      partyType: "Customer",
-      party: "Modern Home",
-      documentType: "Invoice",
-      documentNo: "INV-003",
-      amount: 15000,
-      account: "Cash",
-      paymentMethod: "Cash",
-      reference: "CASH-002",
-      notes: "Partial payment received",
-      status: "Completed",
-    },
-    {
-      id: 5,
-      paymentNo: "PAY-005",
-      date: "01 Sep 2026",
-      type: "Paid",
-      partyType: "Vendor",
-      party: "WoodCraft Suppliers",
-      documentType: "Bill",
-      documentNo: "BILL-022",
-      amount: 22000,
-      account: "Bank",
-      paymentMethod: "Online Transfer",
-      reference: "BANK-003",
-      notes: "Vendor bill payment",
-      status: "Completed",
-    },
-  ]);
-
-  // =====================================================
-  // FILTERS
-  // =====================================================
-
+  const [payments, setPayments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [invoices, setInvoices] = useState([]);
+  const [journals, setJournals] = useState([]);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
   const [accountFilter, setAccountFilter] = useState("All");
-
-  // =====================================================
-  // MODALS
-  // =====================================================
-
   const [showNewPayment, setShowNewPayment] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
-
-  // =====================================================
-  // NEW PAYMENT FORM
-  // =====================================================
+  const [error, setError] = useState("");
 
   const emptyForm = {
-    type: "Received",
-    partyType: "Customer",
-    party: "",
-    documentType: "Invoice",
-    documentNo: "",
-    date: new Date().toISOString().split("T")[0],
+    paymentType: "RECEIVE", // RECEIVE = Customer, SEND = Vendor
+    invoiceId: "",
+    partnerId: "",
+    paymentDate: new Date().toISOString().split("T")[0],
     amount: "",
-    account: "Cash",
-    paymentMethod: "Cash",
-    reference: "",
-    notes: "",
+    paymentMethod: "CASH",
+    journalId: "",
+    note: "",
   };
 
   const [form, setForm] = useState(emptyForm);
 
-  // =====================================================
-  // FILTER PAYMENT DATA
-  // =====================================================
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [payRes, invRes, jRes] = await Promise.all([
+        api.get("/payments"),
+        api.get("/invoices").catch(() => ({ data: [] })),
+        api.get("/journals").catch(() => ({ data: { items: [] } })),
+      ]);
+
+      // payments and invoices return direct arrays; journals return { items: [] }
+      const mapped = (Array.isArray(payRes.data) ? payRes.data : []).map((p) => ({
+        id: p.id,
+        paymentNo: p.number,
+        date: new Date(p.paymentDate).toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }),
+        type: p.paymentType === "RECEIVE" ? "Received" : "Paid",
+        partyType: p.paymentType === "RECEIVE" ? "Customer" : "Vendor",
+        party: p.partner?.name || "Partner",
+        documentType: p.paymentType === "RECEIVE" ? "Invoice" : "Bill",
+        documentNo: p.invoice?.number || `INV-${p.invoiceId}`,
+        amount: Number(p.amount) || 0,
+        account: p.paymentMethod === "BANK" ? "Bank" : "Cash",
+        paymentMethod: p.paymentMethod,
+        reference: p.idempotencyKey || "-",
+        notes: p.note || "-",
+        status: p.status === "CONFIRMED" ? "Completed" : p.status,
+        rawStatus: p.status,
+      }));
+
+      setPayments(mapped);
+      setInvoices(Array.isArray(invRes.data) ? invRes.data : []);
+      setJournals(jRes.data.items || []);
+    } catch {
+      // Error toasted by api.js interceptor
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const filteredPayments = useMemo(() => {
     return payments.filter((payment) => {
       const searchText = search.toLowerCase();
-
       const matchesSearch =
-        payment.paymentNo.toLowerCase().includes(searchText) ||
-        payment.party.toLowerCase().includes(searchText) ||
-        payment.documentNo.toLowerCase().includes(searchText) ||
-        payment.reference.toLowerCase().includes(searchText);
+        (payment.paymentNo || "").toLowerCase().includes(searchText) ||
+        (payment.party || "").toLowerCase().includes(searchText) ||
+        (payment.documentNo || "").toLowerCase().includes(searchText) ||
+        (payment.reference || "").toLowerCase().includes(searchText);
 
       const matchesType =
         typeFilter === "All" || payment.type === typeFilter;
 
       const matchesAccount =
-        accountFilter === "All" ||
-        payment.account === accountFilter;
+        accountFilter === "All" || payment.account === accountFilter;
 
       return matchesSearch && matchesType && matchesAccount;
     });
   }, [payments, search, typeFilter, accountFilter]);
-
-  // =====================================================
-  // TOTALS
-  // =====================================================
 
   const totalReceived = payments
     .filter((payment) => payment.type === "Received")
@@ -177,94 +117,76 @@ function Payments() {
   const cashBalance = payments
     .filter((payment) => payment.account === "Cash")
     .reduce((sum, payment) => {
-      return payment.type === "Received"
-        ? sum + payment.amount
-        : sum - payment.amount;
+      return payment.type === "Received" ? sum + payment.amount : sum - payment.amount;
     }, 0);
 
   const bankBalance = payments
     .filter((payment) => payment.account === "Bank")
     .reduce((sum, payment) => {
-      return payment.type === "Received"
-        ? sum + payment.amount
-        : sum - payment.amount;
+      return payment.type === "Received" ? sum + payment.amount : sum - payment.amount;
     }, 0);
 
-  // =====================================================
-  // FORM HANDLING
-  // =====================================================
-
   const handleFormChange = (field, value) => {
-    setForm((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-
-    // Automatically adjust party/document according to payment type
-    if (field === "type") {
-      if (value === "Received") {
-        setForm((prev) => ({
-          ...prev,
-          type: value,
-          partyType: "Customer",
-          documentType: "Invoice",
-        }));
-      } else {
-        setForm((prev) => ({
-          ...prev,
-          type: value,
-          partyType: "Vendor",
-          documentType: "Bill",
-        }));
+    setForm((prev) => {
+      const updated = { ...prev, [field]: value };
+      if (field === "invoiceId") {
+        const inv = invoices.find((i) => String(i.id) === String(value));
+        if (inv) {
+          updated.partnerId = inv.partnerId;
+          updated.amount = String(inv.amountDue || inv.grandTotal || "");
+        }
       }
-    }
+      return updated;
+    });
   };
 
-  // =====================================================
-  // SAVE PAYMENT
-  // =====================================================
-
-  const handleSavePayment = (e) => {
+  const handleSavePayment = async (e) => {
     e.preventDefault();
+    setError("");
 
-    if (
-      !form.party ||
-      !form.documentNo ||
-      !form.amount ||
-      !form.date
-    ) {
-      alert("Please fill all required fields.");
+    if (!form.invoiceId || !form.amount) {
+      setError("Please select an invoice and enter amount.");
       return;
     }
 
-    const nextNumber = payments.length + 1;
+    const targetJournal = journals.find((j) => j.type === form.paymentMethod) || journals[0];
 
-    const newPayment = {
-      id: Date.now(),
-      paymentNo: `PAY-${String(nextNumber).padStart(3, "0")}`,
-      date: new Date(form.date).toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      }),
-      type: form.type,
-      partyType: form.partyType,
-      party: form.party,
-      documentType: form.documentType,
-      documentNo: form.documentNo,
-      amount: Number(form.amount),
-      account: form.account,
-      paymentMethod: form.paymentMethod,
-      reference: form.reference || "-",
-      notes: form.notes || "-",
-      status: "Completed",
-    };
+    try {
+      await api.post("/payments", {
+        paymentType: form.paymentType,
+        partnerId: Number(form.partnerId),
+        invoiceId: Number(form.invoiceId),
+        paymentDate: form.paymentDate || new Date().toISOString(),
+        amount: Number(form.amount),
+        paymentMethod: form.paymentMethod,
+        journalId: targetJournal?.id || 1,
+        note: form.note || undefined,
+      });
 
-    setPayments((prev) => [newPayment, ...prev]);
-
-    setForm(emptyForm);
-    setShowNewPayment(false);
+      setShowNewPayment(false);
+      setForm(emptyForm);
+      fetchData();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to record payment.");
+    }
   };
+
+  const handleConfirmPayment = async (paymentId) => {
+    try {
+      await api.patch(`/payments/${paymentId}/confirm`, {}, {
+        headers: {
+          "Idempotency-Key": `pay-confirm-${paymentId}-${Date.now()}`,
+        },
+      });
+      fetchData();
+      if (selectedPayment) {
+        setSelectedPayment((prev) => ({ ...prev, status: "Completed", rawStatus: "CONFIRMED" }));
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to confirm payment.");
+    }
+  };
+
 
   // =====================================================
   // FORMAT CURRENCY

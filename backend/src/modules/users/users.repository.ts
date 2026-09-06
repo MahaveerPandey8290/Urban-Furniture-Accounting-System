@@ -14,6 +14,32 @@ export class UsersRepository {
     });
   }
 
+  static async findAll(companyId: number): Promise<Omit<User, 'passwordHash'>[]> {
+    return prisma.user.findMany({
+      where: { companyId },
+      select: {
+        id: true,
+        companyId: true,
+        name: true,
+        loginId: true,
+        email: true,
+        role: true,
+        status: true,
+        contactId: true,
+        mustChangePassword: true,
+        failedLoginAttempts: true,
+        lockedUntil: true,
+        lastLoginAt: true,
+        approvedById: true,
+        approvedAt: true,
+        rejectionReason: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   static async updateStatus(
     id: number,
     data: Partial<Pick<User, 'status' | 'rejectionReason' | 'approvedById' | 'approvedAt'>>,

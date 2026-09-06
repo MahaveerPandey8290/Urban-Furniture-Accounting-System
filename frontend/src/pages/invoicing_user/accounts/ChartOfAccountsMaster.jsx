@@ -14,102 +14,31 @@ import {
 import Toast, { useToast } from "../../../components/common/Toast";
 import AccountList from "./AccountList";
 import AccountForm from "./AccountForm";
+import api from "../../../services/api";
 
-export const STORAGE_KEY = "urban_furniture_chart_of_accounts";
-
-export const PRECONFIGURED_ACCOUNTS = [
-  {
-    id: "coa-1",
-    accountName: "Bank A/c",
-    type: "ASSET",
-    displayType: "Assets",
-    classification: "Bank",
-    status: "ACTIVE",
-  },
-  {
-    id: "coa-2",
-    accountName: "Purchases Expense A/c",
-    type: "EXPENSE",
-    displayType: "Expenses",
-    classification: "Expenses",
-    status: "ACTIVE",
-  },
-  {
-    id: "coa-3",
-    accountName: "Debtors A/c",
-    type: "ASSET",
-    displayType: "Assets",
-    classification: "Asset",
-    status: "ACTIVE",
-  },
-  {
-    id: "coa-4",
-    accountName: "Creditors A/c",
-    type: "LIABILITY",
-    displayType: "Liabilities",
-    classification: "Liability",
-    status: "ACTIVE",
-  },
-  {
-    id: "coa-5",
-    accountName: "Sales Income A/c",
-    type: "INCOME",
-    displayType: "Income",
-    classification: "Income",
-    status: "ACTIVE",
-  },
-  {
-    id: "coa-6",
-    accountName: "Cash A/c",
-    type: "ASSET",
-    displayType: "Assets",
-    classification: "Cash",
-    status: "ACTIVE",
-  },
-  {
-    id: "coa-7",
-    accountName: "Other Expense A/c",
-    type: "EXPENSE",
-    displayType: "Expense",
-    classification: "Other Expenses",
-    status: "ACTIVE",
-  },
-  {
-    id: "coa-8",
-    accountName: "Capital A/c",
-    type: "CAPITAL",
-    displayType: "Capital",
-    classification: "Capital",
-    status: "ACTIVE",
-  },
-];
-
-export const getChartOfAccounts = () => {
+export const getChartOfAccounts = async () => {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed.map((a) => {
-          if (a.classification) return a;
-          let classification = a.displayType || a.type;
-          if (a.accountName?.toLowerCase().includes("bank")) classification = "Bank";
-          else if (a.accountName?.toLowerCase().includes("cash")) classification = "Cash";
-          return { ...a, classification };
-        });
-      }
-    }
-  } catch (e) {
-    console.error("Failed to load chart of accounts from storage:", e);
+    const res = await api.get("/accounts?limit=200");
+    // Backend returns { items: [...] }
+    return (res.data.items || []).map((a) => ({
+      id: a.id,
+      code: a.code,
+      accountName: a.name,
+      type: a.type,
+      displayType: a.group === "BALANCE_SHEET" ? "Balance Sheet" : "Profit and Loss",
+      classification: a.type,
+      status: a.isArchived ? "ARCHIVED" : "ACTIVE",
+    }));
+  } catch {
+    return [];
   }
-  return PRECONFIGURED_ACCOUNTS;
 };
 
 function ChartOfAccountsMaster() {
   const navigate = useNavigate();
 
-  // Load accounts from localStorage or initialize with preconfigured accounts
-  const [accounts, setAccounts] = useState(() => getChartOfAccounts());
+  const [accounts, setAccounts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Views: 'list' (default) | 'form'
   const [currentView, setCurrentView] = useState("list");
@@ -127,14 +56,31 @@ function ChartOfAccountsMaster() {
   const [selectedTypeFilter, setSelectedTypeFilter] = useState("ALL");
   const { toastMessage, showToast } = useToast();
 
-  // Persist accounts
-  useEffect(() => {
+  const fetchAccounts = async () => {
+    setLoading(true);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts));
-    } catch (e) {
-      console.error("Failed to save chart of accounts to storage:", e);
+      const res = await api.get("/accounts?limit=200");
+      // Backend returns { items: [...] }
+      const mapped = (res.data.items || []).map((a) => ({
+        id: a.id,
+        code: a.code,
+        accountName: a.name,
+        type: a.type,
+        displayType: a.group === "BALANCE_SHEET" ? "Balance Sheet" : "Profit and Loss",
+        classification: a.type,
+        status: a.isArchived ? "ARCHIVED" : "ACTIVE",
+      }));
+      setAccounts(mapped);
+    } catch {
+      showToast("Failed to load accounts", "error");
+    } finally {
+      setLoading(false);
     }
-  }, [accounts]);
+  };
+
+  useEffect(() => {
+    fetchAccounts();
+  }, []);
 
   // Switch to Form for a new account
   const handleNewAccount = () => {
@@ -164,43 +110,45 @@ function ChartOfAccountsMaster() {
   };
 
   // Save account (from Confirm button)
-  const handleSaveAccount = (accountData) => {
-    if (accountData.id) {
-      // Update existing
-      setAccounts((prev) =>
-        prev.map((a) => (a.id === accountData.id ? { ...accountData } : a))
-      );
-      showToast("Account updated successfully");
-    } else {
-      // Create new
-      const newAcc = {
-        ...accountData,
-        id: "coa-" + Date.now(),
-      };
-      setAccounts((prev) => [...prev, newAcc]);
-      showToast("Account created successfully");
-    }
+  const handleSaveAccount = async (accountData) => {
+    const rawType = (accountData.classification || accountData.type || "ASSET").toUpperCase();
+    const typeEnum = ["ASSET", "LIABILITY", "BANK", "CAPITAL", "CASH", "INCOME", "EXPENSE", "OTHER_EXPENSE"].includes(rawType)
+      ? rawType
+      : "ASSET";
 
-    setCurrentView("list");
-    setEditingAccount(null);
+    const groupEnum = ["INCOME", "EXPENSE", "OTHER_EXPENSE"].includes(typeEnum)
+      ? "PROFIT_AND_LOSS"
+      : "BALANCE_SHEET";
+
+    const payload = {
+      code: accountData.code || "ACC-" + Math.floor(1000 + Math.random() * 9000),
+      name: accountData.accountName,
+      type: typeEnum,
+      group: groupEnum,
+    };
+
+    try {
+      await api.post("/accounts", payload);
+      showToast("Account saved successfully");
+      await fetchAccounts();
+      setCurrentView("list");
+      setEditingAccount(null);
+    } catch (err) {
+      console.error("Failed to save account:", err);
+      showToast(err.response?.data?.message || "Failed to save account", "error");
+    }
   };
 
   // Toggle Archive status for an account
-  const handleToggleArchive = (id) => {
-    setAccounts((prev) =>
-      prev.map((a) => {
-        if (a.id === id) {
-          const newStatus = a.status === "ARCHIVED" ? "ACTIVE" : "ARCHIVED";
-          showToast(
-            newStatus === "ARCHIVED"
-              ? `Account "${a.accountName}" archived`
-              : `Account "${a.accountName}" restored`
-          );
-          return { ...a, status: newStatus };
-        }
-        return a;
-      })
-    );
+  const handleToggleArchive = async (id) => {
+    try {
+      await api.delete(`/accounts/${id}`);
+      showToast("Account status updated");
+      await fetchAccounts();
+    } catch (err) {
+      console.error("Failed to archive account:", err);
+      showToast(err.response?.data?.message || "Failed to archive account", "error");
+    }
 
     if (currentView === "form") {
       setCurrentView("list");

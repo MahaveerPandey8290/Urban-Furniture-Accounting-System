@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Plus,
   Search,
@@ -11,238 +11,141 @@ import {
   Upload,
   Package,
 } from "lucide-react";
+import api from "../../services/api";
 
 function Products() {
-  // --------------------------------------------------
-  // PRODUCT DATA
-  // --------------------------------------------------
-
-  const [products, setProducts] = useState([
-    {
-      id: 1,
-      name: "Air Conditioner",
-      type: "Goods",
-      category: "Electronics",
-      salesPrice: 25000,
-      cost: 15000,
-      image: "",
-    },
-    {
-      id: 2,
-      name: "Refrigerator",
-      type: "Goods",
-      category: "Electronics",
-      salesPrice: 10000,
-      cost: 7000,
-      image: "",
-    },
-    {
-      id: 3,
-      name: "Office Chair",
-      type: "Goods",
-      category: "Furniture",
-      salesPrice: 8500,
-      cost: 5000,
-      image: "",
-    },
-    {
-      id: 4,
-      name: "Wooden Table",
-      type: "Goods",
-      category: "Furniture",
-      salesPrice: 15000,
-      cost: 9000,
-      image: "",
-    },
-  ]);
-
-  // --------------------------------------------------
-  // STATES
-  // --------------------------------------------------
-
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [view, setView] = useState("list");
-
   const [search, setSearch] = useState("");
-
   const [showForm, setShowForm] = useState(false);
-
   const [editingProduct, setEditingProduct] = useState(null);
-
-  const [showCategoryInput, setShowCategoryInput] = useState(false);
-
-  const [newCategory, setNewCategory] = useState("");
-
-  const [categories, setCategories] = useState([
-    "Electronics",
-    "Furniture",
-    "Office",
-    "Home Appliances",
-  ]);
+  const [categories, setCategories] = useState([]);
+  const [error, setError] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
-    type: "Goods",
-    category: "",
+    type: "GOODS",
+    categoryId: "",
     salesPrice: "",
     cost: "",
     image: "",
   });
 
-  // --------------------------------------------------
-  // SEARCH
-  // --------------------------------------------------
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [prodRes, catRes] = await Promise.all([
+        api.get("/products?limit=100"),
+        api.get("/product-categories").catch(() => ({ data: { items: [] } })),
+      ]);
+      // Both endpoints return { items: [...] }
+      setProducts(prodRes.data.items || []);
+      setCategories(catRes.data.items || []);
+    } catch {
+      // Error toasted by api.js interceptor
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const filteredProducts = products.filter((product) => {
     const searchText = search.toLowerCase();
-
     return (
-      product.name.toLowerCase().includes(searchText) ||
-      product.category.toLowerCase().includes(searchText) ||
-      product.type.toLowerCase().includes(searchText)
+      (product.name || "").toLowerCase().includes(searchText) ||
+      (product.category?.name || "").toLowerCase().includes(searchText) ||
+      (product.type || "").toLowerCase().includes(searchText)
     );
   });
 
-  // --------------------------------------------------
-  // OPEN CREATE FORM
-  // --------------------------------------------------
-
   const handleNew = () => {
     setEditingProduct(null);
-
     setFormData({
       name: "",
-      type: "Goods",
-      category: "",
+      type: "GOODS",
+      categoryId: categories[0]?.id ? String(categories[0].id) : "",
       salesPrice: "",
       cost: "",
       image: "",
     });
-
+    setError("");
     setShowForm(true);
   };
-
-  // --------------------------------------------------
-  // OPEN EDIT FORM
-  // --------------------------------------------------
 
   const handleEdit = (product) => {
     setEditingProduct(product);
-
     setFormData({
-      name: product.name,
-      type: product.type,
-      category: product.category,
-      salesPrice: product.salesPrice,
-      cost: product.cost,
-      image: product.image || "",
+      name: product.name || "",
+      type: product.type || "GOODS",
+      categoryId: product.categoryId ? String(product.categoryId) : "",
+      salesPrice: product.salesPrice || "",
+      cost: product.cost || "",
+      image: "",
     });
-
+    setError("");
     setShowForm(true);
   };
-
-  // --------------------------------------------------
-  // CLOSE FORM
-  // --------------------------------------------------
 
   const handleBack = () => {
     setShowForm(false);
     setEditingProduct(null);
+    setError("");
   };
-
-  // --------------------------------------------------
-  // FORM INPUT
-  // --------------------------------------------------
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
+    setError("");
   };
 
-  // --------------------------------------------------
-  // ADD CATEGORY
-  // --------------------------------------------------
-
-  const handleAddCategory = () => {
-    const category = newCategory.trim();
-
-    if (!category) return;
-
-    if (!categories.includes(category)) {
-      setCategories((prev) => [...prev, category]);
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      category,
-    }));
-
-    setNewCategory("");
-    setShowCategoryInput(false);
-  };
-
-  // --------------------------------------------------
-  // SAVE PRODUCT
-  // --------------------------------------------------
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (
-      !formData.name.trim() ||
-      !formData.category ||
-      formData.salesPrice === "" ||
-      formData.cost === ""
-    ) {
-      alert("Please fill all required fields.");
+    if (!formData.name.trim()) {
+      setError("Please fill in product name.");
       return;
     }
 
-    if (editingProduct) {
-      setProducts((prev) =>
-        prev.map((product) =>
-          product.id === editingProduct.id
-            ? {
-                ...product,
-                ...formData,
-                salesPrice: Number(formData.salesPrice),
-                cost: Number(formData.cost),
-              }
-            : product
-        )
-      );
-    } else {
-      const newProduct = {
-        id: Date.now(),
-        ...formData,
-        salesPrice: Number(formData.salesPrice),
-        cost: Number(formData.cost),
-      };
+    const payload = {
+      name: formData.name.trim(),
+      type: formData.type.toUpperCase(),
+      categoryId: formData.categoryId ? Number(formData.categoryId) : undefined,
+      salesPrice: Number(formData.salesPrice) || 0,
+      cost: Number(formData.cost) || 0,
+    };
 
-      setProducts((prev) => [...prev, newProduct]);
+    try {
+      if (editingProduct) {
+        await api.put(`/products/${editingProduct.id}`, payload);
+      } else {
+        await api.post("/products", payload);
+      }
+
+      handleBack();
+      fetchData();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to save product.");
     }
-
-    handleBack();
   };
 
-  // --------------------------------------------------
-  // DELETE PRODUCT
-  // --------------------------------------------------
-
-  const handleDelete = (id) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this product?"
-    );
-
-    if (!confirmDelete) return;
-
-    setProducts((prev) =>
-      prev.filter((product) => product.id !== id)
-    );
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to archive this product?")) return;
+    try {
+      await api.delete(`/products/${id}`);
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to archive product.");
+    }
   };
+
+
 
   // --------------------------------------------------
   // FORMAT PRICE

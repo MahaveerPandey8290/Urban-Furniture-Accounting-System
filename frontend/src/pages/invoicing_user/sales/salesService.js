@@ -134,20 +134,6 @@ export const getCustomers = () => {
     console.error("Failed to load contacts:", e);
   }
 
-  const defaults = [
-    { id: "cnt-rahul", name: "Mr. Rahul", type: "Customer", email: "rahul@example.com" },
-    { id: "cnt-raj", name: "Mr. Raj", type: "Customer", email: "raj@example.com" },
-    { id: "cnt-1", name: "Open Wood", type: "Customer", email: "openwood21@example.com" },
-    { id: "cnt-3", name: "Prestige Modern Lofts", type: "Customer", email: "procurements@prestigelofts.com" },
-  ];
-
-  defaults.forEach((d) => {
-    if (!list.some((c) => c.name?.toLowerCase() === d.name.toLowerCase())) {
-      list.push(d);
-    }
-  });
-
-  // Filter contacts whose type supports Customer
   return list.filter((c) => !c.type || c.type.toLowerCase() === "customer" || c.type.toLowerCase() === "both");
 };
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Search,
   Plus,
@@ -7,251 +7,161 @@ import {
   UserCheck,
   UserX,
   X,
+  CheckCircle,
+  Key,
+  AlertCircle,
 } from "lucide-react";
+import api from "../../services/api";
 
 function Users() {
   const [search, setSearch] = useState("");
-
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      name: "Rahul Sharma",
-      loginId: "rahul123",
-      email: "rahul@urbanfurniture.com",
-      role: "Customer",
-      status: "Active",
-    },
-    {
-      id: 2,
-      name: "Priya Verma",
-      loginId: "priya123",
-      email: "priya@urbanfurniture.com",
-      role: "Administrator",
-      status: "Active",
-    },
-    {
-      id: 3,
-      name: "Amit Kumar",
-      loginId: "amit1234",
-      email: "amit@urbanfurniture.com",
-      role: "Vendor",
-      status: "Inactive",
-    },
-    {
-      id: 4,
-      name: "Neha Singh",
-      loginId: "neha123",
-      email: "neha@urbanfurniture.com",
-      role: "Customer",
-      status: "Active",
-    },
-  ]);
-
-  // Modal
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // Edit mode
-  const [editingUser, setEditingUser] = useState(null);
-
-  // Error message
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [actionSuccess, setActionSuccess] = useState("");
 
-  // Form
+  // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [tempPasswordModal, setTempPasswordModal] = useState(null);
+
+  // Form state
   const [formData, setFormData] = useState({
     name: "",
     loginId: "",
     email: "",
-    role: "Customer",
-    password: "",
-    confirmPassword: "",
+    userType: "ADMINISTRATOR",
   });
 
-  // Search
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(search.toLowerCase()) ||
-      user.loginId.toLowerCase().includes(search.toLowerCase()) ||
-      user.email.toLowerCase().includes(search.toLowerCase())
-  );
+  const fetchUsers = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await api.get("/users");
+      // /api/users returns { data: [...] }
+      setUsers(res.data.data || []);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to load users.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Open Add User modal
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
   const openAddModal = () => {
-    setEditingUser(null);
-
     setFormData({
       name: "",
       loginId: "",
       email: "",
-      role: "Customer",
-      password: "",
-      confirmPassword: "",
+      userType: "ADMINISTRATOR",
     });
-
     setError("");
     setIsModalOpen(true);
   };
 
-  // Open Edit User modal
-  const openEditModal = (user) => {
-    setEditingUser(user);
-
-    setFormData({
-      name: user.name,
-      loginId: user.loginId,
-      email: user.email,
-      role: user.role,
-      password: "",
-      confirmPassword: "",
-    });
-
-    setError("");
-    setIsModalOpen(true);
-  };
-
-  // Close modal
   const closeModal = () => {
     setIsModalOpen(false);
-    setEditingUser(null);
     setError("");
   };
 
-  // Form input
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
-
     setError("");
   };
 
-  // Validate form
-  const validateForm = () => {
-    const loginId = formData.loginId.trim();
-    const email = formData.email.trim().toLowerCase();
-
-    // Login ID length
-    if (loginId.length < 6 || loginId.length > 12) {
-      return "Login ID must be between 6 and 12 characters.";
-    }
-
-    // Login ID uniqueness
-    const duplicateLoginId = users.some(
-      (user) =>
-        user.loginId.toLowerCase() === loginId.toLowerCase() &&
-        user.id !== editingUser?.id
-    );
-
-    if (duplicateLoginId) {
-      return "This Login ID already exists.";
-    }
-
-    // Email uniqueness
-    const duplicateEmail = users.some(
-      (user) =>
-        user.email.toLowerCase() === email &&
-        user.id !== editingUser?.id
-    );
-
-    if (duplicateEmail) {
-      return "This email address already exists.";
-    }
-
-    // Password validation
-    // During editing, password can be left empty.
-    if (!editingUser || formData.password) {
-      if (formData.password.length <= 8) {
-        return "Password must contain more than 8 characters.";
-      }
-
-      if (!/[a-z]/.test(formData.password)) {
-        return "Password must contain at least one lowercase letter.";
-      }
-
-      if (!/[A-Z]/.test(formData.password)) {
-        return "Password must contain at least one uppercase letter.";
-      }
-
-      if (!/[!@#$%^&*(),.?":{}|<>_\-\\[\]/';+=`~]/.test(formData.password)) {
-        return "Password must contain at least one special character.";
-      }
-
-      if (formData.password !== formData.confirmPassword) {
-        return "Passwords do not match.";
-      }
-    }
-
-    return "";
-  };
-
-  // Add / Edit user
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const validationError = validateForm();
-
-    if (validationError) {
-      setError(validationError);
+    if (!formData.name.trim() || !formData.loginId.trim() || !formData.email.trim()) {
+      setError("Please fill all required fields.");
       return;
     }
 
-    if (editingUser) {
-      setUsers(
-        users.map((user) =>
-          user.id === editingUser.id
-            ? {
-                ...user,
-                name: formData.name,
-                loginId: formData.loginId,
-                email: formData.email,
-                role: formData.role,
-              }
-            : user
-        )
-      );
-    } else {
-      const newUser = {
-        id: Date.now(),
-        name: formData.name,
-        loginId: formData.loginId,
-        email: formData.email,
-        role: formData.role,
-        status: "Active",
-      };
-
-      setUsers([...users, newUser]);
+    // Mirror backend loginId validation (Zod schema)
+    const loginIdRegex = /^[a-zA-Z0-9_]+$/;
+    if (formData.loginId.trim().length < 6) {
+      setError("Login ID must be at least 6 characters.");
+      return;
+    }
+    if (formData.loginId.trim().length > 12) {
+      setError("Login ID must be at most 12 characters.");
+      return;
+    }
+    if (!loginIdRegex.test(formData.loginId.trim())) {
+      setError("Login ID may only contain letters, numbers, and underscores (no @ or special characters).");
+      return;
     }
 
-    closeModal();
-  };
+    try {
+      const res = await api.post("/users", {
+        name: formData.name.trim(),
+        loginId: formData.loginId.trim(),
+        email: formData.email.trim(),
+        userType: formData.userType,
+      });
 
-  // Activate / Deactivate
-  const toggleStatus = (id) => {
-    setUsers(
-      users.map((user) =>
-        user.id === id
-          ? {
-              ...user,
-              status:
-                user.status === "Active"
-                  ? "Inactive"
-                  : "Active",
-            }
-          : user
-      )
-    );
-  };
+      closeModal();
+      fetchUsers();
 
-  // Delete
-  const deleteUser = (id) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this user?"
-    );
-
-    if (confirmed) {
-      setUsers(users.filter((user) => user.id !== id));
+      if (res.data?.tempPassword) {
+        setTempPasswordModal({
+          loginId: formData.loginId,
+          tempPassword: res.data.tempPassword,
+        });
+      }
+    } catch (err) {
+      // Surface 422 field errors
+      const fieldErrors = err.response?.data?.errors;
+      if (fieldErrors && Array.isArray(fieldErrors)) {
+        const msgs = fieldErrors.map((e) => e.message || e).join(", ");
+        setError(msgs);
+      } else {
+        setError(err.response?.data?.message || "Failed to create user.");
+      }
     }
   };
+
+
+  const handleApprove = async (id) => {
+    try {
+      const res = await api.patch(`/users/${id}/approve`);
+      fetchUsers();
+      if (res.data?.tempPassword) {
+        setTempPasswordModal({
+          loginId: `User #${id}`,
+          tempPassword: res.data.tempPassword,
+        });
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to approve user.");
+    }
+  };
+
+  const handleToggleSuspend = async (user) => {
+    const isSuspended = user.status === "SUSPENDED";
+    const endpoint = isSuspended ? `/users/${user.id}/reactivate` : `/users/${user.id}/suspend`;
+    const actionText = isSuspended ? "reactivate" : "suspend";
+
+    if (!window.confirm(`Are you sure you want to ${actionText} this user?`)) return;
+
+    try {
+      await api.patch(endpoint);
+      fetchUsers();
+    } catch (err) {
+      alert(err.response?.data?.message || `Failed to ${actionText} user.`);
+    }
+  };
+
+  const filteredUsers = users.filter(
+    (user) =>
+      (user.name || "").toLowerCase().includes(search.toLowerCase()) ||
+      (user.loginId || "").toLowerCase().includes(search.toLowerCase()) ||
+      (user.email || "").toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <>
@@ -259,480 +169,292 @@ function Users() {
 
         {/* PAGE HEADER */}
         <div className="flex items-center justify-between">
-
           <div>
-            <p className="text-sm text-[#716B63]">
-              Master Data
-            </p>
-
-            <h1 className="mt-1 text-3xl font-semibold text-[#30261F]">
-              Users
-            </h1>
-
+            <p className="text-sm text-[#716B63]">Master Data</p>
+            <h1 className="mt-1 text-3xl font-semibold text-[#30261F]">Users</h1>
             <p className="mt-2 text-sm text-[#716B63]">
-              Manage users who access the accounting system.
+              Manage users who access the accounting system from PostgreSQL.
             </p>
           </div>
 
           <button
             onClick={openAddModal}
-            className="flex items-center gap-2 rounded-lg bg-[#403329] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#30261F]"
+            className="flex items-center gap-2 rounded-lg bg-[#403329] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#30261F] cursor-pointer"
           >
             <Plus size={18} />
             Add User
           </button>
-
         </div>
+
+        {/* TEMP PASSWORD POPUP */}
+        {tempPasswordModal && (
+          <div className="rounded-xl border border-green-200 bg-green-50 p-5">
+            <div className="flex items-start gap-3">
+              <Key className="text-green-700 mt-0.5" size={20} />
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-green-900">
+                  Temporary Password Generated for {tempPasswordModal.loginId}
+                </h3>
+                <p className="mt-1 text-xs text-green-800">
+                  Please copy and share this password immediately. It will NOT be shown again:
+                </p>
+                <div className="mt-2 inline-block rounded-lg bg-white px-4 py-2 font-mono text-sm font-bold text-green-950 border border-green-300">
+                  {tempPasswordModal.tempPassword}
+                </div>
+              </div>
+              <button
+                onClick={() => setTempPasswordModal(null)}
+                className="text-green-700 hover:text-green-900 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* USERS TABLE */}
         <div className="overflow-hidden rounded-xl border border-[#DDD7CE] bg-[#FBFAF7]">
 
           {/* SEARCH */}
           <div className="flex items-center justify-between border-b border-[#DDD7CE] p-5">
-
             <div className="flex h-11 w-[360px] items-center gap-3 rounded-lg border border-[#DDD7CE] bg-white px-4">
-
-              <Search
-                size={18}
-                className="text-[#716B63]"
-              />
-
+              <Search size={18} className="text-[#716B63]" />
               <input
                 type="text"
-                placeholder="Search users..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-transparent text-sm outline-none placeholder:text-[#9B958D]"
+                placeholder="Search by name, login ID, or email..."
+                className="w-full bg-transparent text-sm text-[#211D19] outline-none placeholder:text-[#716B63]"
               />
-
             </div>
-
-            <p className="text-sm text-[#716B63]">
-              {filteredUsers.length} users
-            </p>
-
           </div>
 
-          {/* TABLE */}
+          {/* TABLE CONTENT */}
           <div className="overflow-x-auto">
-
-            <table className="w-full">
-
+            <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-[#DDD7CE] text-left">
-
-                  <th className="px-6 py-4 text-xs font-medium uppercase tracking-wide text-[#716B63]">
-                    User
-                  </th>
-
-                  <th className="px-6 py-4 text-xs font-medium uppercase tracking-wide text-[#716B63]">
-                    Login ID
-                  </th>
-
-                  <th className="px-6 py-4 text-xs font-medium uppercase tracking-wide text-[#716B63]">
-                    Role
-                  </th>
-
-                  <th className="px-6 py-4 text-xs font-medium uppercase tracking-wide text-[#716B63]">
-                    Status
-                  </th>
-
-                  <th className="px-6 py-4 text-right text-xs font-medium uppercase tracking-wide text-[#716B63]">
-                    Actions
-                  </th>
-
+                <tr className="border-b border-[#DDD7CE] bg-[#F5F2EC] text-xs font-semibold uppercase tracking-wider text-[#716B63]">
+                  <th className="px-6 py-4">User</th>
+                  <th className="px-6 py-4">Login ID</th>
+                  <th className="px-6 py-4">Role</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
 
               <tbody>
-
-                {filteredUsers.map((user) => (
-
-                  <tr
-                    key={user.id}
-                    className="border-b border-[#E8E3DB] transition hover:bg-[#F5F2EC]"
-                  >
-
-                    {/* USER */}
-                    <td className="px-6 py-5">
-
-                      <div className="flex items-center gap-3">
-
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E9E2D6] text-sm font-medium text-[#403329]">
-                          {user.name.charAt(0)}
-                        </div>
-
-                        <div>
-
-                          <p className="text-sm font-medium text-[#30261F]">
-                            {user.name}
-                          </p>
-
-                          <p className="mt-1 text-xs text-[#716B63]">
-                            {user.email}
-                          </p>
-
-                        </div>
-
-                      </div>
-
+                {loading ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-12 text-center text-sm text-[#716B63]">
+                      Loading users from database...
                     </td>
-
-                    {/* LOGIN ID */}
-                    <td className="px-6 py-5 text-sm text-[#403329]">
-                      {user.loginId}
-                    </td>
-
-                    {/* ROLE */}
-                    <td className="px-6 py-5">
-
-                      <span className="rounded-full bg-[#E9E2D6] px-3 py-1.5 text-xs font-medium text-[#403329]">
-                        {user.role}
-                      </span>
-
-                    </td>
-
-                    {/* STATUS */}
-                    <td className="px-6 py-5">
-
-                      <span
-                        className={`inline-flex items-center gap-2 text-xs font-medium ${
-                          user.status === "Active"
-                            ? "text-[#56705A]"
-                            : "text-[#9A665A]"
-                        }`}
-                      >
-
-                        <span
-                          className={`h-2 w-2 rounded-full ${
-                            user.status === "Active"
-                              ? "bg-[#56705A]"
-                              : "bg-[#9A665A]"
-                          }`}
-                        />
-
-                        {user.status}
-
-                      </span>
-
-                    </td>
-
-                    {/* ACTIONS */}
-                    <td className="px-6 py-5">
-
-                      <div className="flex justify-end gap-2">
-
-                        <button
-                          onClick={() => openEditModal(user)}
-                          title="Edit user"
-                          className="rounded-lg p-2 text-[#716B63] transition hover:bg-[#E9E2D6] hover:text-[#30261F]"
-                        >
-                          <Pencil size={17} />
-                        </button>
-
-                        <button
-                          onClick={() => toggleStatus(user.id)}
-                          title={
-                            user.status === "Active"
-                              ? "Deactivate user"
-                              : "Activate user"
-                          }
-                          className="rounded-lg p-2 text-[#716B63] transition hover:bg-[#E9E2D6] hover:text-[#30261F]"
-                        >
-                          {user.status === "Active" ? (
-                            <UserX size={17} />
-                          ) : (
-                            <UserCheck size={17} />
-                          )}
-                        </button>
-
-                        <button
-                          onClick={() => deleteUser(user.id)}
-                          title="Delete user"
-                          className="rounded-lg p-2 text-[#9A665A] transition hover:bg-[#F0DFDA]"
-                        >
-                          <Trash2 size={17} />
-                        </button>
-
-                      </div>
-
-                    </td>
-
                   </tr>
+                ) : filteredUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-12 text-center text-sm text-[#716B63]">
+                      No users found.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredUsers.map((user) => (
+                    <tr
+                      key={user.id}
+                      className="border-b border-[#E8E3DB] transition hover:bg-[#F5F2EC]"
+                    >
+                      {/* USER */}
+                      <td className="px-6 py-5">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E9E2D6] text-sm font-medium text-[#403329]">
+                            {(user.name || user.loginId || "U").charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-[#30261F]">{user.name}</p>
+                            <p className="mt-1 text-xs text-[#716B63]">{user.email}</p>
+                          </div>
+                        </div>
+                      </td>
 
-                ))}
+                      {/* LOGIN ID */}
+                      <td className="px-6 py-5 text-sm text-[#403329] font-mono">
+                        {user.loginId}
+                      </td>
 
+                      {/* ROLE */}
+                      <td className="px-6 py-5">
+                        <span className="rounded-full bg-[#E9E2D6] px-3 py-1.5 text-xs font-medium text-[#403329]">
+                          {user.role}
+                        </span>
+                      </td>
+
+                      {/* STATUS */}
+                      <td className="px-6 py-5">
+                        <span
+                          className={`inline-flex items-center gap-2 text-xs font-medium ${
+                            user.status === "ACTIVE"
+                              ? "text-[#56705A]"
+                              : user.status === "PENDING"
+                              ? "text-amber-700"
+                              : "text-[#9A665A]"
+                          }`}
+                        >
+                          <span
+                            className={`h-2 w-2 rounded-full ${
+                              user.status === "ACTIVE"
+                                ? "bg-[#56705A]"
+                                : user.status === "PENDING"
+                                ? "bg-amber-500"
+                                : "bg-[#9A665A]"
+                            }`}
+                          />
+                          {user.status}
+                        </span>
+                      </td>
+
+                      {/* ACTIONS */}
+                      <td className="px-6 py-5">
+                        <div className="flex justify-end gap-2">
+                          {user.status === "PENDING" && (
+                            <button
+                              onClick={() => handleApprove(user.id)}
+                              title="Approve User"
+                              className="rounded-lg p-2 text-green-700 hover:bg-green-100 transition cursor-pointer"
+                            >
+                              <CheckCircle size={17} />
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => handleToggleSuspend(user)}
+                            title={user.status === "SUSPENDED" ? "Reactivate User" : "Suspend User"}
+                            className="rounded-lg p-2 text-[#716B63] transition hover:bg-[#E9E2D6] hover:text-[#30261F] cursor-pointer"
+                          >
+                            {user.status === "SUSPENDED" ? (
+                              <UserCheck size={17} />
+                            ) : (
+                              <UserX size={17} />
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
-
             </table>
-
           </div>
-
-          {/* EMPTY */}
-          {filteredUsers.length === 0 && (
-            <div className="px-6 py-16 text-center">
-
-              <p className="text-sm font-medium text-[#30261F]">
-                No users found
-              </p>
-
-              <p className="mt-1 text-sm text-[#716B63]">
-                Try searching with a different name or email.
-              </p>
-
-            </div>
-          )}
 
         </div>
 
       </div>
 
-      {/* ================= ADD / EDIT USER MODAL ================= */}
-
+      {/* CREATE USER MODAL */}
       {isModalOpen && (
-
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4">
-
-          <div className="max-h-[90vh] w-full max-w-[620px] overflow-y-auto rounded-2xl bg-[#FBFAF7] shadow-2xl">
-
-            {/* MODAL HEADER */}
-            <div className="flex items-center justify-between border-b border-[#DDD7CE] px-7 py-6">
-
-              <div>
-
-                <h2 className="text-2xl font-semibold text-[#30261F]">
-                  {editingUser ? "Edit User" : "Add User"}
-                </h2>
-
-                <p className="mt-1 text-sm text-[#716B63]">
-                  {editingUser
-                    ? "Update user information."
-                    : "Create a new user."}
-                </p>
-
-              </div>
-
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-[#DDD7CE] bg-[#FBFAF7] p-8 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#DDD7CE] pb-5">
+              <h3 className="text-xl font-semibold text-[#30261F]">Add User</h3>
               <button
                 onClick={closeModal}
-                className="rounded-lg p-2 text-[#716B63] transition hover:bg-[#E9E2D6]"
+                className="rounded-lg p-1 text-[#716B63] hover:bg-[#E9E2D6] hover:text-[#30261F] cursor-pointer"
               >
-                <X size={21} />
+                <X size={20} />
               </button>
-
             </div>
 
-            {/* FORM */}
-            <form
-              onSubmit={handleSubmit}
-              className="space-y-5 px-7 py-6"
-            >
-
-              {/* FULL NAME */}
+            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+              {/* NAME */}
               <div>
-
-                <label className="mb-2 block text-sm font-medium text-[#30261F]">
-                  Full Name
-                </label>
-
+                <label className="mb-1 block text-xs font-medium text-[#30261F]">Full Name</label>
                 <input
                   type="text"
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder="Enter full name"
+                  placeholder="e.g. Ramesh Patel"
+                  className="h-10 w-full rounded-lg border border-[#DDD7CE] bg-white px-3 text-sm outline-none focus:border-[#403329]"
                   required
-                  className="h-12 w-full rounded-lg border border-[#DDD7CE] bg-white px-4 text-sm outline-none transition focus:border-[#806A55]"
                 />
-
               </div>
 
               {/* LOGIN ID */}
               <div>
-
-                <label className="mb-2 block text-sm font-medium text-[#30261F]">
-                  Login ID
-                </label>
-
+                <label className="mb-1 block text-xs font-medium text-[#30261F]">Login ID</label>
                 <input
                   type="text"
                   name="loginId"
                   value={formData.loginId}
                   onChange={handleChange}
-                  placeholder="Enter login ID"
-                  minLength={6}
-                  maxLength={12}
+                  placeholder="e.g. ramesh123"
+                  className="h-10 w-full rounded-lg border border-[#DDD7CE] bg-white px-3 text-sm outline-none focus:border-[#403329]"
                   required
-                  className="h-12 w-full rounded-lg border border-[#DDD7CE] bg-white px-4 text-sm outline-none transition focus:border-[#806A55]"
                 />
-
-                <p className="mt-1.5 text-xs text-[#8B837A]">
-                  Login ID must be between 6–12 characters.
+                <p className="mt-1 text-[11px] text-[#716B63]">
+                  6–12 characters. Letters, numbers and underscores only (no @, no spaces).
                 </p>
-
               </div>
+
 
               {/* EMAIL */}
               <div>
-
-                <label className="mb-2 block text-sm font-medium text-[#30261F]">
-                  Email ID
-                </label>
-
+                <label className="mb-1 block text-xs font-medium text-[#30261F]">Email Address</label>
                 <input
                   type="email"
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="Enter email address"
+                  placeholder="e.g. ramesh@example.com"
+                  className="h-10 w-full rounded-lg border border-[#DDD7CE] bg-white px-3 text-sm outline-none focus:border-[#403329]"
                   required
-                  className="h-12 w-full rounded-lg border border-[#DDD7CE] bg-white px-4 text-sm outline-none transition focus:border-[#806A55]"
                 />
-
               </div>
 
-              {/* ROLE */}
+              {/* USER TYPE */}
               <div>
-
-                <label className="mb-3 block text-sm font-medium text-[#30261F]">
-                  Role
-                </label>
-
-                <div className="flex flex-wrap gap-6">
-
-                  {/* ADMINISTRATOR */}
-                  <label className="flex cursor-pointer items-center gap-2 text-sm text-[#403329]">
-
-                    <input
-                      type="radio"
-                      name="role"
-                      value="Administrator"
-                      checked={formData.role === "Administrator"}
-                      onChange={handleChange}
-                      className="h-4 w-4 accent-[#403329]"
-                    />
-
-                    Administrator
-
-                  </label>
-
-                  {/* CUSTOMER */}
-                  <label className="flex cursor-pointer items-center gap-2 text-sm text-[#403329]">
-
-                    <input
-                      type="radio"
-                      name="role"
-                      value="Customer"
-                      checked={formData.role === "Customer"}
-                      onChange={handleChange}
-                      className="h-4 w-4 accent-[#403329]"
-                    />
-
-                    Customer
-
-                  </label>
-
-                  {/* VENDOR */}
-                  <label className="flex cursor-pointer items-center gap-2 text-sm text-[#403329]">
-
-                    <input
-                      type="radio"
-                      name="role"
-                      value="Vendor"
-                      checked={formData.role === "Vendor"}
-                      onChange={handleChange}
-                      className="h-4 w-4 accent-[#403329]"
-                    />
-
-                    Vendor
-
-                  </label>
-
-                </div>
-
-              </div>
-
-              {/* PASSWORD */}
-              <div>
-
-                <label className="mb-2 block text-sm font-medium text-[#30261F]">
-                  Password
-                </label>
-
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
+                <label className="mb-1 block text-xs font-medium text-[#30261F]">User Type / Role</label>
+                <select
+                  name="userType"
+                  value={formData.userType}
                   onChange={handleChange}
-                  placeholder={
-                    editingUser
-                      ? "Enter new password"
-                      : "Enter password"
-                  }
-                  required={!editingUser}
-                  className="h-12 w-full rounded-lg border border-[#DDD7CE] bg-white px-4 text-sm outline-none transition focus:border-[#806A55]"
-                />
-
-                <p className="mt-1.5 text-xs text-[#8B837A]">
-                  More than 8 characters with uppercase, lowercase and
-                  special character.
+                  className="h-10 w-full rounded-lg border border-[#DDD7CE] bg-white px-3 text-sm outline-none focus:border-[#403329]"
+                >
+                  <option value="ADMINISTRATOR">Administrator (ADMIN)</option>
+                  <option value="ACCOUNTANT">Accountant (ACCOUNTANT)</option>
+                  <option value="CUSTOMER">Customer (CONTACT)</option>
+                  <option value="VENDOR">Vendor (CONTACT)</option>
+                </select>
+                <p className="mt-1 text-[11px] text-[#716B63]">
+                  A temporary one-time password will be automatically generated and displayed after creation.
                 </p>
-
-              </div>
-
-              {/* RE-ENTER PASSWORD */}
-              <div>
-
-                <label className="mb-2 block text-sm font-medium text-[#30261F]">
-                  Re-enter Password
-                </label>
-
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  placeholder="Re-enter password"
-                  required={!editingUser}
-                  className="h-12 w-full rounded-lg border border-[#DDD7CE] bg-white px-4 text-sm outline-none transition focus:border-[#806A55]"
-                />
-
               </div>
 
               {/* ERROR */}
               {error && (
-                <div className="rounded-lg border border-[#D8B9B0] bg-[#F7EDEA] px-4 py-3 text-sm text-[#8A4F43]">
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-xs text-red-700 flex items-center gap-2">
+                  <AlertCircle size={14} />
                   {error}
                 </div>
               )}
 
               {/* BUTTONS */}
-              <div className="flex justify-end gap-3 border-t border-[#DDD7CE] pt-5">
-
+              <div className="flex justify-end gap-3 border-t border-[#DDD7CE] pt-4">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="rounded-lg border border-[#DDD7CE] px-5 py-2.5 text-sm font-medium text-[#403329] transition hover:bg-[#E9E2D6]"
+                  className="rounded-lg border border-[#DDD7CE] px-4 py-2 text-xs font-medium text-[#403329] hover:bg-[#E9E2D6] cursor-pointer"
                 >
                   Cancel
                 </button>
-
                 <button
                   type="submit"
-                  className="rounded-lg bg-[#403329] px-6 py-2.5 text-sm font-medium text-white transition hover:bg-[#30261F]"
+                  className="rounded-lg bg-[#403329] px-5 py-2 text-xs font-medium text-white hover:bg-[#30261F] cursor-pointer"
                 >
-                  {editingUser ? "Save Changes" : "Create"}
+                  Create User
                 </button>
-
               </div>
-
             </form>
-
           </div>
-
         </div>
-
       )}
-
     </>
   );
 }

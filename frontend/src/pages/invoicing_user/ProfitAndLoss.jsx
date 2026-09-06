@@ -1,114 +1,66 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import {
   TrendingUp,
   ArrowDownRight,
   ArrowUpRight,
   Calendar,
-  FileSpreadsheet,
-  Download,
-  Filter,
-  DollarSign,
-  PieChart,
+  RotateCw,
 } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
-import { getChartOfAccounts } from "./accounts/ChartOfAccountsMaster";
+import api from "../../services/api";
 
 function ProfitAndLoss() {
-  const [period, setPeriod] = useState("FY 2026-27");
+  const [period] = useState("FY 2026-27");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Load Journal Entries from storage
-  const journalEntries = useMemo(() => {
+  const [incomeItems, setIncomeItems] = useState([]);
+  const [expenseItems, setExpenseItems] = useState([]);
+  const [totalIncome, setTotalIncome] = useState(0);
+  const [totalExpenses, setTotalExpenses] = useState(0);
+  const [netProfit, setNetProfit] = useState(0);
+
+  const fetchProfitLoss = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const saved = localStorage.getItem("urban_furniture_journal_entries_master");
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
+      const res = await api.get("/reports/profit-loss");
+      const data = res.data?.data || res.data || {};
+
+      const rawIncome = data.incomeAccounts || data.income || [];
+      const rawExpenses = data.expenseAccounts || data.expenses || [];
+
+      const mappedIncome = rawIncome.map((inc, i) => ({
+        id: inc.accountId || `inc-${i}`,
+        name: inc.name || inc.accountName || "Income A/c",
+        amount: Number(inc.amount || inc.balance || 0),
+      }));
+
+      const mappedExpenses = rawExpenses.map((exp, i) => ({
+        id: exp.accountId || `exp-${i}`,
+        name: exp.name || exp.accountName || "Expense A/c",
+        amount: Number(exp.amount || exp.balance || 0),
+      }));
+
+      setIncomeItems(mappedIncome);
+      setExpenseItems(mappedExpenses);
+      setTotalIncome(Number(data.totalIncome || 0));
+      setTotalExpenses(Number(data.totalExpense || data.totalExpenses || 0));
+      setNetProfit(Number(data.netProfit || 0));
+    } catch (err) {
+      console.error("Failed to load Profit & Loss:", err);
+      setError(err.response?.data?.message || "Failed to load Profit & Loss report.");
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchProfitLoss();
   }, []);
 
-  // Compute account balances from posted journal items
-  const accountBalances = useMemo(() => {
-    const balances = {}; // { accountId: { name, code, debit, credit, net } }
-
-    journalEntries.forEach((entry) => {
-      // Only count posted entries
-      if (entry.status !== "Cancelled") {
-        (entry.items || []).forEach((item) => {
-          const accId = item.accountId || "unknown";
-          if (!balances[accId]) {
-            balances[accId] = {
-              id: accId,
-              name: item.accountName || "General Account",
-              debit: 0,
-              credit: 0,
-            };
-          }
-          balances[accId].debit += Number(item.debit) || 0;
-          balances[accId].credit += Number(item.credit) || 0;
-        });
-      }
-    });
-
-    return balances;
-  }, [journalEntries]);
-
-  // Income items (Credit - Debit)
-  const incomeItems = useMemo(() => {
-    const list = [];
-    Object.values(accountBalances).forEach((acc) => {
-      const name = acc.name?.toLowerCase() || "";
-      if (name.includes("sales") || name.includes("income") || name.includes("revenue")) {
-        const netIncome = Math.max(0, acc.credit - acc.debit);
-        list.push({
-          id: acc.id,
-          name: acc.name,
-          amount: netIncome,
-        });
-      }
-    });
-
-    // Baseline fallback if no transactions yet
-    if (list.length === 0) {
-      list.push({ id: "coa-5", name: "Sales Income A/c", amount: 10500 });
-    }
-    return list;
-  }, [accountBalances]);
-
-  // Expense items (Debit - Credit)
-  const expenseItems = useMemo(() => {
-    const list = [];
-    Object.values(accountBalances).forEach((acc) => {
-      const name = acc.name?.toLowerCase() || "";
-      if (name.includes("purchase") || name.includes("expense") || name.includes("cost")) {
-        const netExpense = Math.max(0, acc.debit - acc.credit);
-        list.push({
-          id: acc.id,
-          name: acc.name,
-          amount: netExpense,
-        });
-      }
-    });
-
-    // Baseline fallback if no transactions yet
-    if (list.length === 0) {
-      list.push({ id: "coa-2", name: "Purchases Expense A/c", amount: 6000 });
-    }
-    return list;
-  }, [accountBalances]);
-
-  const totalIncome = useMemo(
-    () => incomeItems.reduce((sum, it) => sum + it.amount, 0),
-    [incomeItems]
-  );
-
-  const totalExpenses = useMemo(
-    () => expenseItems.reduce((sum, it) => sum + it.amount, 0),
-    [expenseItems]
-  );
-
-  const netProfit = totalIncome - totalExpenses;
   const marginPercent =
-    totalIncome > 0 ? ((netProfit / totalIncome) * 100).toFixed(1) : 0;
+    totalIncome > 0 ? ((netProfit / totalIncome) * 100).toFixed(1) : "0.0";
 
   return (
     <div className="w-full space-y-6">
@@ -123,14 +75,29 @@ function ProfitAndLoss() {
           </p>
         </div>
 
-        {/* Period Selector */}
+        {/* Period Selector & Refresh */}
         <div className="flex items-center gap-2.5">
+          <button
+            onClick={fetchProfitLoss}
+            disabled={loading}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#e7e3da] bg-white text-xs font-semibold text-[#211D19] shadow-2xs hover:bg-[#faf8f4] transition cursor-pointer"
+          >
+            <RotateCw size={13} className={loading ? "animate-spin text-[#8f8274]" : "text-[#8f8274]"} />
+            <span>Refresh</span>
+          </button>
+
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#e7e3da] bg-white text-xs font-semibold text-[#211D19] shadow-2xs">
             <Calendar size={14} className="text-[#8f8274]" />
             <span>{period}</span>
           </div>
         </div>
       </div>
+
+      {error && (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+          {error}
+        </div>
+      )}
 
       {/* ================= 3 KPI SUMMARY METRICS ================= */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
@@ -209,17 +176,23 @@ function ProfitAndLoss() {
               1. Operating Revenue & Income
             </h4>
             <div className="space-y-2">
-              {incomeItems.map((inc) => (
-                <div
-                  key={inc.id}
-                  className="flex items-center justify-between py-1 px-2 rounded-lg hover:bg-white transition"
-                >
-                  <span className="text-[#211D19]">{inc.name}</span>
-                  <span className="font-semibold text-[#211D19]">
-                    {formatCurrency(inc.amount)}
-                  </span>
-                </div>
-              ))}
+              {loading ? (
+                <div className="text-center py-4 text-xs text-[#8f8274]">Loading revenue figures...</div>
+              ) : incomeItems.length === 0 ? (
+                <div className="text-center py-4 text-xs text-[#8f8274]">No operating revenue recorded yet</div>
+              ) : (
+                incomeItems.map((inc) => (
+                  <div
+                    key={inc.id}
+                    className="flex items-center justify-between py-1 px-2 rounded-lg hover:bg-white transition"
+                  >
+                    <span className="text-[#211D19]">{inc.name}</span>
+                    <span className="font-semibold text-[#211D19]">
+                      {formatCurrency(inc.amount)}
+                    </span>
+                  </div>
+                ))
+              )}
               <div className="flex items-center justify-between pt-2 border-t border-[#e7e3da] font-bold text-[#211D19]">
                 <span>Total Operating Income</span>
                 <span className="text-emerald-800">{formatCurrency(totalIncome)}</span>
@@ -233,17 +206,23 @@ function ProfitAndLoss() {
               2. Cost of Sales & Procurement Expenses
             </h4>
             <div className="space-y-2">
-              {expenseItems.map((exp) => (
-                <div
-                  key={exp.id}
-                  className="flex items-center justify-between py-1 px-2 rounded-lg hover:bg-white transition"
-                >
-                  <span className="text-[#211D19]">{exp.name}</span>
-                  <span className="font-semibold text-rose-700">
-                    {formatCurrency(exp.amount)}
-                  </span>
-                </div>
-              ))}
+              {loading ? (
+                <div className="text-center py-4 text-xs text-[#8f8274]">Loading expense figures...</div>
+              ) : expenseItems.length === 0 ? (
+                <div className="text-center py-4 text-xs text-[#8f8274]">No procurement or operating expenses recorded yet</div>
+              ) : (
+                expenseItems.map((exp) => (
+                  <div
+                    key={exp.id}
+                    className="flex items-center justify-between py-1 px-2 rounded-lg hover:bg-white transition"
+                  >
+                    <span className="text-[#211D19]">{exp.name}</span>
+                    <span className="font-semibold text-rose-700">
+                      {formatCurrency(exp.amount)}
+                    </span>
+                  </div>
+                ))
+              )}
               <div className="flex items-center justify-between pt-2 border-t border-[#e7e3da] font-bold text-[#211D19]">
                 <span>Total Procurement & Expenses</span>
                 <span className="text-rose-700">{formatCurrency(totalExpenses)}</span>

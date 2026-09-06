@@ -6,97 +6,15 @@ import ProductKanban from "./ProductKanban";
 import ProductForm from "./ProductForm";
 import Toast, { useToast } from "../../../components/common/Toast";
 import ViewToggle from "../../../components/common/ViewToggle";
-
-const STORAGE_KEY_PRODUCTS = "urban_furniture_products_master";
-const STORAGE_KEY_CATEGORIES = "urban_furniture_categories_master";
-
-const INITIAL_CATEGORIES = [
-  "Raw Material",
-  "Round Table",
-  "Modular Furniture",
-  "Beds",
-];
-
-const INITIAL_PRODUCTS = [
-  {
-    id: "prod-1",
-    productName: "Teak Hardwood Logs",
-    productType: "Goods",
-    category: "Raw Material",
-    salesPrice: 25000,
-    cost: 15000,
-    image: null,
-  },
-  {
-    id: "prod-2",
-    productName: "Solid Oak Round Dining Table",
-    productType: "Goods",
-    category: "Round Table",
-    salesPrice: 32000,
-    cost: 19000,
-    image: null,
-  },
-  {
-    id: "prod-3",
-    productName: "Modular Office Workstation 4-Pod",
-    productType: "Goods",
-    category: "Modular Furniture",
-    salesPrice: 48000,
-    cost: 28000,
-    image: null,
-  },
-  {
-    id: "prod-4",
-    productName: "King Size Storage Bed",
-    productType: "Goods",
-    category: "Beds",
-    salesPrice: 42000,
-    cost: 26000,
-    image: null,
-  },
-];
+import api from "../../../services/api";
 
 function ProductMaster() {
   const navigate = useNavigate();
 
-  // Load products from localStorage or fallback to mock
-  const [products, setProducts] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_PRODUCTS);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const hasLegacy = parsed.some((p) => p.category === "Electronics" || p.category === "Office");
-          if (hasLegacy) {
-            return INITIAL_PRODUCTS;
-          }
-          return parsed;
-        }
-      }
-    } catch (e) {
-      console.error("Failed to load products from storage:", e);
-    }
-    return INITIAL_PRODUCTS;
-  });
-
-  // Load categories from localStorage or fallback
-  const [categories, setCategories] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_CATEGORIES);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          if (parsed.includes("Electronics") || parsed.includes("Office")) {
-            return INITIAL_CATEGORIES;
-          }
-          return parsed;
-        }
-      }
-    } catch (e) {
-      console.error("Failed to load categories from storage:", e);
-    }
-    return INITIAL_CATEGORIES;
-  });
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [rawCategories, setRawCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Views: 'list' (default) | 'kanban' | 'form'
   const [currentView, setCurrentView] = useState("list");
@@ -112,23 +30,41 @@ function ProductMaster() {
   const [selectedIds, setSelectedIds] = useState([]);
   const { toastMessage, showToast } = useToast();
 
-  // Persist products
-  useEffect(() => {
+  const fetchData = async () => {
+    setLoading(true);
     try {
-      localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(products));
-    } catch (e) {
-      console.error("Failed to save products to storage:", e);
-    }
-  }, [products]);
+      const [prodRes, catRes] = await Promise.all([
+        api.get("/products?limit=100"),
+        api.get("/product-categories").catch(() => ({ data: { items: [] } })),
+      ]);
 
-  // Persist categories
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_CATEGORIES, JSON.stringify(categories));
-    } catch (e) {
-      console.error("Failed to save categories to storage:", e);
+      const catList = catRes.data?.items || [];
+      setRawCategories(catList);
+      const catNames = catList.map((c) => c.name);
+      setCategories(catNames.length > 0 ? catNames : ["Raw Material", "Round Table", "Modular Furniture", "Beds"]);
+
+      const mapped = (prodRes.data?.items || []).map((p) => ({
+        id: p.id,
+        productName: p.name,
+        productType: p.type === "GOODS" ? "Goods" : p.type === "SERVICE" ? "Service" : "Combo",
+        category: p.category?.name || "General",
+        categoryId: p.categoryId,
+        salesPrice: Number(p.salesPrice) || 0,
+        cost: Number(p.cost) || 0,
+        image: p.imageUrl || null,
+      }));
+      setProducts(mapped);
+    } catch (err) {
+      console.error("Failed to load products:", err);
+      showToast("Failed to load products", "error");
+    } finally {
+      setLoading(false);
     }
-  }, [categories]);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   // Switch to Form View for creating a new product
   const handleNewProduct = () => {
@@ -159,33 +95,51 @@ function ProductMaster() {
   };
 
   // Save product (from Confirm button)
-  const handleSaveProduct = (formData) => {
-    if (formData.id) {
-      // Update existing
-      setProducts((prev) =>
-        prev.map((p) => (p.id === formData.id ? { ...formData } : p))
-      );
-      showToast("Product updated successfully");
-    } else {
-      // Create new
-      const newProduct = {
-        ...formData,
-        id: "prod-" + Date.now(),
-      };
-      setProducts((prev) => [newProduct, ...prev]);
-      showToast("Product created successfully");
-    }
+  const handleSaveProduct = async (formData) => {
+    // Look up categoryId
+    const matchedCategory = rawCategories.find(
+      (c) => c.name.toLowerCase() === (formData.category || "").toLowerCase()
+    );
 
-    // Return to previous browse view
-    setCurrentView(previousBrowseView);
-    setEditingProduct(null);
+    const payload = {
+      name: formData.productName,
+      type: formData.productType === "Service" ? "SERVICE" : formData.productType === "Combo" ? "COMBO" : "GOODS",
+      categoryId: matchedCategory ? matchedCategory.id : (rawCategories[0]?.id || undefined),
+      salesPrice: Number(formData.salesPrice) || 0,
+      cost: Number(formData.cost) || 0,
+    };
+
+    try {
+      if (formData.id && typeof formData.id === "number") {
+        await api.put(`/products/${formData.id}`, payload);
+        showToast("Product updated successfully");
+      } else {
+        await api.post("/products", payload);
+        showToast("Product created successfully");
+      }
+      await fetchData();
+      setCurrentView(previousBrowseView);
+      setEditingProduct(null);
+    } catch (err) {
+      console.error("Failed to save product:", err);
+      showToast(err.response?.data?.message || "Failed to save product", "error");
+    }
   };
 
   // Add category on the fly
-  const handleAddCategory = (newCat) => {
+  const handleAddCategory = async (newCat) => {
     if (!categories.includes(newCat)) {
-      setCategories((prev) => [...prev, newCat]);
-      showToast(`Category "${newCat}" created`);
+      try {
+        const res = await api.post("/product-categories", { name: newCat }).catch(() => null);
+        if (res?.data?.data) {
+          setRawCategories((prev) => [...prev, res.data.data]);
+        }
+        setCategories((prev) => [...prev, newCat]);
+        showToast(`Category "${newCat}" created`);
+      } catch {
+        setCategories((prev) => [...prev, newCat]);
+        showToast(`Category "${newCat}" added`);
+      }
     }
   };
 
@@ -219,11 +173,16 @@ function ProductMaster() {
   };
 
   // Delete product
-  const handleDeleteProduct = (productId) => {
+  const handleDeleteProduct = async (productId) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
-      setProducts((prev) => prev.filter((p) => p.id !== productId));
-      setSelectedIds((prev) => prev.filter((id) => id !== productId));
-      showToast("Product deleted successfully");
+      try {
+        await api.delete(`/products/${productId}`);
+        showToast("Product deleted successfully");
+        await fetchData();
+      } catch (err) {
+        console.error("Failed to delete product:", err);
+        showToast(err.response?.data?.message || "Failed to delete product", "error");
+      }
     }
   };
 

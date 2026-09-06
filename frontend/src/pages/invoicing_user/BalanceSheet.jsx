@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import {
   Building2,
   Calendar,
@@ -7,145 +7,69 @@ import {
   Scale,
   DollarSign,
   TrendingUp,
+  RotateCw,
 } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
+import api from "../../services/api";
 
 function BalanceSheet() {
   const [asOfDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Load Journal Entries from storage
-  const journalEntries = useMemo(() => {
+  const [assets, setAssets] = useState([]);
+  const [liabilities, setLiabilities] = useState([]);
+  const [equity, setEquity] = useState([]);
+  const [totalAssets, setTotalAssets] = useState(0);
+  const [totalLiabilities, setTotalLiabilities] = useState(0);
+  const [totalEquity, setTotalEquity] = useState(0);
+  const [totalLiabAndEquity, setTotalLiabAndEquity] = useState(0);
+  const [isBalanced, setIsBalanced] = useState(true);
+
+  const fetchBalanceSheet = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const saved = localStorage.getItem("urban_furniture_journal_entries_master");
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
+      const res = await api.get("/reports/balance-sheet");
+      const data = res.data?.data || res.data || {};
+
+      const rawAssets = (data.assets || []).map((a) => ({
+        name: a.name || a.accountName || "Asset A/c",
+        amount: Number(a.amount || 0),
+        desc: `Account code: ${a.code || "N/A"}`,
+      }));
+
+      const rawLiabilities = (data.liabilities || []).map((l) => ({
+        name: l.name || l.accountName || "Liability A/c",
+        amount: Number(l.amount || 0),
+        desc: `Account code: ${l.code || "N/A"}`,
+      }));
+
+      const rawEquity = (data.equity || []).map((e) => ({
+        name: e.name || e.accountName || "Equity A/c",
+        amount: Number(e.amount || 0),
+        desc: `Account code: ${e.code || "N/A"}`,
+      }));
+
+      setAssets(rawAssets);
+      setLiabilities(rawLiabilities);
+      setEquity(rawEquity);
+      setTotalAssets(Number(data.totalAssets || 0));
+      setTotalLiabilities(Number(data.totalLiabilities || 0));
+      setTotalEquity(Number(data.totalEquity || 0));
+      setTotalLiabAndEquity(Number(data.totalEquityAndLiabilities || 0));
+      setIsBalanced(data.isBalanced ?? true);
+    } catch (err) {
+      console.error("Failed to load Balance Sheet:", err);
+      setError(err.response?.data?.message || "Failed to load Balance Sheet report.");
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchBalanceSheet();
   }, []);
-
-  // Compute account balances from posted journal items
-  const accountBalances = useMemo(() => {
-    const balances = {};
-
-    journalEntries.forEach((entry) => {
-      if (entry.status !== "Cancelled") {
-        (entry.items || []).forEach((item) => {
-          const accId = item.accountId || "unknown";
-          if (!balances[accId]) {
-            balances[accId] = {
-              id: accId,
-              name: item.accountName || "Account",
-              debit: 0,
-              credit: 0,
-            };
-          }
-          balances[accId].debit += Number(item.debit) || 0;
-          balances[accId].credit += Number(item.credit) || 0;
-        });
-      }
-    });
-
-    return balances;
-  }, [journalEntries]);
-
-  // 1. Assets (Debit - Credit)
-  const assets = useMemo(() => {
-    let bank = 500000; // Baseline seed capital in bank
-    let cash = 50000;
-    let debtors = 0;
-
-    Object.values(accountBalances).forEach((acc) => {
-      const name = acc.name?.toLowerCase() || "";
-      const netDebit = acc.debit - acc.credit;
-
-      if (name.includes("bank")) {
-        bank += netDebit;
-      } else if (name.includes("cash")) {
-        cash += netDebit;
-      } else if (name.includes("debtor")) {
-        debtors += netDebit;
-      }
-    });
-
-    return [
-      { name: "Bank A/c", amount: Math.max(0, bank), desc: "Liquid cash at bank" },
-      { name: "Cash A/c", amount: Math.max(0, cash), desc: "Petty cash in hand" },
-      { name: "Debtors A/c (Receivables)", amount: Math.max(0, debtors), desc: "Customer receivables" },
-    ];
-  }, [accountBalances]);
-
-  const totalAssets = useMemo(
-    () => assets.reduce((sum, a) => sum + a.amount, 0),
-    [assets]
-  );
-
-  // 2. Liabilities (Credit - Debit)
-  const liabilities = useMemo(() => {
-    let creditors = 0;
-
-    Object.values(accountBalances).forEach((acc) => {
-      const name = acc.name?.toLowerCase() || "";
-      const netCredit = acc.credit - acc.debit;
-
-      if (name.includes("creditor")) {
-        creditors += netCredit;
-      }
-    });
-
-    return [
-      {
-        name: "Creditors A/c (Payables)",
-        amount: Math.max(0, creditors),
-        desc: "Outstanding vendor procurement payables",
-      },
-    ];
-  }, [accountBalances]);
-
-  const totalLiabilities = useMemo(
-    () => liabilities.reduce((sum, l) => sum + l.amount, 0),
-    [liabilities]
-  );
-
-  // 3. Equity & Retained Earnings
-  const equity = useMemo(() => {
-    let capital = 500000; // Baseline seed equity
-    let income = 0;
-    let expenses = 0;
-
-    Object.values(accountBalances).forEach((acc) => {
-      const name = acc.name?.toLowerCase() || "";
-      if (name.includes("capital")) {
-        capital += acc.credit - acc.debit;
-      } else if (name.includes("sales") || name.includes("income")) {
-        income += acc.credit - acc.debit;
-      } else if (name.includes("purchase") || name.includes("expense")) {
-        expenses += acc.debit - acc.credit;
-      }
-    });
-
-    const retainedProfit = income - expenses;
-    const items = [
-      { name: "Capital A/c", amount: Math.max(0, capital), desc: "Owner equity contribution" },
-    ];
-
-    if (retainedProfit !== 0) {
-      items.push({
-        name: "Retained Earnings (Period Net Profit)",
-        amount: retainedProfit,
-        desc: "Accumulated profit/loss from transactions",
-      });
-    }
-
-    return items;
-  }, [accountBalances]);
-
-  const totalEquity = useMemo(
-    () => equity.reduce((sum, e) => sum + e.amount, 0),
-    [equity]
-  );
-
-  const totalLiabAndEquity = totalLiabilities + totalEquity;
-  const isBalanced = Math.abs(totalAssets - totalLiabAndEquity) < 1000;
 
   return (
     <div className="w-full space-y-6">
@@ -162,17 +86,36 @@ function BalanceSheet() {
 
         {/* Status indicator */}
         <div className="flex items-center gap-2">
+          <button
+            onClick={fetchBalanceSheet}
+            disabled={loading}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#e7e3da] bg-white text-xs font-semibold text-[#211D19] shadow-2xs hover:bg-[#faf8f4] transition cursor-pointer"
+          >
+            <RotateCw size={13} className={loading ? "animate-spin text-[#8f8274]" : "text-[#8f8274]"} />
+            <span>Refresh</span>
+          </button>
+
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#e7e3da] bg-white text-xs font-semibold text-[#211D19] shadow-2xs">
             <Calendar size={14} className="text-[#8f8274]" />
             <span>As of: {asOfDate}</span>
           </div>
 
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs font-semibold shadow-2xs">
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold shadow-2xs ${
+            isBalanced
+              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+              : "border-rose-200 bg-rose-50 text-rose-800"
+          }`}>
             <ShieldCheck size={14} />
-            <span>Double-Entry Balanced</span>
+            <span>{isBalanced ? "Double-Entry Balanced" : "Discrepancy Detected"}</span>
           </div>
         </div>
       </div>
+
+      {error && (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+          {error}
+        </div>
+      )}
 
       {/* ================= TOTALS CARDS ================= */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
@@ -228,23 +171,29 @@ function BalanceSheet() {
               <span className="text-xs text-[#716B63]">Debit Balances</span>
             </div>
 
-            <div className="p-5 space-y-3">
-              {assets.map((a, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between py-2 border-b border-[#f0ece4] last:border-0"
-                >
-                  <div>
-                    <span className="font-semibold text-sm text-[#211D19] block">
-                      {a.name}
+            <div className="p-5 space-y-3 min-h-[120px]">
+              {loading ? (
+                <div className="text-center py-6 text-sm text-[#8f8274]">Loading ledger balances...</div>
+              ) : assets.length === 0 ? (
+                <div className="text-center py-6 text-sm text-[#8f8274]">No asset entries recorded yet</div>
+              ) : (
+                assets.map((a, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between py-2 border-b border-[#f0ece4] last:border-0"
+                  >
+                    <div>
+                      <span className="font-semibold text-sm text-[#211D19] block">
+                        {a.name}
+                      </span>
+                      <span className="text-xs text-[#998d7f]">{a.desc}</span>
+                    </div>
+                    <span className="text-sm font-bold text-[#211D19]">
+                      {formatCurrency(a.amount)}
                     </span>
-                    <span className="text-xs text-[#998d7f]">{a.desc}</span>
                   </div>
-                  <span className="text-sm font-bold text-[#211D19]">
-                    {formatCurrency(a.amount)}
-                  </span>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
@@ -266,28 +215,34 @@ function BalanceSheet() {
               <span className="text-xs text-[#716B63]">Credit Balances</span>
             </div>
 
-            <div className="p-5 space-y-4">
+            <div className="p-5 space-y-4 min-h-[120px]">
               {/* Liabilities Subsection */}
               <div>
                 <span className="text-[11px] font-bold text-[#8f8274] uppercase tracking-wider block mb-2">
                   Current Liabilities
                 </span>
-                {liabilities.map((l, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between py-2 border-b border-[#f0ece4] last:border-0"
-                  >
-                    <div>
-                      <span className="font-semibold text-sm text-[#211D19] block">
-                        {l.name}
+                {loading ? (
+                  <div className="text-center py-3 text-sm text-[#8f8274]">Loading...</div>
+                ) : liabilities.length === 0 ? (
+                  <div className="text-xs text-[#998d7f] py-1">No liability balances recorded</div>
+                ) : (
+                  liabilities.map((l, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between py-2 border-b border-[#f0ece4] last:border-0"
+                    >
+                      <div>
+                        <span className="font-semibold text-sm text-[#211D19] block">
+                          {l.name}
+                        </span>
+                        <span className="text-xs text-[#998d7f]">{l.desc}</span>
+                      </div>
+                      <span className="text-sm font-bold text-amber-800">
+                        {formatCurrency(l.amount)}
                       </span>
-                      <span className="text-xs text-[#998d7f]">{l.desc}</span>
                     </div>
-                    <span className="text-sm font-bold text-amber-800">
-                      {formatCurrency(l.amount)}
-                    </span>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
 
               {/* Equity Subsection */}
@@ -295,22 +250,28 @@ function BalanceSheet() {
                 <span className="text-[11px] font-bold text-[#8f8274] uppercase tracking-wider block mb-2">
                   Capital & Retained Earnings
                 </span>
-                {equity.map((e, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between py-2 border-b border-[#f0ece4] last:border-0"
-                  >
-                    <div>
-                      <span className="font-semibold text-sm text-[#211D19] block">
-                        {e.name}
+                {loading ? (
+                  <div className="text-center py-3 text-sm text-[#8f8274]">Loading...</div>
+                ) : equity.length === 0 ? (
+                  <div className="text-xs text-[#998d7f] py-1">No capital or equity balances recorded</div>
+                ) : (
+                  equity.map((e, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between py-2 border-b border-[#f0ece4] last:border-0"
+                    >
+                      <div>
+                        <span className="font-semibold text-sm text-[#211D19] block">
+                          {e.name}
+                        </span>
+                        <span className="text-xs text-[#998d7f]">{e.desc}</span>
+                      </div>
+                      <span className="text-sm font-bold text-[#211D19]">
+                        {formatCurrency(e.amount)}
                       </span>
-                      <span className="text-xs text-[#998d7f]">{e.desc}</span>
                     </div>
-                    <span className="text-sm font-bold text-[#211D19]">
-                      {formatCurrency(e.amount)}
-                    </span>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </div>

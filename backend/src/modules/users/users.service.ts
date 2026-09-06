@@ -110,6 +110,10 @@ export class UsersService {
     return users.map(({ passwordHash: _h, ...u }) => u as Omit<User, 'passwordHash'>);
   }
 
+  static async listAll(companyId: number): Promise<Omit<User, 'passwordHash'>[]> {
+    return UsersRepository.findAll(companyId);
+  }
+
   /**
    * Approve a pending user — set ACTIVE, generate temp password.
    */

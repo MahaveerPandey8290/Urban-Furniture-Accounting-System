@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   ArrowLeft,
   BarChart3,
@@ -12,114 +12,128 @@ import {
   TrendingUp,
   Wallet,
 } from "lucide-react";
+import api from "../../services/api";
 
 const Reports = () => {
   const [activeReport, setActiveReport] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // --------------------------------------------------
-  // SAMPLE DATA
-  // Later this will come from your backend/API
-  // --------------------------------------------------
+  const [balanceSheet, setBalanceSheet] = useState({
+    assets: [],
+    liabilities: [],
+    capital: [],
+  });
 
-  const balanceSheet = {
-    assets: [
-      { name: "Cash A/c", amount: 85000 },
-      { name: "Bank A/c", amount: 125000 },
-      { name: "Debtors A/c", amount: 75000 },
-      { name: "Furniture & Fixtures", amount: 100000 },
-      { name: "Inventory", amount: 150000 },
-    ],
-    liabilities: [
-      { name: "Creditors A/c", amount: 95000 },
-      { name: "Outstanding Expenses", amount: 25000 },
-    ],
-    capital: [
-      { name: "Owner's Capital", amount: 300000 },
-      { name: "Current Year Profit", amount: 110000 },
-    ],
+  const [profitLoss, setProfitLoss] = useState({
+    income: [],
+    expenses: [],
+  });
+
+  const [budgets, setBudgets] = useState([]);
+
+  const fetchReportsData = async () => {
+    setLoading(true);
+    try {
+      const [bsRes, plRes, bRes] = await Promise.all([
+        api.get("/reports/balance-sheet").catch(() => ({ data: { data: {} } })),
+        api.get("/reports/profit-loss").catch(() => ({ data: { data: {} } })),
+        api.get("/budgets").catch(() => ({ data: { data: [] } })),
+      ]);
+
+      const bsData = bsRes.data?.data || bsRes.data || {};
+      const plData = plRes.data?.data || plRes.data || {};
+      const rawBudgets = Array.isArray(bRes.data?.data) ? bRes.data.data : Array.isArray(bRes.data) ? bRes.data : [];
+
+      // Transform balance sheet data
+      const bsAssets = (bsData.assets || []).map((a) => ({
+        name: a.name || a.accountName || "Asset",
+        amount: Number(a.balance || a.amount || 0),
+      }));
+      const bsLiabilities = (bsData.liabilities || []).map((l) => ({
+        name: l.name || l.accountName || "Liability",
+        amount: Number(l.balance || l.amount || 0),
+      }));
+      const bsCapital = (bsData.equity || bsData.capital || []).map((c) => ({
+        name: c.name || c.accountName || "Capital",
+        amount: Number(c.balance || c.amount || 0),
+      }));
+
+      setBalanceSheet({
+        assets: bsAssets.length > 0 ? bsAssets : [{ name: "Current Assets", amount: 0 }],
+        liabilities: bsLiabilities.length > 0 ? bsLiabilities : [{ name: "Current Liabilities", amount: 0 }],
+        capital: bsCapital.length > 0 ? bsCapital : [{ name: "Owner's Equity", amount: 0 }],
+      });
+
+      // Transform P&L data
+      const rawIncome = plData.incomeAccounts || plData.income || [];
+      const rawExpenses = plData.expenseAccounts || plData.expenses || [];
+      const plIncome = rawIncome.map((i) => ({
+        name: i.name || i.accountName || "Income",
+        amount: Number(i.balance || i.amount || 0),
+      }));
+      const plExpenses = rawExpenses.map((e) => ({
+        name: e.name || e.accountName || "Expense",
+        amount: Number(e.balance || e.amount || 0),
+      }));
+
+      setProfitLoss({
+        income: plIncome.length > 0 ? plIncome : [{ name: "Operating Revenue", amount: 0 }],
+        expenses: plExpenses.length > 0 ? plExpenses : [{ name: "Operating Expenses", amount: 0 }],
+      });
+
+      // Transform budgets
+      const mappedBudgets = rawBudgets.map((b) => {
+        const totalCommitted = (b.lines || []).reduce(
+          (sum, l) => sum + Number(l.committedAmount || 0),
+          0
+        );
+        return {
+          name: b.name,
+          type: "Expenses",
+          committed: totalCommitted,
+          achieved: 0,
+        };
+      });
+
+      setBudgets(mappedBudgets.length > 0 ? mappedBudgets : [{ name: "Annual Budget", type: "Expenses", committed: 0, achieved: 0 }]);
+    } catch (err) {
+      console.error("Failed to load reports:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const profitLoss = {
-    income: [
-      { name: "Sales Income A/c", amount: 450000 },
-      { name: "Other Income", amount: 20000 },
-    ],
-    expenses: [
-      { name: "Purchases Expense A/c", amount: 220000 },
-      { name: "Salary Expense", amount: 45000 },
-      { name: "Rent Expense", amount: 30000 },
-      { name: "Other Expenses", amount: 15000 },
-    ],
-  };
-
-  const budgets = [
-    {
-      name: "Furniture Project",
-      type: "Expenses",
-      committed: 200000,
-      achieved: 100000,
-    },
-    {
-      name: "Office Expansion",
-      type: "Expenses",
-      committed: 150000,
-      achieved: 90000,
-    },
-    {
-      name: "Sales Target",
-      type: "Income",
-      committed: 300000,
-      achieved: 225000,
-    },
-  ];
+  useEffect(() => {
+    fetchReportsData();
+  }, []);
 
   // --------------------------------------------------
   // CALCULATIONS
   // --------------------------------------------------
 
   const totalAssets = useMemo(
-    () =>
-      balanceSheet.assets.reduce(
-        (total, item) => total + item.amount,
-        0
-      ),
-    []
+    () => balanceSheet.assets.reduce((total, item) => total + item.amount, 0),
+    [balanceSheet.assets]
   );
 
   const totalLiabilities = useMemo(
-    () =>
-      balanceSheet.liabilities.reduce(
-        (total, item) => total + item.amount,
-        0
-      ),
-    []
+    () => balanceSheet.liabilities.reduce((total, item) => total + item.amount, 0),
+    [balanceSheet.liabilities]
   );
 
   const totalCapital = useMemo(
-    () =>
-      balanceSheet.capital.reduce(
-        (total, item) => total + item.amount,
-        0
-      ),
-    []
+    () => balanceSheet.capital.reduce((total, item) => total + item.amount, 0),
+    [balanceSheet.capital]
   );
 
   const totalIncome = useMemo(
-    () =>
-      profitLoss.income.reduce(
-        (total, item) => total + item.amount,
-        0
-      ),
-    []
+    () => profitLoss.income.reduce((total, item) => total + item.amount, 0),
+    [profitLoss.income]
   );
 
   const totalExpenses = useMemo(
-    () =>
-      profitLoss.expenses.reduce(
-        (total, item) => total + item.amount,
-        0
-      ),
-    []
+    () => profitLoss.expenses.reduce((total, item) => total + item.amount, 0),
+    [profitLoss.expenses]
   );
 
   const netProfit = totalIncome - totalExpenses;

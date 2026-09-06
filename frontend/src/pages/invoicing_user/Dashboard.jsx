@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Plus,
@@ -11,26 +11,62 @@ import {
   TrendingUp,
   X
 } from "lucide-react";
-import { getPurchaseOrders } from "../../utils/storage";
+import api from "../../services/api";
 
 function Dashboard() {
   const navigate = useNavigate();
 
-  // Load live purchase orders for dashboard counts
-  const purchaseOrders = useMemo(() => {
-    try {
-      return getPurchaseOrders();
-    } catch {
-      return [];
-    }
+  const [salesOrders, setSalesOrders] = useState([]);
+  const [purchaseOrders, setPurchaseOrders] = useState([]);
+  const [budgets, setBudgets] = useState([]);
+  const [recentInvoices, setRecentInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      setLoading(true);
+      try {
+        const [soRes, poRes, bRes, invRes] = await Promise.all([
+          api.get("/sales-orders?limit=50").catch(() => ({ data: [] })),
+          api.get("/purchase-orders?limit=50").catch(() => ({ data: [] })),
+          api.get("/budgets?limit=50").catch(() => ({ data: [] })),
+          api.get("/invoices?limit=10").catch(() => ({ data: [] })),
+        ]);
+        // All four endpoints return direct arrays
+        setSalesOrders(Array.isArray(soRes.data) ? soRes.data : []);
+        setPurchaseOrders(Array.isArray(poRes.data) ? poRes.data : []);
+        setBudgets(Array.isArray(bRes.data) ? bRes.data : []);
+        setRecentInvoices(Array.isArray(invRes.data) ? invRes.data : []);
+      } catch {
+        // Error toasted by api.js interceptor
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboard();
   }, []);
+
+
+  const soStats = useMemo(() => {
+    const total = salesOrders.length;
+    const confirmed = salesOrders.filter((s) => s.status === "CONFIRMED" || s.status === "Confirmed").length;
+    const draft = salesOrders.filter((s) => s.status === "DRAFT" || s.status === "Draft" || !s.status).length;
+    return { total, confirmed, draft };
+  }, [salesOrders]);
 
   const poStats = useMemo(() => {
     const total = purchaseOrders.length;
-    const confirmed = purchaseOrders.filter((p) => p.status === "Confirmed").length;
-    const draft = purchaseOrders.filter((p) => p.status === "Draft" || !p.status).length;
+    const confirmed = purchaseOrders.filter((p) => p.status === "CONFIRMED" || p.status === "Confirmed").length;
+    const draft = purchaseOrders.filter((p) => p.status === "DRAFT" || p.status === "Draft" || !p.status).length;
     return { total, confirmed, draft };
   }, [purchaseOrders]);
+
+  const budgetStats = useMemo(() => {
+    const total = budgets.length;
+    const confirmed = budgets.filter((b) => b.status === "CONFIRMED" || b.status === "Confirmed").length;
+    const draft = budgets.filter((b) => b.status === "DRAFT" || b.status === "Draft" || !b.status).length;
+    return { total, confirmed, draft };
+  }, [budgets]);
 
   // Quick Action Modal State
   const [activeModal, setActiveModal] = useState(null); // 'sales' | 'purchase' | null
@@ -38,13 +74,12 @@ function Dashboard() {
 
   const handleModalSubmit = (e) => {
     e.preventDefault();
-    // Closes modal and navigates to the respective module
     if (activeModal === "sales") {
       setActiveModal(null);
       navigate("/invoicing_user/sale-invoices");
     } else if (activeModal === "purchase") {
       setActiveModal(null);
-      navigate("/invoicing_user/purchase-orders?action=new");
+      navigate("/invoicing_user/purchase-orders");
     }
   };
 
@@ -87,7 +122,7 @@ function Dashboard() {
             {/* Three Summary Blocks */}
             <div className="grid grid-cols-3 gap-3 mt-6">
 
-              {/* All: 12 */}
+              {/* All */}
               <div
                 onClick={() => navigate("/invoicing_user/sale-invoices")}
                 className="bg-[#faf8f4] border border-[#ebe6dc] hover:border-[#bfaea0] hover:bg-white hover:-translate-y-0.5 hover:shadow-md rounded-xl p-3.5 text-center cursor-pointer transition-all duration-150"
@@ -96,14 +131,14 @@ function Dashboard() {
                   All
                 </span>
                 <p className="text-2xl sm:text-3xl font-bold text-[#211D19] mt-1.5">
-                  12
+                  {soStats.total}
                 </p>
                 <span className="text-xs text-[#716B63] mt-0.5 block">
                   Total records
                 </span>
               </div>
 
-              {/* Confirmed: 10 */}
+              {/* Confirmed */}
               <div
                 onClick={() => navigate("/invoicing_user/sale-invoices?status=confirmed")}
                 className="bg-[#faf8f4] border border-[#ebe6dc] hover:border-[#bfaea0] hover:bg-white hover:-translate-y-0.5 hover:shadow-md rounded-xl p-3.5 text-center cursor-pointer transition-all duration-150"
@@ -112,14 +147,14 @@ function Dashboard() {
                   Confirmed
                 </span>
                 <p className="text-2xl sm:text-3xl font-bold text-[#342921] mt-1.5">
-                  10
+                  {soStats.confirmed}
                 </p>
                 <span className="text-xs text-[#3e5335] mt-0.5 block">
                   Validated
                 </span>
               </div>
 
-              {/* Draft: 2 */}
+              {/* Draft */}
               <div
                 onClick={() => navigate("/invoicing_user/sale-invoices?status=draft")}
                 className="bg-[#faf8f4] border border-[#ebe6dc] hover:border-[#bfaea0] hover:bg-white hover:-translate-y-0.5 hover:shadow-md rounded-xl p-3.5 text-center cursor-pointer transition-all duration-150"
@@ -128,7 +163,7 @@ function Dashboard() {
                   Draft
                 </span>
                 <p className="text-2xl sm:text-3xl font-bold text-[#68584b] mt-1.5">
-                  2
+                  {soStats.draft}
                 </p>
                 <span className="text-xs text-[#7c6352] mt-0.5 block">
                   In progress
@@ -281,51 +316,51 @@ function Dashboard() {
             {/* Three Summary Blocks */}
             <div className="grid grid-cols-3 gap-3 mt-6">
 
-              {/* Achieved: 3 */}
+              {/* All */}
               <div
                 onClick={() => navigate("/invoicing_user/budget-reports")}
                 className="bg-[#faf8f4] border border-[#ebe6dc] hover:border-[#bfaea0] hover:bg-white hover:-translate-y-0.5 hover:shadow-md rounded-xl p-3.5 text-center cursor-pointer transition-all duration-150"
               >
                 <span className="text-xs font-semibold text-[#716B63] tracking-wider uppercase">
-                  Achieved
+                  All
                 </span>
                 <p className="text-2xl sm:text-3xl font-bold text-[#211D19] mt-1.5">
-                  3
+                  {budgetStats.total}
                 </p>
                 <span className="text-xs text-[#716B63] mt-0.5 block">
-                  Met targets
+                  Total budgets
                 </span>
               </div>
 
-              {/* Budget: 2 */}
+              {/* Confirmed */}
               <div
                 onClick={() => navigate("/invoicing_user/budget-reports")}
                 className="bg-[#faf8f4] border border-[#ebe6dc] hover:border-[#bfaea0] hover:bg-white hover:-translate-y-0.5 hover:shadow-md rounded-xl p-3.5 text-center cursor-pointer transition-all duration-150"
               >
                 <span className="text-xs font-semibold text-[#3e5335] tracking-wider uppercase">
-                  Budget
+                  Confirmed
                 </span>
                 <p className="text-2xl sm:text-3xl font-bold text-[#342921] mt-1.5">
-                  2
+                  {budgetStats.confirmed}
                 </p>
                 <span className="text-xs text-[#3e5335] mt-0.5 block">
                   Active lines
                 </span>
               </div>
 
-              {/* Committed: 4 */}
+              {/* Draft */}
               <div
                 onClick={() => navigate("/invoicing_user/budget-reports")}
                 className="bg-[#faf8f4] border border-[#ebe6dc] hover:border-[#bfaea0] hover:bg-white hover:-translate-y-0.5 hover:shadow-md rounded-xl p-3.5 text-center cursor-pointer transition-all duration-150"
               >
                 <span className="text-xs font-semibold text-[#7c6352] tracking-wider uppercase">
-                  Committed
+                  Draft
                 </span>
                 <p className="text-2xl sm:text-3xl font-bold text-[#68584b] mt-1.5">
-                  4
+                  {budgetStats.draft}
                 </p>
                 <span className="text-xs text-[#7c6352] mt-0.5 block">
-                  Allocated
+                  Awaiting review
                 </span>
               </div>
 
@@ -382,50 +417,57 @@ function Dashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#f5f2eb]">
-                <tr className="hover:bg-[#faf8f4] transition cursor-pointer" onClick={() => navigate("/invoicing_user/sale-invoices")}>
-                  <td className="py-3.5 px-3.5 font-semibold text-[#211D19]">INV-2025-012</td>
-                  <td className="py-3.5 px-3.5 text-[#38332c]">The Grand Regal Hotel</td>
-                  <td className="py-3.5 px-3.5 text-[#716B63]">04 Mar 2025</td>
-                  <td className="py-3.5 px-3.5 text-right font-semibold text-[#211D19]">₹ 1,28,500</td>
-                  <td className="py-3.5 px-3.5 text-center">
-                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-[#eef3e8] text-[#3e5335] border border-[#d3dfca]">
-                      Confirmed
-                    </span>
-                  </td>
-                </tr>
-                <tr className="hover:bg-[#faf8f4] transition cursor-pointer" onClick={() => navigate("/invoicing_user/purchase-orders")}>
-                  <td className="py-3.5 px-3.5 font-semibold text-[#211D19]">PO-2025-008</td>
-                  <td className="py-3.5 px-3.5 text-[#38332c]">Timber & Oak Raw Supplies</td>
-                  <td className="py-3.5 px-3.5 text-[#716B63]">03 Mar 2025</td>
-                  <td className="py-3.5 px-3.5 text-right font-semibold text-[#211D19]">₹ 48,200</td>
-                  <td className="py-3.5 px-3.5 text-center">
-                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-[#eef3e8] text-[#3e5335] border border-[#d3dfca]">
-                      Confirmed
-                    </span>
-                  </td>
-                </tr>
-                <tr className="hover:bg-[#faf8f4] transition cursor-pointer" onClick={() => navigate("/invoicing_user/sale-invoices")}>
-                  <td className="py-3.5 px-3.5 font-semibold text-[#211D19]">INV-2025-011</td>
-                  <td className="py-3.5 px-3.5 text-[#38332c]">Prestige Modern Lofts</td>
-                  <td className="py-3.5 px-3.5 text-[#716B63]">01 Mar 2025</td>
-                  <td className="py-3.5 px-3.5 text-right font-semibold text-[#211D19]">₹ 45,000</td>
-                  <td className="py-3.5 px-3.5 text-center">
-                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-[#fcf5e8] text-[#7a5933] border border-[#ebd8bc]">
-                      Draft
-                    </span>
-                  </td>
-                </tr>
-                <tr className="hover:bg-[#faf8f4] transition cursor-pointer" onClick={() => navigate("/invoicing_user/sale-invoices")}>
-                  <td className="py-3.5 px-3.5 font-semibold text-[#211D19]">INV-2025-010</td>
-                  <td className="py-3.5 px-3.5 text-[#38332c]">Studio Arch Interiors</td>
-                  <td className="py-3.5 px-3.5 text-[#716B63]">28 Feb 2025</td>
-                  <td className="py-3.5 px-3.5 text-right font-semibold text-[#211D19]">₹ 32,400</td>
-                  <td className="py-3.5 px-3.5 text-center">
-                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-[#eef3e8] text-[#3e5335] border border-[#d3dfca]">
-                      Confirmed
-                    </span>
-                  </td>
-                </tr>
+                {recentInvoices.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className="py-6 text-center text-[#716B63] text-sm">
+                      No invoices recorded yet.
+                    </td>
+                  </tr>
+                ) : (
+                  recentInvoices.slice(0, 5).map((inv) => (
+                    <tr
+                      key={inv.id}
+                      className="hover:bg-[#faf8f4] transition cursor-pointer"
+                      onClick={() =>
+                        navigate(
+                          inv.documentType === "VENDOR_BILL"
+                            ? "/invoicing_user/bills"
+                            : "/invoicing_user/sale-invoices"
+                        )
+                      }
+                    >
+                      <td className="py-3.5 px-3.5 font-semibold text-[#211D19]">
+                        {inv.number || `INV-${inv.id}`}
+                      </td>
+                      <td className="py-3.5 px-3.5 text-[#38332c]">
+                        {inv.partner?.name || "Partner"}
+                      </td>
+                      <td className="py-3.5 px-3.5 text-[#716B63]">
+                        {inv.invoiceDate
+                          ? new Date(inv.invoiceDate).toLocaleDateString("en-IN", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })
+                          : "-"}
+                      </td>
+                      <td className="py-3.5 px-3.5 text-right font-semibold text-[#211D19]">
+                        ₹ {Number(inv.grandTotal || 0).toLocaleString("en-IN")}
+                      </td>
+                      <td className="py-3.5 px-3.5 text-center">
+                        <span
+                          className={`px-2.5 py-1 rounded-full text-xs font-medium border ${
+                            inv.status === "CONFIRMED"
+                              ? "bg-[#eef3e8] text-[#3e5335] border-[#d3dfca]"
+                              : "bg-[#fcf5e8] text-[#7a5933] border-[#ebd8bc]"
+                          }`}
+                        >
+                          {inv.status === "CONFIRMED" ? "Confirmed" : "Draft"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

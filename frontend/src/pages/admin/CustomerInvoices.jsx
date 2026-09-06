@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -12,101 +12,7 @@ import {
   Wallet,
   X,
 } from "lucide-react";
-
-const initialInvoices = [
-  {
-    id: 1,
-    invoiceNo: "INV/2026/001",
-    customer: "Mr. Rahul",
-    invoiceDate: "05/09/2026",
-    dueDate: "20/09/2026",
-    salesOrder: "SO/2026/015",
-    reference: "ABC-26-001",
-    status: "Paid",
-    total: 6000,
-    paid: 6000,
-    paymentMethod: "Cash",
-    bankAccount: "",
-    items: [
-      {
-        product: "Table",
-        account: "Sales Income A/c",
-        quantity: 3,
-        unitPrice: 2000,
-        total: 6000,
-      },
-    ],
-  },
-  {
-    id: 2,
-    invoiceNo: "INV/2026/002",
-    customer: "ABC Furniture Ltd.",
-    invoiceDate: "04/09/2026",
-    dueDate: "19/09/2026",
-    salesOrder: "SO/2026/014",
-    reference: "ABC-26-002",
-    status: "Partial",
-    total: 12000,
-    paid: 5000,
-    paymentMethod: "Bank",
-    bankAccount: "HDFC Bank A/c",
-    items: [
-      {
-        product: "Office Chair",
-        account: "Sales Income A/c",
-        quantity: 4,
-        unitPrice: 3000,
-        total: 12000,
-      },
-    ],
-  },
-  {
-    id: 3,
-    invoiceNo: "INV/2026/003",
-    customer: "XYZ Interiors",
-    invoiceDate: "03/09/2026",
-    dueDate: "18/09/2026",
-    salesOrder: "SO/2026/013",
-    reference: "XYZ-26-001",
-    status: "Not Paid",
-    total: 8500,
-    paid: 0,
-    paymentMethod: "",
-    bankAccount: "",
-    items: [
-      {
-        product: "Wooden Sofa",
-        account: "Sales Income A/c",
-        quantity: 1,
-        unitPrice: 8500,
-        total: 8500,
-      },
-    ],
-  },
-  {
-    id: 4,
-    invoiceNo: "INV/2026/004",
-    customer: "Modern Home",
-    invoiceDate: "02/09/2026",
-    dueDate: "17/09/2026",
-    salesOrder: "SO/2026/012",
-    reference: "MH-26-001",
-    status: "Not Paid",
-    total: 15000,
-    paid: 0,
-    paymentMethod: "",
-    bankAccount: "",
-    items: [
-      {
-        product: "Dining Table",
-        account: "Sales Income A/c",
-        quantity: 1,
-        unitPrice: 15000,
-        total: 15000,
-      },
-    ],
-  },
-];
+import api from "../../services/api";
 
 const bankAccounts = [
   "HDFC Bank A/c",
@@ -115,20 +21,86 @@ const bankAccounts = [
 ];
 
 function CustomerInvoices() {
-  const [invoices, setInvoices] = useState(initialInvoices);
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [customersList, setCustomersList] = useState([]);
+  const [productsList, setProductsList] = useState([]);
+  const [taxesList, setTaxesList] = useState([]);
+  const [accountsList, setAccountsList] = useState([]);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [customerFilter, setCustomerFilter] = useState("All");
 
   const [selectedInvoice, setSelectedInvoice] = useState(null);
-
   const [showNewInvoice, setShowNewInvoice] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
 
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [selectedBank, setSelectedBank] = useState("");
+  const [error, setError] = useState("");
+
+  const fetchInvoicesData = async () => {
+    setLoading(true);
+    try {
+      const [invRes, cRes, pRes, tRes, aRes] = await Promise.all([
+        api.get("/invoices?type=CUSTOMER_INVOICE"),
+        api.get("/contacts?type=CUSTOMER&limit=100").catch(() => ({ data: { items: [] } })),
+        api.get("/products?limit=100").catch(() => ({ data: { items: [] } })),
+        api.get("/taxes").catch(() => ({ data: { items: [] } })),
+        api.get("/accounts").catch(() => ({ data: { items: [] } })),
+      ]);
+
+      // invoices returns a direct array; contacts/products/taxes/accounts return { items: [] }
+      const mapped = (Array.isArray(invRes.data) ? invRes.data : []).map((inv) => ({
+        id: inv.id,
+        invoiceNo: inv.number,
+        customer: inv.partner?.name || "Customer",
+        partnerId: inv.partnerId,
+        invoiceDate: new Date(inv.invoiceDate).toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }),
+        dueDate: new Date(inv.dueDate).toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }),
+        salesOrder: inv.sourceOrderId ? `SO-${inv.sourceOrderId}` : "-",
+        reference: inv.reference || "-",
+        status: inv.paymentStatus === "PAID" ? "Paid" : inv.paymentStatus === "PARTIAL" ? "Partial" : "Not Paid",
+        rawStatus: inv.status,
+        total: Number(inv.grandTotal) || 0,
+        paid: (Number(inv.paidViaCash) || 0) + (Number(inv.paidViaBank) || 0),
+        paymentMethod: Number(inv.paidViaBank) > 0 ? "Bank" : "Cash",
+        bankAccount: "",
+        items: (inv.lines || []).map((l) => ({
+          product: l.product?.name || "Product",
+          account: l.account?.name || "Sales Income A/c",
+          quantity: Number(l.quantity) || 1,
+          unitPrice: Number(l.unitPrice) || 0,
+          total: Number(l.lineTotal) || 0,
+        })),
+      }));
+
+      setInvoices(mapped);
+      setCustomersList(cRes.data.items || []);
+      setProductsList(pRes.data.items || []);
+      setTaxesList(tRes.data.items || []);
+      setAccountsList(aRes.data.items || []);
+    } catch {
+      // Error toasted by api.js interceptor
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  useEffect(() => {
+    fetchInvoicesData();
+  }, []);
 
   const customers = useMemo(() => {
     return [...new Set(invoices.map((invoice) => invoice.customer))];
@@ -139,9 +111,9 @@ function CustomerInvoices() {
       const searchText = search.toLowerCase();
 
       const matchesSearch =
-        invoice.invoiceNo.toLowerCase().includes(searchText) ||
-        invoice.customer.toLowerCase().includes(searchText) ||
-        invoice.salesOrder.toLowerCase().includes(searchText);
+        (invoice.invoiceNo || "").toLowerCase().includes(searchText) ||
+        (invoice.customer || "").toLowerCase().includes(searchText) ||
+        (invoice.salesOrder || "").toLowerCase().includes(searchText);
 
       const matchesStatus =
         statusFilter === "All" || invoice.status === statusFilter;
@@ -174,6 +146,18 @@ function CustomerInvoices() {
     return "status-unpaid";
   };
 
+  const handleConfirmInvoice = async (invoiceId) => {
+    try {
+      await api.patch(`/invoices/${invoiceId}/confirm`);
+      await fetchInvoicesData();
+      if (selectedInvoice) {
+        setSelectedInvoice((prev) => ({ ...prev, rawStatus: "CONFIRMED" }));
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to confirm invoice.");
+    }
+  };
+
   const openInvoice = (invoice) => {
     setSelectedInvoice(invoice);
   };
@@ -201,7 +185,7 @@ function CustomerInvoices() {
     setSelectedBank("");
   };
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
     if (!selectedInvoice) return;
 
     const amount = Number(paymentAmount);
@@ -223,31 +207,38 @@ function CustomerInvoices() {
       return;
     }
 
-    const newPaidAmount = selectedInvoice.paid + amount;
+    try {
+      // Find cash or bank journal
+      const jourRes = await api.get("/journals").catch(() => ({ data: { items: [] } }));
+      const jList = jourRes.data?.items || [];
+      const targetJournal = jList.find((j) => j.type === (paymentMethod === "Bank" ? "BANK" : "CASH")) || jList[0];
 
-    let newStatus = "Partial";
+      const pRes = await api.post("/payments", {
+        paymentType: "RECEIVE",
+        partnerId: Number(selectedInvoice.partnerId),
+        invoiceId: Number(selectedInvoice.id),
+        paymentDate: new Date().toISOString(),
+        amount: Number(amount),
+        paymentMethod: paymentMethod === "Bank" ? "BANK" : "CASH",
+        journalId: targetJournal?.id || 1,
+        note: `Payment for invoice ${selectedInvoice.invoiceNo}`,
+      });
 
-    if (newPaidAmount >= selectedInvoice.total) {
-      newStatus = "Paid";
+      const paymentId = pRes.data?.id;
+      if (paymentId) {
+        await api.patch(`/payments/${paymentId}/confirm`, {}, {
+          headers: {
+            "Idempotency-Key": `cust-inv-pay-${paymentId}-${Date.now()}`,
+          },
+        });
+      }
+
+      await fetchInvoicesData();
+      closePayment();
+      closeInvoice();
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to process payment.");
     }
-
-    const updatedInvoice = {
-      ...selectedInvoice,
-      paid: newPaidAmount,
-      status: newStatus,
-      paymentMethod,
-      bankAccount: paymentMethod === "Bank" ? selectedBank : "",
-    };
-
-    setInvoices((previousInvoices) =>
-      previousInvoices.map((invoice) =>
-        invoice.id === selectedInvoice.id ? updatedInvoice : invoice
-      )
-    );
-
-    setSelectedInvoice(updatedInvoice);
-
-    closePayment();
   };
 
   return (
@@ -590,7 +581,18 @@ function CustomerInvoices() {
                 Back
               </button>
 
-              {getDueAmount(selectedInvoice) > 0 && (
+              {selectedInvoice.rawStatus === "DRAFT" && (
+                <button
+                  className="primary-button"
+                  style={{ backgroundColor: "#1e5e3a" }}
+                  onClick={() => handleConfirmInvoice(selectedInvoice.id)}
+                >
+                  <FileText size={17} />
+                  Confirm Invoice
+                </button>
+              )}
+
+              {getDueAmount(selectedInvoice) > 0 && selectedInvoice.rawStatus !== "DRAFT" && (
                 <button
                   className="primary-button"
                   onClick={() => openPayment(selectedInvoice)}

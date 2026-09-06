@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Plus,
   Search,
@@ -7,6 +7,7 @@ import {
   X,
   ChevronDown,
 } from "lucide-react";
+import api from "../../services/api";
 
 function ChartOfAccounts() {
   // =========================
@@ -34,78 +35,39 @@ function ChartOfAccounts() {
     },
   ];
 
-  // =========================
-  // DEFAULT ACCOUNTS
-  // =========================
-
-  const [accounts, setAccounts] = useState([
-    {
-      id: 1,
-      name: "Bank A/c",
-      type: "Asset",
-      status: "Active",
-    },
-    {
-      id: 2,
-      name: "Purchases Expense A/c",
-      type: "Expenses",
-      status: "Active",
-    },
-    {
-      id: 3,
-      name: "Debtors A/c",
-      type: "Asset",
-      status: "Active",
-    },
-    {
-      id: 4,
-      name: "Creditors A/c",
-      type: "Liability",
-      status: "Active",
-    },
-    {
-      id: 5,
-      name: "Sales Income A/c",
-      type: "Income",
-      status: "Active",
-    },
-    {
-      id: 6,
-      name: "Cash A/c",
-      type: "Cash",
-      status: "Active",
-    },
-    {
-      id: 7,
-      name: "Other Expense A/c",
-      type: "Other Expenses",
-      status: "Active",
-    },
-  ]);
-
-  // =========================
-  // STATES
-  // =========================
-
+  const [accounts, setAccounts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-
   const [showArchived, setShowArchived] = useState(false);
-
   const [showModal, setShowModal] = useState(false);
-
+  const [accountCode, setAccountCode] = useState("");
   const [accountName, setAccountName] = useState("");
-
   const [accountType, setAccountType] = useState("");
-
   const [error, setError] = useState("");
+
+  const fetchAccounts = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get("/accounts?limit=200");
+      // Backend returns { items: [...] }
+      setAccounts(res.data.items || []);
+    } catch {
+      // Error toasted by api.js interceptor
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAccounts();
+  }, []);
 
   // =========================
   // ADD NEW ACCOUNT
   // =========================
 
-  const handleAddAccount = (e) => {
+  const handleAddAccount = async (e) => {
     e.preventDefault();
-
     setError("");
 
     if (!accountName.trim()) {
@@ -118,38 +80,51 @@ function ChartOfAccounts() {
       return;
     }
 
-    const newAccount = {
-      id: Date.now(),
-      name: accountName.trim(),
-      type: accountType,
-      status: "Active",
+    // Map UI type to Backend AccountType & AccountGroup
+    const typeMapping = {
+      Asset: { type: "ASSET", group: "BALANCE_SHEET" },
+      Liability: { type: "LIABILITY", group: "BALANCE_SHEET" },
+      Bank: { type: "BANK", group: "BALANCE_SHEET" },
+      Capital: { type: "CAPITAL", group: "BALANCE_SHEET" },
+      Cash: { type: "CASH", group: "BALANCE_SHEET" },
+      Income: { type: "INCOME", group: "PROFIT_AND_LOSS" },
+      Expenses: { type: "EXPENSE", group: "PROFIT_AND_LOSS" },
+      "Other Expenses": { type: "OTHER_EXPENSE", group: "PROFIT_AND_LOSS" },
     };
 
-    setAccounts((prev) => [...prev, newAccount]);
+    const mapped = typeMapping[accountType] || { type: "ASSET", group: "BALANCE_SHEET" };
+    const code = accountCode.trim() || `ACC${Date.now().toString().slice(-4)}`;
 
-    // Reset form
-    setAccountName("");
-    setAccountType("");
+    try {
+      await api.post("/accounts", {
+        code,
+        name: accountName.trim(),
+        type: mapped.type,
+        group: mapped.group,
+      });
 
-    // Close modal
-    setShowModal(false);
+      setAccountCode("");
+      setAccountName("");
+      setAccountType("");
+      setShowModal(false);
+      fetchAccounts();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to create account.");
+    }
   };
 
   // =========================
   // ARCHIVE ACCOUNT
   // =========================
 
-  const handleArchive = (id) => {
-    setAccounts((prev) =>
-      prev.map((account) =>
-        account.id === id
-          ? {
-              ...account,
-              status: "Archived",
-            }
-          : account
-      )
-    );
+  const handleArchive = async (id) => {
+    if (!window.confirm("Are you sure you want to archive this account?")) return;
+    try {
+      await api.delete(`/accounts/${id}`);
+      fetchAccounts();
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to archive account.");
+    }
   };
 
   // =========================

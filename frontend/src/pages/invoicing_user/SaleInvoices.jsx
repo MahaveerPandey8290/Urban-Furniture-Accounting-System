@@ -1,7 +1,7 @@
-import CustomerInvoicesMaster from "./sales/CustomerInvoicesMaster";
+import AdminCustomerInvoices from "../admin/CustomerInvoices";
 
 function SaleInvoices() {
-  return <CustomerInvoicesMaster />;
+  return <AdminCustomerInvoices />;
 }
 
 export default SaleInvoices;
