@@ -166,27 +166,100 @@ function SalesOrders() {
     });
   };
 
+  const [submitting, setSubmitting] = useState(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    if (!formData.customerId) {
-      setError("Please select a customer.");
+    if (!formData.customerName.trim() && !formData.customerId) {
+      setError("Please enter or select a customer name.");
       return;
     }
 
-    const lines = items.map((item, idx) => ({
-      sequence: idx,
-      productId: item.productId ? Number(item.productId) : (products[0]?.id || 1),
-      quantity: Number(item.quantity) || 1,
-      unitPrice: Number(item.unitPrice) || 0,
-    }));
+    // Filter out completely empty items
+    const validItems = items.filter(
+      (item) => item.name.trim() || Number(item.unitPrice) > 0 || item.productId
+    );
+
+    if (validItems.length === 0) {
+      setError("Please add at least one product item with a name and price.");
+      return;
+    }
+
+    setSubmitting(true);
 
     try {
+      // 1. Resolve or create Customer Contact
+      let resolvedContactId = formData.customerId ? Number(formData.customerId) : null;
+
+      if (!resolvedContactId) {
+        // Look up in existing customers list
+        const existingCustomer = customers.find(
+          (c) =>
+            c.name.trim().toLowerCase() === formData.customerName.trim().toLowerCase() ||
+            (formData.customerEmail && c.email && c.email.trim().toLowerCase() === formData.customerEmail.trim().toLowerCase())
+        );
+
+        if (existingCustomer) {
+          resolvedContactId = existingCustomer.id;
+        } else {
+          // Create customer in database
+          const createContactPayload = {
+            name: formData.customerName.trim(),
+            type: "CUSTOMER",
+            email: formData.customerEmail?.trim() || undefined,
+            mobile: formData.customerPhone?.trim() || undefined,
+            street: formData.customerAddress?.trim() || undefined,
+          };
+          const contactRes = await api.post("/contacts", createContactPayload);
+          resolvedContactId = contactRes.data.id;
+        }
+      }
+
+      // 2. Resolve or create Products
+      const resolvedLines = [];
+      for (let idx = 0; idx < validItems.length; idx++) {
+        const item = validItems[idx];
+        let prodId = item.productId ? Number(item.productId) : null;
+
+        if (!prodId) {
+          // Check if product exists by name in products list
+          const existingProd = products.find(
+            (p) => p.name.trim().toLowerCase() === item.name.trim().toLowerCase()
+          );
+
+          if (existingProd) {
+            prodId = existingProd.id;
+          } else {
+            // Auto-create product in database
+            const prodRes = await api.post("/products", {
+              name: item.name.trim() || "Item",
+              type: "GOODS",
+              salesPrice: Number(item.unitPrice) || 0,
+              salesAccountId: 5, // Sales Income A/c
+            });
+            prodId = prodRes.data.id;
+          }
+        }
+
+        resolvedLines.push({
+          productId: prodId,
+          description: item.name.trim() || "Sales Item",
+          quantity: String(Number(item.quantity) || 1),
+          unitPrice: String(Number(item.unitPrice) || 0),
+          accountId: 5, // Sales Income A/c
+          taxId: 1, // Default 0% tax in DB
+        });
+      }
+
+      // 3. Create Sales Order
       await api.post("/sales-orders", {
-        customerId: Number(formData.customerId),
-        orderDate: formData.date || new Date().toISOString(),
-        lines,
+        contactId: Number(resolvedContactId),
+        orderDate: formData.date || new Date().toISOString().split("T")[0],
+        reference: formData.referenceNo || undefined,
+        narration: formData.paymentMethod ? `Payment Method: ${formData.paymentMethod}` : undefined,
+        lines: resolvedLines,
       });
 
       setShowForm(false);
@@ -204,9 +277,18 @@ function SalesOrders() {
         dueDate: "",
       });
       setItems([{ productId: "", name: "", quantity: 1, unitPrice: 0, tax: 18 }]);
-      fetchData();
+      await fetchData();
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to create sales order.");
+      console.error("Failed to create sales order:", err);
+      const msg =
+        err.response?.data?.message ||
+        (Array.isArray(err.response?.data?.errors)
+          ? err.response.data.errors.map((e) => e.message).join(", ")
+          : null) ||
+        "Failed to create sales order. Please try again.";
+      setError(msg);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -718,6 +800,11 @@ function SalesOrders() {
         </div>
 
         <form onSubmit={handleSubmit}>
+          {error && (
+            <div className="mb-5 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-medium">
+              {error}
+            </div>
+          )}
 
           {/* CUSTOMER INFORMATION */}
 
@@ -737,18 +824,38 @@ function SalesOrders() {
 
                 <input
                   type="text"
+                  list="customer-suggestions"
                   value={
                     formData.customerName
                   }
-                  onChange={(e) =>
-                    updateForm(
-                      "customerName",
-                      e.target.value
-                    )
-                  }
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const matchedCustomer = customers.find(
+                      (c) => c.name.toLowerCase() === val.trim().toLowerCase()
+                    );
+                    if (matchedCustomer) {
+                      setFormData({
+                        ...formData,
+                        customerId: matchedCustomer.id,
+                        customerName: matchedCustomer.name,
+                        customerPhone: matchedCustomer.mobile || formData.customerPhone,
+                        customerEmail: matchedCustomer.email || formData.customerEmail,
+                        customerAddress: matchedCustomer.street || formData.customerAddress,
+                      });
+                    } else {
+                      updateForm("customerName", val);
+                    }
+                  }}
                   placeholder="Enter customer name"
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-lg outline-none focus:border-[#49392f]"
                 />
+                <datalist id="customer-suggestions">
+                  {customers.map((c) => (
+                    <option key={c.id} value={c.name}>
+                      {c.mobile ? `${c.mobile} - ` : ""}{c.email || ""}
+                    </option>
+                  ))}
+                </datalist>
 
               </div>
 
@@ -998,19 +1105,35 @@ function SalesOrders() {
 
                           <input
                             type="text"
+                            list={`product-suggestions-${index}`}
                             value={
                               item.name
                             }
-                            onChange={(e) =>
-                              updateItem(
-                                index,
-                                "name",
-                                e.target.value
-                              )
-                            }
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const matchedProd = products.find(
+                                (p) => p.name.toLowerCase() === val.trim().toLowerCase()
+                              );
+                              if (matchedProd) {
+                                const updated = [...items];
+                                updated[index].productId = matchedProd.id;
+                                updated[index].name = matchedProd.name;
+                                updated[index].unitPrice = matchedProd.salesPrice || 0;
+                                setItems(updated);
+                              } else {
+                                updateItem(index, "name", val);
+                              }
+                            }}
                             placeholder="Product name"
                             className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none"
                           />
+                          <datalist id={`product-suggestions-${index}`}>
+                            {products.map((p) => (
+                              <option key={p.id} value={p.name}>
+                                ₹{p.salesPrice}
+                              </option>
+                            ))}
+                          </datalist>
 
                         </td>
 
@@ -1395,9 +1518,12 @@ function SalesOrders() {
 
             <button
               type="submit"
-              className="px-5 py-2.5 bg-[#49392f] text-white rounded-lg hover:bg-[#382c25]"
+              disabled={submitting}
+              className={`px-5 py-2.5 bg-[#49392f] text-white rounded-lg hover:bg-[#382c25] ${
+                submitting ? "opacity-60 cursor-not-allowed" : ""
+              }`}
             >
-              Create Sales Order
+              {submitting ? "Creating..." : "Create Sales Order"}
             </button>
 
           </div>

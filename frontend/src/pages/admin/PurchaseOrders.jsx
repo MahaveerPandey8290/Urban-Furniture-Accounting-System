@@ -17,8 +17,11 @@ function PurchaseOrders() {
   const [search, setSearch] = useState("");
   const [error, setError] = useState("");
 
+  const [submitting, setSubmitting] = useState(false);
+
   const [formData, setFormData] = useState({
     vendorId: "",
+    vendor: "",
     date: new Date().toISOString().split("T")[0],
     status: "DRAFT",
   });
@@ -76,12 +79,18 @@ function PurchaseOrders() {
     fetchData();
   }, []);
 
-  const getItemTotal = (item) => {
-    return Number(item.quantity || 0) * Number(item.rate || 0);
+  const getSubtotal = (orderItems) => {
+    return (orderItems || []).reduce(
+      (total, item) =>
+        total +
+        Number(item.quantity || 0) *
+          Number(item.rate || 0),
+      0
+    );
   };
 
   const getGrandTotal = (orderItems) => {
-    return (orderItems || []).reduce((total, item) => total + getItemTotal(item), 0);
+    return getSubtotal(orderItems);
   };
 
   const addItem = () => {
@@ -120,35 +129,103 @@ function PurchaseOrders() {
     e.preventDefault();
     setError("");
 
-    if (!formData.vendorId) {
-      setError("Please select a vendor.");
+    if (!formData.vendor?.trim() && !formData.vendorId) {
+      setError("Please enter or select a vendor.");
       return;
     }
 
-    const validLines = items.map((item, idx) => ({
-      sequence: idx,
-      productId: item.productId ? Number(item.productId) : (products[0]?.id || 1),
-      quantity: Number(item.quantity) || 1,
-      unitPrice: Number(item.rate) || 0,
-    }));
+    const validItems = items.filter(
+      (item) => item.name?.trim() || Number(item.rate) > 0 || item.productId
+    );
+
+    if (validItems.length === 0) {
+      setError("Please add at least one item with a name and rate.");
+      return;
+    }
+
+    setSubmitting(true);
 
     try {
+      // 1. Resolve or create Vendor Contact
+      let resolvedVendorId = formData.vendorId ? Number(formData.vendorId) : null;
+
+      if (!resolvedVendorId) {
+        const existingVendor = vendors.find(
+          (v) => v.name.trim().toLowerCase() === formData.vendor.trim().toLowerCase()
+        );
+
+        if (existingVendor) {
+          resolvedVendorId = existingVendor.id;
+        } else {
+          const contactRes = await api.post("/contacts", {
+            name: formData.vendor.trim(),
+            type: "VENDOR",
+          });
+          resolvedVendorId = contactRes.data.id;
+        }
+      }
+
+      // 2. Resolve or create Products
+      const validLines = [];
+      for (let idx = 0; idx < validItems.length; idx++) {
+        const item = validItems[idx];
+        let prodId = item.productId ? Number(item.productId) : null;
+
+        if (!prodId) {
+          const existingProd = products.find(
+            (p) => p.name.trim().toLowerCase() === item.name.trim().toLowerCase()
+          );
+
+          if (existingProd) {
+            prodId = existingProd.id;
+          } else {
+            const prodRes = await api.post("/products", {
+              name: item.name.trim() || "Item",
+              type: "GOODS",
+              cost: Number(item.rate) || 0,
+              purchaseAccountId: 6, // Purchase Expense A/c
+            });
+            prodId = prodRes.data.id;
+          }
+        }
+
+        validLines.push({
+          productId: prodId,
+          description: item.name.trim() || "Purchase Item",
+          quantity: String(Number(item.quantity) || 1),
+          unitPrice: String(Number(item.rate) || 0),
+          accountId: 6, // Purchase Expense A/c
+          taxId: 1, // Default 0% tax
+        });
+      }
+
+      // 3. Create Purchase Order
       await api.post("/purchase-orders", {
-        vendorId: Number(formData.vendorId),
-        orderDate: formData.date || new Date().toISOString(),
+        contactId: Number(resolvedVendorId),
+        orderDate: formData.date || new Date().toISOString().split("T")[0],
         lines: validLines,
       });
 
       setShowForm(false);
       setFormData({
         vendorId: "",
+        vendor: "",
         date: new Date().toISOString().split("T")[0],
         status: "DRAFT",
       });
       setItems([{ productId: "", name: "", quantity: 1, rate: 0 }]);
-      fetchData();
+      await fetchData();
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to create purchase order.");
+      console.error("Failed to create purchase order:", err);
+      const msg =
+        err.response?.data?.message ||
+        (Array.isArray(err.response?.data?.errors)
+          ? err.response.data.errors.map((e) => e.message).join(", ")
+          : null) ||
+        "Failed to create purchase order. Please try again.";
+      setError(msg);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -480,6 +557,11 @@ function PurchaseOrders() {
         </div>
 
         <form onSubmit={handleSubmit}>
+          {error && (
+            <div className="mb-5 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-medium">
+              {error}
+            </div>
+          )}
 
           {/* PURCHASE INFORMATION */}
 
@@ -501,17 +583,36 @@ function PurchaseOrders() {
 
                 <input
                   type="text"
+                  list="vendor-suggestions"
                   value={formData.vendor}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      vendor:
-                        e.target.value,
-                    })
-                  }
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const matchedVendor = vendors.find(
+                      (v) => v.name.toLowerCase() === val.trim().toLowerCase()
+                    );
+                    if (matchedVendor) {
+                      setFormData({
+                        ...formData,
+                        vendorId: matchedVendor.id,
+                        vendor: matchedVendor.name,
+                      });
+                    } else {
+                      setFormData({
+                        ...formData,
+                        vendor: val,
+                      });
+                    }
+                  }}
                   placeholder="Enter vendor name"
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-lg outline-none focus:border-[#49392f]"
                 />
+                <datalist id="vendor-suggestions">
+                  {vendors.map((v) => (
+                    <option key={v.id} value={v.name}>
+                      {v.mobile ? `${v.mobile} - ` : ""}{v.email || ""}
+                    </option>
+                  ))}
+                </datalist>
 
               </div>
 
@@ -653,17 +754,33 @@ function PurchaseOrders() {
 
                           <input
                             type="text"
+                            list={`po-prod-suggestions-${index}`}
                             value={item.name}
-                            onChange={(e) =>
-                              updateItem(
-                                index,
-                                "name",
-                                e.target.value
-                              )
-                            }
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const matchedProd = products.find(
+                                (p) => p.name.toLowerCase() === val.trim().toLowerCase()
+                              );
+                              if (matchedProd) {
+                                const updated = [...items];
+                                updated[index].productId = matchedProd.id;
+                                updated[index].name = matchedProd.name;
+                                updated[index].rate = matchedProd.cost || 0;
+                                setItems(updated);
+                              } else {
+                                updateItem(index, "name", val);
+                              }
+                            }}
                             placeholder="Item name"
                             className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-[#49392f]"
                           />
+                          <datalist id={`po-prod-suggestions-${index}`}>
+                            {products.map((p) => (
+                              <option key={p.id} value={p.name}>
+                                Cost: ₹{p.cost}
+                              </option>
+                            ))}
+                          </datalist>
 
                         </td>
 
@@ -796,9 +913,12 @@ function PurchaseOrders() {
 
               <button
                 type="submit"
-                className="px-5 py-2.5 bg-[#49392f] text-white rounded-lg hover:bg-[#382c25]"
+                disabled={submitting}
+                className={`px-5 py-2.5 bg-[#49392f] text-white rounded-lg hover:bg-[#382c25] ${
+                  submitting ? "opacity-60 cursor-not-allowed" : ""
+                }`}
               >
-                Create Purchase Order
+                {submitting ? "Creating..." : "Create Purchase Order"}
               </button>
 
             </div>
