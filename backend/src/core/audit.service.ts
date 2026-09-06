@@ -27,27 +27,34 @@ export interface AuditLogInput {
 
 export class AuditService {
   /**
-   * Redact sensitive fields from the payload.
+   * Redact sensitive fields and ensure the payload is clean, serializable JSON.
+   * Handles Prisma.Decimal, Date, BigInt, and other non-standard objects.
    */
   private static redact(data: unknown): unknown {
-    if (!data || typeof data !== 'object') {
-      return data;
+    if (data === undefined || data === null) {
+      return null;
     }
 
-    if (Array.isArray(data)) {
-      return data.map(item => this.redact(item));
-    }
+    // First JSON stringify with replacer to convert Decimal, BigInt, Date etc.
+    try {
+      const serialized = JSON.stringify(data, (key, value) => {
+        if (REDACTED_FIELDS.includes(key)) {
+          return '[REDACTED]';
+        }
+        if (typeof value === 'bigint') {
+          return value.toString();
+        }
+        // Prisma Decimal or decimal.js object has toString()
+        if (value && typeof value === 'object' && typeof value.toFixed === 'function') {
+          return value.toString();
+        }
+        return value;
+      });
 
-    const redacted = { ...data } as Record<string, unknown>;
-    for (const key of Object.keys(redacted)) {
-      if (REDACTED_FIELDS.includes(key)) {
-        redacted[key] = '[REDACTED]';
-      } else if (typeof redacted[key] === 'object' && redacted[key] !== null) {
-        redacted[key] = this.redact(redacted[key]);
-      }
+      return JSON.parse(serialized);
+    } catch {
+      return String(data);
     }
-
-    return redacted;
   }
 
   /**
@@ -74,8 +81,8 @@ export class AuditService {
         entity,
         entityId,
         action,
-        before: before ? (this.redact(before) as any) : undefined,
-        after: after ? (this.redact(after) as any) : undefined,
+        before: before !== undefined ? (this.redact(before) as any) : undefined,
+        after: after !== undefined ? (this.redact(after) as any) : undefined,
         userId,
         companyId,
         ipAddress,
