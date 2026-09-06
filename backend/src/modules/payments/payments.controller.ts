@@ -7,6 +7,9 @@ export class PaymentController {
     try {
       const dto = CreatePaymentDto.parse(req.body);
       const companyId = req.companyId ?? req.user!.companyId;
+      if (req.user!.role === 'CONTACT' && req.user!.contactId && dto.contactId !== req.user!.contactId) {
+        dto.contactId = req.user!.contactId;
+      }
       const result = await PaymentService.createPayment(dto, companyId, req.user!.sub, req.requestId);
       res.status(201).json(result);
     } catch (err) { next(err); }
@@ -36,6 +39,11 @@ export class PaymentController {
       const { id } = PaymentIdParamDto.parse(req.params);
       const companyId = req.companyId ?? req.user!.companyId;
       const invoiceIds = req.body.invoiceIds || [];
+      const contactId = req.user!.role === 'CONTACT' ? (req.user!.contactId ?? undefined) : undefined;
+      if (contactId) {
+        // verify payment belongs to contact
+        await PaymentService.getPayment(id, companyId, contactId);
+      }
       const payment = await PaymentService.confirmPayment(id, companyId, req.user!.sub, req.requestId, invoiceIds);
       res.json(payment);
     } catch (err) { next(err); }

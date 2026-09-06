@@ -17,12 +17,18 @@ function AccountList({
         return "bg-[#eef3e8] text-[#3e5335] border-[#d3dfca]";
       case "LIABILITY":
         return "bg-[#fbf0ee] text-[#8e392e] border-[#f0d4d0]";
+      case "BANK":
+        return "bg-[#e8f1f5] text-[#2c5364] border-[#d0e1e9]";
+      case "CASH":
+        return "bg-[#eaf5f0] text-[#2c634c] border-[#cde7dc]";
+      case "CAPITAL":
+        return "bg-[#f2eff7] text-[#543b78] border-[#ded5ec]";
       case "INCOME":
         return "bg-[#eaf5f0] text-[#2c634c] border-[#cde7dc]";
       case "EXPENSE":
         return "bg-[#faf0e6] text-[#7a4e2d] border-[#e8d7c5]";
-      case "CAPITAL":
-        return "bg-[#f2eff7] text-[#543b78] border-[#ded5ec]";
+      case "OTHER_EXPENSE":
+        return "bg-[#faf4ea] text-[#8a5d3b] border-[#e8dcc8]";
       default:
         return "bg-[#faf8f4] text-[#6e6357] border-[#e7e3da]";
     }

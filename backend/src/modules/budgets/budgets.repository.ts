@@ -42,20 +42,20 @@ export class BudgetRepository {
     });
   }
 
-  static async updateStatus(id: number, companyId: number, status: BudgetStatus, client: PrismaTransactionClient = prisma) {
+  static async updateStatus(id: number, _companyId: number, status: BudgetStatus, client: PrismaTransactionClient = prisma) {
     return client.budget.update({
-      where: { id, companyId },
+      where: { id },
       data: { status }
     });
   }
 
-  static async revise(id: number, companyId: number, newLines: any[], _userId: number, client: PrismaTransactionClient = prisma) {
+  static async revise(id: number, _companyId: number, newLines: any[], _userId: number, client: PrismaTransactionClient = prisma) {
     // According to typical revision semantics, we might create a new budget or update existing.
     // The instructions say: "adds revised lines, sets status=REVISED".
     // We will clear old lines or just add new lines? The schema allows deleting and re-creating.
     await client.budgetLine.deleteMany({ where: { budgetId: id } });
     return client.budget.update({
-      where: { id, companyId },
+      where: { id },
       data: {
         status: BudgetStatus.REVISED,
         lines: {

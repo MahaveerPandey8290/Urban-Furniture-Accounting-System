@@ -11,6 +11,9 @@ export const createContactSchema = z.object({
   state: z.string().max(100).optional(),
   country: z.string().max(100).optional(),
   pincode: z.string().max(20).optional(),
+  createPortalCredentials: z.boolean().optional(),
+  loginId: z.string().min(6).max(12).regex(/^[a-zA-Z0-9_]+$/).optional(),
+  portalPassword: z.string().min(8).optional(),
 }).strip();
 
 export type CreateContactDTO = z.infer<typeof createContactSchema>;

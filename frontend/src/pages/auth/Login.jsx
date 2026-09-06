@@ -28,9 +28,15 @@ function Login() {
     try {
       const user = await login(loginId.trim(), password);
 
-      // Route based on user role returned from backend
+      // Route based on user role and contact type returned from backend
       if (user?.role === "ADMIN") {
         navigate("/admin");
+      } else if (user?.role === "CONTACT") {
+        if (user.contactType === "VENDOR") {
+          navigate("/vendor");
+        } else {
+          navigate("/customer");
+        }
       } else {
         navigate("/invoicing_user");
       }

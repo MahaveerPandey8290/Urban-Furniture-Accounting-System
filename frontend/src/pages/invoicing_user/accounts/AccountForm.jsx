@@ -1,17 +1,30 @@
 import { useState, useEffect } from "react";
 import { Plus, Check, ArrowLeft, Home, Archive, RotateCcw } from "lucide-react";
 
-// Mapping from option value to accounting Type and Display Label
-const TYPE_OPTIONS = [
-  { label: "Asset", type: "ASSET", displayType: "Assets" },
-  { label: "Liability", type: "LIABILITY", displayType: "Liabilities" },
-  { label: "Bank", type: "ASSET", displayType: "Assets" },
-  { label: "Capital", type: "CAPITAL", displayType: "Capital" },
-  { label: "Cash", type: "ASSET", displayType: "Assets" },
-  { label: "Income", type: "INCOME", displayType: "Income" },
-  { label: "Expenses", type: "EXPENSE", displayType: "Expenses" },
-  { label: "Other Expenses", type: "EXPENSE", displayType: "Expense" },
+export const ACCOUNT_CATEGORIES = [
+  {
+    heading: "Balance Sheet",
+    group: "BALANCE_SHEET",
+    options: [
+      { label: "Asset", type: "ASSET", group: "BALANCE_SHEET", displayType: "Asset" },
+      { label: "Liability", type: "LIABILITY", group: "BALANCE_SHEET", displayType: "Liability" },
+      { label: "Bank", type: "BANK", group: "BALANCE_SHEET", displayType: "Bank" },
+      { label: "Capital", type: "CAPITAL", group: "BALANCE_SHEET", displayType: "Capital" },
+      { label: "Cash", type: "CASH", group: "BALANCE_SHEET", displayType: "Cash" },
+    ],
+  },
+  {
+    heading: "Profit and Loss",
+    group: "PROFIT_AND_LOSS",
+    options: [
+      { label: "Income", type: "INCOME", group: "PROFIT_AND_LOSS", displayType: "Income" },
+      { label: "Expenses", type: "EXPENSE", group: "PROFIT_AND_LOSS", displayType: "Expense" },
+      { label: "Other Expenses", type: "OTHER_EXPENSE", group: "PROFIT_AND_LOSS", displayType: "Other Expense" },
+    ],
+  },
 ];
+
+const ALL_TYPE_OPTIONS = ACCOUNT_CATEGORIES.flatMap((c) => c.options);
 
 function AccountForm({
   initialData,
@@ -22,37 +35,26 @@ function AccountForm({
   onToggleArchive,
 }) {
   const [accountName, setAccountName] = useState("");
-  const [selectedOption, setSelectedOption] = useState("");
+  const [selectedType, setSelectedType] = useState("");
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (initialData) {
       setAccountName(initialData.accountName || "");
-      // Find matching option or construct it
+      // Match by exact type or label
       const match =
-        TYPE_OPTIONS.find(
-          (opt) =>
-            opt.label.toLowerCase() === initialData.classification?.toLowerCase()
+        ALL_TYPE_OPTIONS.find((opt) => opt.type === initialData.type) ||
+        ALL_TYPE_OPTIONS.find(
+          (opt) => opt.label.toLowerCase() === (initialData.classification || "").toLowerCase()
         ) ||
-        TYPE_OPTIONS.find(
-          (opt) =>
-            opt.label.toLowerCase() === initialData.displayType?.toLowerCase()
-        ) ||
-        TYPE_OPTIONS.find(
-          (opt) =>
-            opt.type === initialData.type &&
-            (opt.displayType === initialData.displayType || opt.label === initialData.displayType)
-        ) ||
-        TYPE_OPTIONS.find((opt) => opt.type === initialData.type);
+        ALL_TYPE_OPTIONS.find(
+          (opt) => opt.label.toLowerCase() === (initialData.displayType || "").toLowerCase()
+        );
 
-      if (match) {
-        setSelectedOption(`${match.type}__${match.label}`);
-      } else {
-        setSelectedOption("ASSET__Asset");
-      }
+      setSelectedType(match ? match.type : initialData.type || "ASSET");
     } else {
       setAccountName("");
-      setSelectedOption("");
+      setSelectedType("");
     }
     setErrors({});
   }, [initialData]);
@@ -65,7 +67,7 @@ function AccountForm({
       newErrors.accountName = "Account Name is required";
     }
 
-    if (!selectedOption) {
+    if (!selectedType) {
       newErrors.type = "Account Type is required";
     }
 
@@ -74,17 +76,15 @@ function AccountForm({
       return;
     }
 
-    const [type, label] = selectedOption.split("__");
-    const matchedOption = TYPE_OPTIONS.find(
-      (opt) => opt.type === type && opt.label === label
-    );
+    const matchedOption = ALL_TYPE_OPTIONS.find((opt) => opt.type === selectedType);
 
     onSave({
       id: initialData?.id || null,
       accountName: accountName.trim(),
-      type: matchedOption ? matchedOption.type : type,
-      displayType: matchedOption ? matchedOption.displayType : label,
-      classification: matchedOption ? matchedOption.label : label,
+      type: selectedType,
+      group: matchedOption?.group || (["INCOME", "EXPENSE", "OTHER_EXPENSE"].includes(selectedType) ? "PROFIT_AND_LOSS" : "BALANCE_SHEET"),
+      displayType: matchedOption ? matchedOption.displayType : selectedType,
+      classification: matchedOption ? matchedOption.label : selectedType,
       status: initialData?.status || "ACTIVE",
     });
   };
@@ -196,15 +196,15 @@ function AccountForm({
             )}
           </div>
 
-          {/* 2. Type / Category (Flat list: Asset, Liability, Bank, Capital, Cash, Income, Expenses, Other Expenses) */}
+          {/* 2. Type / Category (Grouped by Balance Sheet & Profit and Loss) */}
           <div>
             <label className="block text-sm font-medium text-[#211D19] mb-1.5">
               Type / Category <span className="text-red-500">*</span>
             </label>
             <select
-              value={selectedOption}
+              value={selectedType}
               onChange={(e) => {
-                setSelectedOption(e.target.value);
+                setSelectedType(e.target.value);
                 if (errors.type) setErrors((prev) => ({ ...prev, type: null }));
               }}
               className={`w-full h-10 px-3.5 rounded-lg border ${
@@ -212,12 +212,16 @@ function AccountForm({
               } bg-white text-sm text-[#211D19] outline-none transition cursor-pointer`}
             >
               <option value="" disabled>
-                Select Account Classification
+                Select Account Type
               </option>
-              {TYPE_OPTIONS.map((opt) => (
-                <option key={`${opt.type}__${opt.label}`} value={`${opt.type}__${opt.label}`}>
-                  {opt.label}
-                </option>
+              {ACCOUNT_CATEGORIES.map((cat) => (
+                <optgroup key={cat.heading} label={cat.heading} className="font-semibold text-[#8a5d3b]">
+                  {cat.options.map((opt) => (
+                    <option key={opt.type} value={opt.type} className="text-[#211D19] font-normal">
+                      {opt.label}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
             {errors.type && (
@@ -225,7 +229,7 @@ function AccountForm({
             )}
 
             <p className="text-xs text-[#716B63] mt-2">
-              Select the account category for financial ledger transactions and reporting.
+              Each account is assigned an Account Type, which determines how the account is treated and where it appears in financial reports.
             </p>
           </div>
 

@@ -42,24 +42,46 @@ function MyInvoices() {
     fetchInvoices();
   }, []);
 
+  const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState("");
+
   const handlePay = async (e) => {
     e.preventDefault();
+    setPayError("");
+    setPaying(true);
     try {
-      await api.post("/payments", {
+      // 1. Create payment against this invoice
+      const createRes = await api.post("/payments", {
         type: "RECEIVE",
         method: "BANK",
         contactId: payModal.partnerId,
-        journalId: 3,
+        journalId: 3, // Bank journal
         amount: String(payModal.amountDue),
         paymentDate: new Date().toISOString().split("T")[0],
         invoiceIds: [payModal.id],
-      }).catch((err) => {
-        console.warn("Direct payment registration:", err.message);
       });
+
+      const paymentId = createRes.data?.payment?.id || createRes.data?.id;
+      if (paymentId) {
+        // 2. Automatically confirm the payment to post ledger entry and settle invoice amount due
+        await api.patch(
+          `/payments/${paymentId}/confirm`,
+          { invoiceIds: [payModal.id] },
+          {
+            headers: {
+              "Idempotency-Key": `cust-pay-${paymentId}-${Date.now()}`,
+            },
+          }
+        );
+      }
+
       await fetchInvoices();
       setPayModal(null);
     } catch (err) {
-      console.error(err);
+      console.error("Payment processing error:", err);
+      setPayError(err.response?.data?.message || "Failed to process payment. Please try again.");
+    } finally {
+      setPaying(false);
     }
   };
 
@@ -143,24 +165,33 @@ function MyInvoices() {
       {payModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 backdrop-blur-xs p-4">
           <div className="w-full max-w-sm rounded-2xl bg-white border border-[#e7e3da] shadow-2xl p-6">
-            <h3 className="text-lg font-semibold text-[#211D19] mb-4">Mock Payment Gateway</h3>
-            <p className="text-sm text-[#716B63] mb-6">
+            <h3 className="text-lg font-semibold text-[#211D19] mb-4">Payment Confirmation</h3>
+            <p className="text-sm text-[#716B63] mb-4">
               You are paying <strong>₹ {Number(payModal.amountDue).toLocaleString("en-IN")}</strong> for invoice {payModal.invoiceNumber}.
             </p>
+
+            {payError && (
+              <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-2.5 text-xs text-red-700">
+                {payError}
+              </div>
+            )}
+
             <form onSubmit={handlePay}>
               <div className="flex items-center justify-end gap-2.5">
                 <button
                   type="button"
+                  disabled={paying}
                   onClick={() => setPayModal(null)}
-                  className="px-4 py-2 text-sm font-medium text-[#716B63] hover:text-[#211D19]"
+                  className="px-4 py-2 text-sm font-medium text-[#716B63] hover:text-[#211D19] cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-lg bg-[#342921] text-white text-sm font-medium hover:bg-[#231b15]"
+                  disabled={paying}
+                  className="px-5 py-2 rounded-lg bg-[#342921] text-white text-sm font-medium hover:bg-[#231b15] cursor-pointer disabled:opacity-50"
                 >
-                  Pay Now
+                  {paying ? "Processing..." : "Pay Now"}
                 </button>
               </div>
             </form>

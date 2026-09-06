@@ -158,30 +158,87 @@ function VendorBills() {
     e.preventDefault();
     setError("");
 
-    if (!formData.partnerId) {
-      setError("Please select a vendor.");
+    const vendorName = (formData.vendorName || "").trim();
+    if (!formData.partnerId && !vendorName) {
+      setError("Please enter or select a vendor.");
       return;
     }
 
-    const defaultTaxId = taxes[0]?.id || 1;
-    const defaultAccountId = accounts.find((a) => a.type === "EXPENSE")?.id || accounts[0]?.id || 1;
-
-    const lines = items.map((item, idx) => ({
-      sequence: idx,
-      productId: item.productId ? Number(item.productId) : (products[0]?.id || 1),
-      accountId: defaultAccountId,
-      quantity: Number(item.quantity) || 1,
-      unitPrice: Number(item.rate) || 0,
-      taxId: defaultTaxId,
-    }));
-
     try {
+      // 1. Resolve or create Vendor contact if needed
+      let resolvedPartnerId = formData.partnerId ? Number(formData.partnerId) : null;
+      if (!resolvedPartnerId && vendorName) {
+        const existing = vendors.find(
+          (v) => v.name.trim().toLowerCase() === vendorName.toLowerCase()
+        );
+        if (existing) {
+          resolvedPartnerId = existing.id;
+        } else {
+          const contactRes = await api.post("/contacts", {
+            name: vendorName,
+            type: "VENDOR",
+            street: formData.vendorAddress || undefined,
+            mobile: formData.vendorPhone || undefined,
+          });
+          resolvedPartnerId = contactRes.data.id;
+        }
+      }
+
+      if (!resolvedPartnerId) {
+        setError("Please select or enter a valid vendor.");
+        return;
+      }
+
+      // 2. Resolve products and build lines
+      const defaultTaxId = taxes[0]?.id || 1;
+      const defaultAccountId = accounts.find((a) => a.type === "EXPENSE")?.id || accounts[0]?.id || 6;
+
+      const validLines = [];
+      for (let idx = 0; idx < items.length; idx++) {
+        const item = items[idx];
+        const itemName = (item.name || "").trim();
+        let prodId = item.productId ? Number(item.productId) : null;
+
+        if (!prodId && itemName) {
+          const existingProd = products.find(
+            (p) => p.name.trim().toLowerCase() === itemName.toLowerCase()
+          );
+          if (existingProd) {
+            prodId = existingProd.id;
+          } else {
+            const prodRes = await api.post("/products", {
+              name: itemName,
+              type: "GOODS",
+              cost: Number(item.rate) || 0,
+              purchaseAccountId: defaultAccountId,
+            });
+            prodId = prodRes.data.id;
+          }
+        }
+
+        validLines.push({
+          sequence: idx,
+          productId: prodId || (products[0]?.id || 1),
+          accountId: defaultAccountId,
+          quantity: String(Number(item.quantity) || 1),
+          unitPrice: String(Number(item.rate) || 0),
+          taxId: defaultTaxId,
+          description: itemName || "Vendor bill item",
+        });
+      }
+
+      const jourRes = await api.get("/journals").catch(() => ({ data: { items: [] } }));
+      const jList = jourRes.data?.items || [];
+      const purchJournal = jList.find((j) => j.type === "PURCHASE") || jList[0];
+
       await api.post("/invoices", {
         documentType: "VENDOR_BILL",
-        partnerId: Number(formData.partnerId),
-        invoiceDate: formData.billDate || new Date().toISOString(),
-        dueDate: formData.dueDate || new Date().toISOString(),
-        lines,
+        contactId: Number(resolvedPartnerId),
+        journalId: Number(purchJournal?.id || 2),
+        invoiceDate: formData.billDate || new Date().toISOString().split("T")[0],
+        dueDate: formData.dueDate || new Date().toISOString().split("T")[0],
+        reference: formData.purchaseOrder || undefined,
+        lines: validLines,
       });
 
       setShowForm(false);
@@ -200,7 +257,14 @@ function VendorBills() {
       setItems([{ productId: "", name: "", quantity: 1, rate: 0 }]);
       fetchData();
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to create vendor bill.");
+      console.error("Failed to create vendor bill:", err);
+      const msg =
+        err.response?.data?.message ||
+        (Array.isArray(err.response?.data?.errors)
+          ? err.response.data.errors.map((e) => e.message).join(", ")
+          : null) ||
+        "Failed to create vendor bill.";
+      setError(msg);
     }
   };
 
@@ -975,6 +1039,11 @@ function VendorBills() {
           onSubmit={handleSubmit}
           className="space-y-5"
         >
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-medium">
+              {error}
+            </div>
+          )}
 
           {/* VENDOR INFORMATION */}
 
@@ -986,20 +1055,41 @@ function VendorBills() {
 
             <div className="grid md:grid-cols-2 gap-5">
 
-              <input
-                placeholder="Vendor Name"
-                value={
-                  formData.vendorName
-                }
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    vendorName:
-                      e.target.value,
-                  })
-                }
-                className="input"
-              />
+              <div>
+                <input
+                  list="bill-vendor-suggestions"
+                  placeholder="Vendor Name"
+                  value={formData.vendorName}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const matchedVendor = vendors.find(
+                      (v) => v.name.toLowerCase() === val.trim().toLowerCase()
+                    );
+                    if (matchedVendor) {
+                      setFormData({
+                        ...formData,
+                        partnerId: matchedVendor.id,
+                        vendorName: matchedVendor.name,
+                        vendorAddress: matchedVendor.street || matchedVendor.city || formData.vendorAddress,
+                        vendorPhone: matchedVendor.mobile || formData.vendorPhone,
+                      });
+                    } else {
+                      setFormData({
+                        ...formData,
+                        vendorName: val,
+                      });
+                    }
+                  }}
+                  className="input w-full"
+                />
+                <datalist id="bill-vendor-suggestions">
+                  {vendors.map((v) => (
+                    <option key={v.id} value={v.name}>
+                      {v.mobile ? `${v.mobile} - ` : ""}{v.email || ""}
+                    </option>
+                  ))}
+                </datalist>
+              </div>
 
               <input
                 placeholder="Vendor Address"

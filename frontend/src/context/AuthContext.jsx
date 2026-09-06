@@ -63,6 +63,20 @@ export function AuthProvider({ children }) {
     if (refreshToken) {
       localStorage.setItem("refreshToken", refreshToken);
     }
+
+    // If role is CONTACT, fetch contact record to determine contact type (CUSTOMER vs VENDOR)
+    if (userData.role === "CONTACT" && userData.contactId) {
+      try {
+        const contactRes = await api.get(`/contacts/${userData.contactId}`);
+        if (contactRes.data) {
+          userData.contact = contactRes.data;
+          userData.contactType = contactRes.data.type; // "CUSTOMER" or "VENDOR" or "BOTH"
+        }
+      } catch (e) {
+        console.warn("Could not fetch contact profile for CONTACT user:", e);
+      }
+    }
+
     localStorage.setItem("user", JSON.stringify(userData));
 
     setUser(userData);

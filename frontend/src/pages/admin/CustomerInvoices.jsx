@@ -32,6 +32,10 @@ function CustomerInvoices() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [customerFilter, setCustomerFilter] = useState("All");
 
+  const [salesOrdersList, setSalesOrdersList] = useState([]);
+  const [selectedSOId, setSelectedSOId] = useState("");
+  const [generatingInvoice, setGeneratingInvoice] = useState(false);
+
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [showNewInvoice, setShowNewInvoice] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
@@ -44,12 +48,13 @@ function CustomerInvoices() {
   const fetchInvoicesData = async () => {
     setLoading(true);
     try {
-      const [invRes, cRes, pRes, tRes, aRes] = await Promise.all([
+      const [invRes, cRes, pRes, tRes, aRes, soRes] = await Promise.all([
         api.get("/invoices?type=CUSTOMER_INVOICE"),
         api.get("/contacts?type=CUSTOMER&limit=100").catch(() => ({ data: { items: [] } })),
         api.get("/products?limit=100").catch(() => ({ data: { items: [] } })),
         api.get("/taxes").catch(() => ({ data: { items: [] } })),
         api.get("/accounts").catch(() => ({ data: { items: [] } })),
+        api.get("/sales-orders").catch(() => ({ data: [] })),
       ]);
 
       // invoices returns a direct array; contacts/products/taxes/accounts return { items: [] }
@@ -90,6 +95,7 @@ function CustomerInvoices() {
       setProductsList(pRes.data.items || []);
       setTaxesList(tRes.data.items || []);
       setAccountsList(aRes.data.items || []);
+      setSalesOrdersList(Array.isArray(soRes.data) ? soRes.data : []);
     } catch {
       // Error toasted by api.js interceptor
     } finally {
@@ -144,6 +150,64 @@ function CustomerInvoices() {
     }
 
     return "status-unpaid";
+  };
+
+  const handleGenerateInvoice = async () => {
+    if (!selectedSOId) {
+      alert("Please select a confirmed Sales Order.");
+      return;
+    }
+
+    const so = salesOrdersList.find((order) => String(order.id) === String(selectedSOId));
+    if (!so) {
+      alert("Selected Sales Order not found.");
+      return;
+    }
+
+    setGeneratingInvoice(true);
+    try {
+      // Find Sales Journal (type: SALES)
+      const jourRes = await api.get("/journals").catch(() => ({ data: { items: [] } }));
+      const jList = jourRes.data?.items || [];
+      const salesJournal = jList.find((j) => j.type === "SALES") || jList[0];
+
+      const lines = (so.lines || []).map((l, idx) => ({
+        productId: l.productId,
+        description: l.product?.name || "Sales item",
+        quantity: String(l.quantity || "1"),
+        unitPrice: String(l.unitPrice || "0"),
+        accountId: 5, // Sales Income A/c
+        taxId: l.taxId || 1,
+      }));
+
+      if (lines.length === 0) {
+        alert("This sales order has no line items.");
+        return;
+      }
+
+      const today = new Date().toISOString().split("T")[0];
+      const dueDate = new Date(Date.now() + 15 * 86400000).toISOString().split("T")[0];
+
+      await api.post("/invoices", {
+        documentType: "CUSTOMER_INVOICE",
+        contactId: Number(so.customerId),
+        journalId: Number(salesJournal?.id || 1),
+        invoiceDate: today,
+        dueDate: dueDate,
+        reference: so.number,
+        lines,
+      });
+
+      setShowNewInvoice(false);
+      setSelectedSOId("");
+      await fetchInvoicesData();
+      alert("Customer Invoice generated successfully from " + so.number + "!");
+    } catch (err) {
+      console.error("Failed to generate invoice:", err);
+      alert(err.response?.data?.message || "Failed to generate invoice from sales order.");
+    } finally {
+      setGeneratingInvoice(false);
+    }
   };
 
   const handleConfirmInvoice = async (invoiceId) => {
@@ -214,23 +278,27 @@ function CustomerInvoices() {
       const targetJournal = jList.find((j) => j.type === (paymentMethod === "Bank" ? "BANK" : "CASH")) || jList[0];
 
       const pRes = await api.post("/payments", {
-        paymentType: "RECEIVE",
-        partnerId: Number(selectedInvoice.partnerId),
-        invoiceId: Number(selectedInvoice.id),
-        paymentDate: new Date().toISOString(),
-        amount: Number(amount),
-        paymentMethod: paymentMethod === "Bank" ? "BANK" : "CASH",
-        journalId: targetJournal?.id || 1,
-        note: `Payment for invoice ${selectedInvoice.invoiceNo}`,
+        type: "RECEIVE",
+        contactId: Number(selectedInvoice.partnerId),
+        invoiceIds: [Number(selectedInvoice.id)],
+        paymentDate: new Date().toISOString().split("T")[0],
+        amount: String(amount),
+        method: paymentMethod === "Bank" ? "BANK" : "CASH",
+        journalId: Number(targetJournal?.id || (paymentMethod === "Bank" ? 3 : 4)),
+        narration: `Payment for invoice ${selectedInvoice.invoiceNo}`,
       });
 
-      const paymentId = pRes.data?.id;
+      const paymentId = pRes.data?.payment?.id || pRes.data?.id;
       if (paymentId) {
-        await api.patch(`/payments/${paymentId}/confirm`, {}, {
-          headers: {
-            "Idempotency-Key": `cust-inv-pay-${paymentId}-${Date.now()}`,
-          },
-        });
+        await api.patch(
+          `/payments/${paymentId}/confirm`,
+          { invoiceIds: [Number(selectedInvoice.id)] },
+          {
+            headers: {
+              "Idempotency-Key": `cust-inv-pay-${paymentId}-${Date.now()}`,
+            },
+          }
+        );
       }
 
       await fetchInvoicesData();
@@ -823,18 +891,29 @@ function CustomerInvoices() {
                 <label>Select Sales Order</label>
 
                 <div className="select-box full-width">
-                  <select>
+                  <select
+                    value={selectedSOId}
+                    onChange={(e) => setSelectedSOId(e.target.value)}
+                  >
                     <option value="">
                       Select Sales Order
                     </option>
-
-                    <option>SO/2026/015 - Mr. Rahul</option>
-                    <option>SO/2026/014 - ABC Furniture Ltd.</option>
-                    <option>SO/2026/013 - XYZ Interiors</option>
+                    {salesOrdersList
+                      .filter((so) => so.status === "CONFIRMED" || so.status === "DRAFT")
+                      .map((so) => (
+                        <option key={so.id} value={so.id}>
+                          {so.number} - {so.customer?.name || "Customer"} (₹{Number(so.grandTotal).toLocaleString("en-IN")})
+                        </option>
+                      ))}
                   </select>
 
                   <ChevronDown size={17} />
                 </div>
+                {salesOrdersList.length === 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    No sales orders found. Please create a sales order first under Sales Order menu.
+                  </p>
+                )}
               </div>
 
               <div className="new-invoice-info">
@@ -857,13 +936,14 @@ function CustomerInvoices() {
 
               <button
                 className="primary-button"
-                onClick={() => {
-                  alert(
-                    "Invoice generation from Sales Order will be connected to your Sales Order data/API."
-                  );
+                disabled={generatingInvoice || !selectedSOId}
+                onClick={handleGenerateInvoice}
+                style={{
+                  opacity: generatingInvoice || !selectedSOId ? 0.6 : 1,
+                  cursor: generatingInvoice || !selectedSOId ? "not-allowed" : "pointer",
                 }}
               >
-                Generate Invoice
+                {generatingInvoice ? "Generating..." : "Generate Invoice"}
                 <ArrowRight size={17} />
               </button>
             </div>

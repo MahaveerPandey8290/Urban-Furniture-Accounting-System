@@ -1,4 +1,4 @@
-﻿import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 /**
@@ -33,6 +33,12 @@ function ProtectedRoute({ roles }) {
     // Wrong role: send to their correct dashboard
     if (user.role === "ADMIN") {
       return <Navigate to="/admin" replace />;
+    }
+    if (user.role === "CONTACT") {
+      if (user.contactType === "VENDOR") {
+        return <Navigate to="/vendor" replace />;
+      }
+      return <Navigate to="/customer" replace />;
     }
     return <Navigate to="/invoicing_user" replace />;
   }

@@ -9,6 +9,9 @@ import {
   X,
   Pencil,
   Trash2,
+  Key,
+  CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 import api from "../../services/api";
 
@@ -23,6 +26,9 @@ const emptyForm = {
   country: "India",
   pincode: "",
   image: "",
+  createPortalCredentials: false,
+  loginId: "",
+  portalPassword: "",
 };
 
 function Contacts() {
@@ -34,6 +40,7 @@ function Contacts() {
   const [search, setSearch] = useState("");
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState("");
+  const [tempPasswordModal, setTempPasswordModal] = useState(null);
 
   const fetchContacts = async () => {
     setLoading(true);
@@ -83,6 +90,9 @@ function Contacts() {
       country: contact.country || "India",
       pincode: contact.pincode || "",
       image: "",
+      createPortalCredentials: false,
+      loginId: "",
+      portalPassword: "",
     });
     setEditingId(contact.id);
     setError("");
@@ -93,10 +103,10 @@ function Contacts() {
   // FORM INPUT CHANGE
   // -----------------------------
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setForm((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     }));
     setError("");
   };
@@ -125,6 +135,21 @@ function Contacts() {
       return;
     }
 
+    if (!editingId && form.createPortalCredentials) {
+      if (form.loginId && (form.loginId.length < 6 || form.loginId.length > 12)) {
+        setError("Login ID must be between 6 and 12 characters.");
+        return;
+      }
+      if (form.loginId && !/^[a-zA-Z0-9_]+$/.test(form.loginId)) {
+        setError("Login ID may only contain letters, numbers, and underscores (no @ or special characters).");
+        return;
+      }
+      if (form.portalPassword && form.portalPassword.length < 8) {
+        setError("Password must be at least 8 characters.");
+        return;
+      }
+    }
+
     const payload = {
       name: form.name.trim(),
       type: form.type.toUpperCase(),
@@ -137,11 +162,33 @@ function Contacts() {
       pincode: form.pincode?.trim() || undefined,
     };
 
+    if (!editingId && form.createPortalCredentials) {
+      payload.createPortalCredentials = true;
+      if (form.loginId?.trim()) payload.loginId = form.loginId.trim();
+      if (form.portalPassword?.trim()) payload.portalPassword = form.portalPassword.trim();
+    }
+
     try {
       if (editingId) {
-        await api.put(`/contacts/${editingId}`, payload);
+        try {
+          await api.put(`/contacts/${editingId}`, payload);
+        } catch (putErr) {
+          if (putErr.response?.status === 404 || putErr.response?.status === 405) {
+            await api.patch(`/contacts/${editingId}`, payload);
+          } else {
+            throw putErr;
+          }
+        }
       } else {
-        await api.post("/contacts", payload);
+        const res = await api.post("/contacts", payload);
+        if (res.data?.tempPassword) {
+          setTempPasswordModal({
+            name: res.data.name || form.name,
+            loginId: res.data.user?.loginId || payload.loginId || res.data.email,
+            tempPassword: res.data.tempPassword,
+            role: res.data.type || form.type,
+          });
+        }
       }
 
       setShowForm(false);
@@ -149,7 +196,12 @@ function Contacts() {
       setForm(emptyForm);
       fetchContacts();
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to save contact.");
+      const fieldErrors = err.response?.data?.errors;
+      if (fieldErrors && Array.isArray(fieldErrors)) {
+        setError(fieldErrors.map((e) => e.message || e).join(", "));
+      } else {
+        setError(err.response?.data?.message || "Failed to save contact.");
+      }
     }
   };
 
@@ -214,6 +266,12 @@ function Contacts() {
             onSubmit={handleSubmit}
             className="rounded-2xl border border-[#d8d0c6] bg-[#fffdf9] p-8 shadow-sm"
           >
+            {error && (
+              <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 flex items-center gap-2">
+                <AlertCircle size={16} />
+                <span>{error}</span>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_220px]">
 
@@ -248,7 +306,7 @@ function Contacts() {
                     value={form.email}
                     onChange={handleChange}
                     placeholder="Enter email address"
-                    className="w-full rounded-lg border border-[#cfc5ba] bg-white px-4 py-3 outline-none transition focus:border-[#5b4636]"
+                    className="w-full rounded-lg border border-[#cfc5ba] bg-white px-4 py-3 outline-none focus:border-[#5b4636]"
                   />
                 </div>
 
@@ -259,12 +317,12 @@ function Contacts() {
                   </label>
 
                   <input
-                    type="tel"
+                    type="text"
                     name="mobile"
                     value={form.mobile}
                     onChange={handleChange}
                     placeholder="Enter mobile number"
-                    className="w-full rounded-lg border border-[#cfc5ba] bg-white px-4 py-3 outline-none transition focus:border-[#5b4636]"
+                    className="w-full rounded-lg border border-[#cfc5ba] bg-white px-4 py-3 outline-none focus:border-[#5b4636]"
                   />
                 </div>
 
@@ -281,8 +339,8 @@ function Contacts() {
                         type="radio"
                         name="type"
                         value="Customer"
-                        checked={form.type === "Customer"}
-                        onChange={handleChange}
+                        checked={form.type === "Customer" || form.type === "CUSTOMER"}
+                        onChange={() => setForm((prev) => ({ ...prev, type: "Customer" }))}
                         className="h-4 w-4 accent-[#5b4636]"
                       />
 
@@ -296,8 +354,8 @@ function Contacts() {
                         type="radio"
                         name="type"
                         value="Vendor"
-                        checked={form.type === "Vendor"}
-                        onChange={handleChange}
+                        checked={form.type === "Vendor" || form.type === "VENDOR"}
+                        onChange={() => setForm((prev) => ({ ...prev, type: "Vendor" }))}
                         className="h-4 w-4 accent-[#5b4636]"
                       />
 
@@ -366,6 +424,71 @@ function Contacts() {
                   </div>
 
                 </div>
+
+                {/* PORTAL USER CREDENTIALS (NEW CONTACT ONLY) */}
+                {!editingId && (
+                  <div className="rounded-xl border border-[#d8d0c6] bg-[#f9f6f0] p-5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-sm font-semibold text-[#30261f]">
+                          Create Portal User Account
+                        </h4>
+                        <p className="mt-0.5 text-xs text-[#746b63]">
+                          Allow this {form.type === "Vendor" ? "vendor" : "customer"} to log into the portal
+                        </p>
+                      </div>
+
+                      <label className="relative inline-flex cursor-pointer items-center">
+                        <input
+                          type="checkbox"
+                          name="createPortalCredentials"
+                          checked={form.createPortalCredentials}
+                          onChange={handleChange}
+                          className="peer sr-only"
+                        />
+                        <div className="peer h-6 w-11 rounded-full bg-[#cfc5ba] after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-[#4a392d] peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                      </label>
+                    </div>
+
+                    {form.createPortalCredentials && (
+                      <div className="mt-4 space-y-4 border-t border-[#e2dacd] pt-4">
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-[#30261f]">
+                            Login ID (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            name="loginId"
+                            value={form.loginId}
+                            onChange={handleChange}
+                            placeholder="e.g. acme_store (leave blank to auto-generate)"
+                            className="w-full rounded-lg border border-[#cfc5ba] bg-white px-3.5 py-2.5 text-sm outline-none focus:border-[#5b4636]"
+                          />
+                          <p className="mt-1 text-[11px] text-[#746b63]">
+                            6–12 characters. Letters, numbers, and underscores only.
+                          </p>
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-[#30261f]">
+                            Password (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            name="portalPassword"
+                            value={form.portalPassword}
+                            onChange={handleChange}
+                            placeholder="Leave blank to auto-generate secure temporary password"
+                            className="w-full rounded-lg border border-[#cfc5ba] bg-white px-3.5 py-2.5 text-sm outline-none focus:border-[#5b4636]"
+                          />
+                          <p className="mt-1 text-[11px] text-[#746b63]">
+                            Minimum 8 characters. If blank, a temporary password will be shown after confirmation.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
               </div>
 
@@ -756,6 +879,77 @@ function Contacts() {
 
           )}
 
+        </div>
+      )}
+
+      {/* TEMPORARY PASSWORD / CREDENTIALS MODAL */}
+      {tempPasswordModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-2xl border border-[#d8d0c6] bg-[#fffdf9] p-7 shadow-2xl">
+            <div className="flex items-center gap-3 border-b border-[#e4ddd5] pb-4 text-[#39533c]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e4eee4]">
+                <CheckCircle size={22} />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-[#30261f]">Portal Account Created</h3>
+                <p className="text-xs text-[#746b63]">Credentials for {tempPasswordModal.name}</p>
+              </div>
+            </div>
+
+            <div className="my-5 space-y-4 rounded-xl border border-[#e4ddd5] bg-[#f9f6f0] p-4 text-xs">
+              <div>
+                <span className="block font-medium text-[#746b63]">Role / Portal:</span>
+                <span className="font-semibold text-[#30261f]">
+                  {tempPasswordModal.role === "Vendor" ? "Vendor Portal (/vendor)" : "Customer Portal (/customer)"}
+                </span>
+              </div>
+
+              <div>
+                <span className="block font-medium text-[#746b63]">Login ID:</span>
+                <div className="mt-1 flex items-center justify-between rounded-lg border border-[#d8d0c6] bg-white px-3 py-2">
+                  <span className="font-mono text-sm font-semibold text-[#30261f]">{tempPasswordModal.loginId}</span>
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard.writeText(tempPasswordModal.loginId)}
+                    className="text-[11px] font-medium text-[#4a392d] hover:underline cursor-pointer"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <span className="block font-medium text-[#746b63]">Temporary Password:</span>
+                <div className="mt-1 flex items-center justify-between rounded-lg border border-[#d8d0c6] bg-white px-3 py-2">
+                  <span className="font-mono text-sm font-semibold text-[#30261f]">{tempPasswordModal.tempPassword}</span>
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard.writeText(tempPasswordModal.tempPassword)}
+                    className="text-[11px] font-medium text-[#4a392d] hover:underline cursor-pointer"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+
+              <div className="rounded-lg bg-amber-50 border border-amber-200 p-2.5 text-[11px] text-amber-800 flex items-start gap-2">
+                <Key size={15} className="mt-0.5 shrink-0" />
+                <span>
+                  Please share these credentials securely with the contact. They will be prompted to change their password upon their first login.
+                </span>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setTempPasswordModal(null)}
+                className="rounded-lg bg-[#4a392d] px-5 py-2.5 text-xs font-medium text-white transition hover:bg-[#3a2d24] cursor-pointer"
+              >
+                I Have Saved the Credentials
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

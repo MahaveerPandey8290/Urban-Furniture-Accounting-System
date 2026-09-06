@@ -1,12 +1,16 @@
 import { ContactRepository } from './repository.js';
 import { CreateContactDTO, UpdateContactDTO, QueryContactDTO } from './dto.js';
 import { PrismaClient } from '@prisma/client';
-import { NotFoundError } from '../../core/errors.js';
+import { NotFoundError, ConflictError } from '../../core/errors.js';
+import { AuthService } from '../auth/auth.service.js';
+import { AuthRepository } from '../auth/auth.repository.js';
 
 export class ContactService {
   constructor(private repo: ContactRepository, private prisma: PrismaClient) {}
 
   async create(data: CreateContactDTO, companyId: number) {
+    const { createPortalCredentials, loginId, portalPassword, ...contactFields } = data;
+
     let receivableAccountId: number | undefined = undefined;
     let payableAccountId: number | undefined = undefined;
 
@@ -20,12 +24,62 @@ export class ContactService {
     });
     if (payableAccount) payableAccountId = payableAccount.id;
 
-    return this.repo.create({
-      ...data,
+    const contact = await this.repo.create({
+      ...contactFields,
       companyId,
       receivableAccountId,
       payableAccountId,
     });
+
+    let tempPassword: string | undefined = undefined;
+    let userRecord: any = null;
+
+    if (createPortalCredentials) {
+      const email = contact.email || `${contact.name.toLowerCase().replace(/[^a-z0-9]/g, '')}_${contact.id}@urbanfurniture.local`;
+      const finalLoginId = loginId || `user_${contact.id}_${Date.now().toString().slice(-4)}`;
+
+      // Check for uniqueness
+      const [existingLogin, existingEmail] = await Promise.all([
+        AuthRepository.findByLoginId(finalLoginId),
+        AuthRepository.findByEmail(email),
+      ]);
+
+      if (existingLogin) throw new ConflictError(`Login ID '${finalLoginId}' is already taken`);
+      if (existingEmail && existingEmail.contactId !== contact.id) {
+        throw new ConflictError(`Email '${email}' is already associated with an account`);
+      }
+
+      tempPassword = portalPassword || AuthService.generateTempPasswordValue();
+      const hash = await AuthService.hashPassword(tempPassword);
+
+      userRecord = await this.prisma.user.create({
+        data: {
+          companyId,
+          name: contact.name,
+          loginId: finalLoginId,
+          email: email.toLowerCase(),
+          passwordHash: hash,
+          role: 'CONTACT',
+          status: 'ACTIVE',
+          mustChangePassword: true,
+          contactId: contact.id,
+        },
+      });
+
+      await AuthRepository.addPasswordHistory(userRecord.id, hash);
+    }
+
+    return {
+      ...contact,
+      user: userRecord ? {
+        id: userRecord.id,
+        loginId: userRecord.loginId,
+        email: userRecord.email,
+        role: userRecord.role,
+        tempPassword,
+      } : undefined,
+      tempPassword,
+    };
   }
 
   async findAll(query: QueryContactDTO, user: any) {

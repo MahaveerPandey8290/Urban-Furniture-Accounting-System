@@ -19,7 +19,7 @@ export type UpdateAccountDto = z.infer<typeof updateAccountSchema>;
 
 export const queryAccountSchema = z.object({
   cursor: z.coerce.number().int().positive().optional(),
-  limit: z.coerce.number().min(1).max(100).default(50),
+  limit: z.coerce.number().min(1).max(200).default(50),
   search: z.string().optional(),
   type: z.nativeEnum(AccountType).optional(),
   isArchived: z.coerce.boolean().optional(),

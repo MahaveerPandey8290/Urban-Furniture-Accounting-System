@@ -113,25 +113,44 @@ function ChartOfAccountsMaster() {
 
   // Save account (from Confirm button)
   const handleSaveAccount = async (accountData) => {
-    const rawType = (accountData.classification || accountData.type || "ASSET").toUpperCase();
+    const rawType = (accountData.type || accountData.classification || "ASSET").toUpperCase();
     const typeEnum = ["ASSET", "LIABILITY", "BANK", "CAPITAL", "CASH", "INCOME", "EXPENSE", "OTHER_EXPENSE"].includes(rawType)
       ? rawType
       : "ASSET";
 
-    const groupEnum = ["INCOME", "EXPENSE", "OTHER_EXPENSE"].includes(typeEnum)
+    const groupEnum = accountData.group || (["INCOME", "EXPENSE", "OTHER_EXPENSE"].includes(typeEnum)
       ? "PROFIT_AND_LOSS"
-      : "BALANCE_SHEET";
-
-    const payload = {
-      code: accountData.code || "ACC-" + Math.floor(1000 + Math.random() * 9000),
-      name: accountData.accountName,
-      type: typeEnum,
-      group: groupEnum,
-    };
+      : "BALANCE_SHEET");
 
     try {
-      await api.post("/accounts", payload);
-      showToast("Account saved successfully");
+      if (accountData.id) {
+        await api.patch(`/accounts/${accountData.id}`, {
+          name: accountData.accountName,
+          type: typeEnum,
+          group: groupEnum,
+        });
+        showToast("Account updated successfully");
+      } else {
+        const prefixes = {
+          BANK: "10",
+          CASH: "10",
+          ASSET: "11",
+          LIABILITY: "21",
+          CAPITAL: "30",
+          INCOME: "40",
+          EXPENSE: "50",
+          OTHER_EXPENSE: "51",
+        };
+        const p = prefixes[typeEnum] || "10";
+        const code = accountData.code || `${p}${Math.floor(10 + Math.random() * 90)}`;
+        await api.post("/accounts", {
+          code,
+          name: accountData.accountName,
+          type: typeEnum,
+          group: groupEnum,
+        });
+        showToast("Account created successfully");
+      }
       await fetchAccounts();
       setCurrentView("list");
       setEditingAccount(null);

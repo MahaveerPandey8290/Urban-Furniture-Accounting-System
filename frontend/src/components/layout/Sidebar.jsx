@@ -148,10 +148,28 @@ export function AdminSidebarContent({ onNavigate, onLogout }) {
                 <WalletCards size={18} className="text-[#d4c5b5]" />
                 <span>Budgets</span>
               </NavLink>
+            </div>
+          </div>
 
-              <NavLink to="/admin/reports" onClick={handleNav} className={subLinkClass}>
-                <BarChart3 size={18} className="text-[#d4c5b5]" />
-                <span>Reports</span>
+          {/* 6. REPORT */}
+          <div className="space-y-1.5">
+            <span className="px-3 text-[13px] font-bold tracking-[2px] uppercase text-[#d8cbbf] block">
+              REPORT
+            </span>
+            <div className="space-y-1 pl-1">
+              <NavLink to="/admin/balance-sheet" onClick={handleNav} className={subLinkClass}>
+                <span className="w-2 h-2 rounded-full bg-current opacity-80" />
+                <span>Balance Sheet</span>
+              </NavLink>
+
+              <NavLink to="/admin/profit-and-loss" onClick={handleNav} className={subLinkClass}>
+                <span className="w-2 h-2 rounded-full bg-current opacity-80" />
+                <span>Profit and Loss</span>
+              </NavLink>
+
+              <NavLink to="/admin/budget-reports" onClick={handleNav} className={subLinkClass}>
+                <span className="w-2 h-2 rounded-full bg-current opacity-80" />
+                <span>Budget Reports</span>
               </NavLink>
             </div>
           </div>

@@ -10,13 +10,16 @@ import {
   CreditCard
 } from "lucide-react";
 import loginFurniture from "../../assets/login-furniture.png";
+import { useAuth } from "../../context/AuthContext";
 
 function VendorLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await logout();
     navigate("/login");
   };
 
@@ -109,7 +112,7 @@ function VendorLayout() {
               </div>
               <div className="hidden sm:flex items-center pr-1">
                 <span className="text-sm font-semibold text-white leading-tight">
-                  Vendor
+                  {user?.contact?.name || user?.loginId || "Vendor"}
                 </span>
               </div>
             </div>

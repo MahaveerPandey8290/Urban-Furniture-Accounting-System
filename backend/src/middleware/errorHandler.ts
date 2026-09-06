@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { Prisma } from '@prisma/client';
+import { ZodError } from 'zod';
 import { AppError } from '../core/errors.js';
 import logger from '../config/logger.js';
 import { env } from '../config/env.js';
@@ -29,6 +30,19 @@ export function errorHandler(
   // Always ensure correlation ID is on response
   if (!res.headersSent) {
     res.setHeader('x-request-id', req.requestId ?? 'unknown');
+  }
+
+  // ─── Zod validation errors ──────────────────────────────────────────────
+  if (err instanceof ZodError) {
+    const errorMsg = err.errors
+      .map((e) => `${e.path.join('.') || 'body'}: ${e.message}`)
+      .join(', ');
+    res.status(400).json({
+      code: 'VALIDATION_ERROR',
+      message: errorMsg,
+      details: err.errors,
+    });
+    return;
   }
 
   // ─── AppError (our typed domain errors) ──────────────────────────────────

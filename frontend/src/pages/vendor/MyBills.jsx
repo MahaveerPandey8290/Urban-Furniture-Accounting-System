@@ -4,8 +4,6 @@ import api from "../../services/api";
 function MyBills() {
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [uploadModal, setUploadModal] = useState(false);
-  const [newBill, setNewBill] = useState({ amount: "", reference: "" });
   const [viewModal, setViewModal] = useState(null);
   const [payModal, setPayModal] = useState(null);
 
@@ -46,10 +44,15 @@ function MyBills() {
     fetchBills();
   }, []);
 
+  const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState("");
+
   const handlePay = async (e) => {
     e.preventDefault();
+    setPayError("");
+    setPaying(true);
     try {
-      await api.post("/payments", {
+      const createRes = await api.post("/payments", {
         type: "SEND",
         method: "BANK",
         contactId: payModal.partnerId,
@@ -57,41 +60,28 @@ function MyBills() {
         amount: String(payModal.amountDue),
         paymentDate: new Date().toISOString().split("T")[0],
         invoiceIds: [payModal.id],
-      }).catch((err) => {
-        console.warn("Direct payment registration:", err.message);
       });
+
+      const paymentId = createRes.data?.payment?.id || createRes.data?.id;
+      if (paymentId) {
+        await api.patch(
+          `/payments/${paymentId}/confirm`,
+          { invoiceIds: [payModal.id] },
+          {
+            headers: {
+              "Idempotency-Key": `vend-pay-${paymentId}-${Date.now()}`,
+            },
+          }
+        );
+      }
+
       await fetchBills();
       setPayModal(null);
     } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleUpload = async (e) => {
-    e.preventDefault();
-    try {
-      await api.post("/invoices", {
-        documentType: "VENDOR_BILL",
-        contactId: 1,
-        journalId: 2,
-        invoiceDate: new Date().toISOString().split("T")[0],
-        reference: newBill.reference || "Vendor Upload",
-        lines: [
-          {
-            description: newBill.reference || "Materials & Supplies",
-            quantity: "1",
-            unitPrice: String(newBill.amount),
-            accountId: 6,
-          },
-        ],
-      }).catch((err) => {
-        console.warn("Bill creation via API:", err.message);
-      });
-      await fetchBills();
-      setUploadModal(false);
-      setNewBill({ amount: "", reference: "" });
-    } catch (err) {
-      console.error(err);
+      console.error("Vendor payment error:", err);
+      setPayError(err.response?.data?.message || "Failed to process payment. Please try again.");
+    } finally {
+      setPaying(false);
     }
   };
 
@@ -100,14 +90,8 @@ function MyBills() {
       <div className="flex items-center justify-between pb-4 border-b border-[#e7e3da]">
         <div>
           <h2 className="text-2xl font-bold text-[#211D19]">My Bills</h2>
-          <p className="text-sm text-[#716B63] mt-1">View bills you have submitted to us.</p>
+          <p className="text-sm text-[#716B63] mt-1">View vendor bills and payment status.</p>
         </div>
-        <button
-          onClick={() => setUploadModal(true)}
-          className="bg-[#342921] text-white hover:bg-[#231b15] text-sm font-medium px-4 py-2 rounded-lg shadow-sm cursor-pointer transition"
-        >
-          Upload Bill
-        </button>
       </div>
 
       <div className="bg-white border border-[#e7e3da] rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.03)] overflow-hidden">
@@ -189,24 +173,33 @@ function MyBills() {
       {payModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 backdrop-blur-xs p-4">
           <div className="w-full max-w-sm rounded-2xl bg-white border border-[#e7e3da] shadow-2xl p-6">
-            <h3 className="text-lg font-semibold text-[#211D19] mb-4">Mock Payment Gateway</h3>
-            <p className="text-sm text-[#716B63] mb-6">
+            <h3 className="text-lg font-semibold text-[#211D19] mb-4">Payment Confirmation</h3>
+            <p className="text-sm text-[#716B63] mb-4">
               You are paying <strong>₹ {Number(payModal.amountDue).toLocaleString("en-IN")}</strong> for bill {payModal.billNumber}.
             </p>
+
+            {payError && (
+              <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-2.5 text-xs text-red-700">
+                {payError}
+              </div>
+            )}
+
             <form onSubmit={handlePay}>
               <div className="flex items-center justify-end gap-2.5">
                 <button
                   type="button"
+                  disabled={paying}
                   onClick={() => setPayModal(null)}
-                  className="px-4 py-2 text-sm font-medium text-[#716B63] hover:text-[#211D19]"
+                  className="px-4 py-2 text-sm font-medium text-[#716B63] hover:text-[#211D19] cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-lg bg-[#342921] text-white text-sm font-medium hover:bg-[#231b15]"
+                  disabled={paying}
+                  className="px-5 py-2 rounded-lg bg-[#342921] text-white text-sm font-medium hover:bg-[#231b15] cursor-pointer disabled:opacity-50"
                 >
-                  Pay Now
+                  {paying ? "Processing..." : "Pay Now"}
                 </button>
               </div>
             </form>
@@ -291,65 +284,6 @@ function MyBills() {
                 </button>
               )}
             </div>
-          </div>
-        </div>
-      )}
-
-      {uploadModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 backdrop-blur-xs p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white border border-[#e7e3da] shadow-2xl p-6">
-            <h3 className="text-lg font-semibold text-[#211D19] mb-4">Upload New Bill</h3>
-            <form onSubmit={handleUpload} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-[#211D19] mb-1">
-                  Amount (₹)
-                </label>
-                <input
-                  type="number"
-                  required
-                  value={newBill.amount}
-                  onChange={(e) => setNewBill({ ...newBill, amount: e.target.value })}
-                  placeholder="e.g. 15000"
-                  className="w-full h-10 px-3.5 rounded-lg border border-[#cfc6b6] bg-white text-sm text-[#211D19] outline-none focus:border-[#342921]"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#211D19] mb-1">
-                  Reference
-                </label>
-                <input
-                  type="text"
-                  value={newBill.reference}
-                  onChange={(e) => setNewBill({ ...newBill, reference: e.target.value })}
-                  placeholder="e.g. Supplies March 2026"
-                  className="w-full h-10 px-3.5 rounded-lg border border-[#cfc6b6] bg-white text-sm text-[#211D19] outline-none focus:border-[#342921]"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#211D19] mb-1">
-                  File Upload
-                </label>
-                <input
-                  type="file"
-                  className="w-full text-sm text-[#716B63] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#f5f2eb] file:text-[#342921] hover:file:bg-[#ebe6dc] cursor-pointer"
-                />
-              </div>
-              <div className="flex items-center justify-end gap-2.5 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setUploadModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-[#716B63] hover:text-[#211D19] cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-lg bg-[#342921] text-white text-sm font-medium hover:bg-[#231b15] cursor-pointer"
-                >
-                  Submit Bill
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}

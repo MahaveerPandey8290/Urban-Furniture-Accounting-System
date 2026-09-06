@@ -12,8 +12,8 @@ import AdminDashboard from "../pages/admin/Dashboard";
 import AdminUsers from "../pages/admin/Users";
 import AdminContacts from "../pages/admin/Contacts";
 import AdminProducts from "../pages/admin/Products";
-import AdminChartOfAccounts from "../pages/admin/ChartOfAccounts";
-import AdminJournals from "../pages/admin/Journals";
+import AdminChartOfAccounts from "../pages/invoicing_user/ChartOfAccounts";
+import AdminJournals from "../pages/invoicing_user/Journals";
 import AdminPurchaseOrders from "../pages/admin/PurchaseOrders";
 import AdminVendorBills from "../pages/admin/VendorBills";
 import AdminSalesOrders from "../pages/admin/SalesOrders";
@@ -96,6 +96,7 @@ function AppRoutes() {
           <Route path="journal-entries" element={<JournalEntries />} />
           <Route path="balance-sheet" element={<BalanceSheet />} />
           <Route path="profit-and-loss" element={<ProfitAndLoss />} />
+          <Route path="budget-reports" element={<BudgetReport />} />
         </Route>
       </Route>
 
@@ -121,7 +122,7 @@ function AppRoutes() {
           <Route path="balance-sheet" element={<BalanceSheet />} />
           <Route path="profit-and-loss" element={<ProfitAndLoss />} />
           <Route path="budget-reports" element={<BudgetReport />} />
-          <Route path="reports" element={<BudgetReport />} />
+          <Route path="reports" element={<AdminReports />} />
         </Route>
 
         {/* Hyphenated alias /invoicing-user */}
@@ -144,28 +145,32 @@ function AppRoutes() {
           <Route path="balance-sheet" element={<BalanceSheet />} />
           <Route path="profit-and-loss" element={<ProfitAndLoss />} />
           <Route path="budget-reports" element={<BudgetReport />} />
-          <Route path="reports" element={<BudgetReport />} />
+          <Route path="reports" element={<AdminReports />} />
         </Route>
       </Route>
 
       {/* =================================================
           CUSTOMER PORTAL
       ================================================= */}
-      <Route path="/customer" element={<CustomerLayout />}>
-        <Route index element={<CustomerDashboard />} />
-        <Route path="dashboard" element={<CustomerDashboard />} />
-        <Route path="sales-orders" element={<MySalesOrders />} />
-        <Route path="invoices" element={<MyInvoices />} />
+      <Route element={<ProtectedRoute roles={["CONTACT", "ADMIN"]} />}>
+        <Route path="/customer" element={<CustomerLayout />}>
+          <Route index element={<CustomerDashboard />} />
+          <Route path="dashboard" element={<CustomerDashboard />} />
+          <Route path="sales-orders" element={<MySalesOrders />} />
+          <Route path="invoices" element={<MyInvoices />} />
+        </Route>
       </Route>
 
       {/* =================================================
           VENDOR PORTAL
       ================================================= */}
-      <Route path="/vendor" element={<VendorLayout />}>
-        <Route index element={<VendorDashboard />} />
-        <Route path="dashboard" element={<VendorDashboard />} />
-        <Route path="purchase-orders" element={<MyPurchaseOrders />} />
-        <Route path="bills" element={<MyBills />} />
+      <Route element={<ProtectedRoute roles={["CONTACT", "ADMIN"]} />}>
+        <Route path="/vendor" element={<VendorLayout />}>
+          <Route index element={<VendorDashboard />} />
+          <Route path="dashboard" element={<VendorDashboard />} />
+          <Route path="purchase-orders" element={<MyPurchaseOrders />} />
+          <Route path="bills" element={<MyBills />} />
+        </Route>
       </Route>
 
     </Routes>

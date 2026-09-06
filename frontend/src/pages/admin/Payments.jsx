@@ -28,14 +28,18 @@ function Payments() {
   const [error, setError] = useState("");
 
   const emptyForm = {
-    paymentType: "RECEIVE", // RECEIVE = Customer, SEND = Vendor
-    invoiceId: "",
+    type: "Received", // "Received" or "Paid"
+    party: "",
     partnerId: "",
-    paymentDate: new Date().toISOString().split("T")[0],
+    documentType: "Invoice", // "Invoice" or "Bill"
+    documentNo: "",
+    invoiceId: "",
+    date: new Date().toISOString().split("T")[0],
     amount: "",
-    paymentMethod: "CASH",
-    journalId: "",
-    note: "",
+    account: "Cash",
+    paymentMethod: "Cash",
+    reference: "",
+    notes: "",
   };
 
   const [form, setForm] = useState(emptyForm);
@@ -70,6 +74,7 @@ function Payments() {
         notes: p.note || "-",
         status: p.status === "CONFIRMED" ? "Completed" : p.status,
         rawStatus: p.status,
+        invoiceId: p.invoiceId,
       }));
 
       setPayments(mapped);
@@ -81,7 +86,6 @@ function Payments() {
       setLoading(false);
     }
   };
-
 
   useEffect(() => {
     fetchData();
@@ -129,13 +133,40 @@ function Payments() {
   const handleFormChange = (field, value) => {
     setForm((prev) => {
       const updated = { ...prev, [field]: value };
+
+      if (field === "type") {
+        updated.documentType = value === "Received" ? "Invoice" : "Bill";
+        updated.invoiceId = "";
+        updated.documentNo = "";
+        updated.party = "";
+        updated.partnerId = "";
+        updated.amount = "";
+      }
+
+      if (field === "account") {
+        updated.paymentMethod = value === "Cash" ? "Cash" : "Online Transfer";
+      }
+
       if (field === "invoiceId") {
         const inv = invoices.find((i) => String(i.id) === String(value));
         if (inv) {
           updated.partnerId = inv.partnerId;
-          updated.amount = String(inv.amountDue || inv.grandTotal || "");
+          updated.party = inv.partner?.name || "";
+          updated.documentNo = inv.number;
+          updated.amount = String(inv.amountDue != null ? inv.amountDue : (inv.grandTotal || ""));
         }
       }
+
+      if (field === "documentNo") {
+        const inv = invoices.find((i) => i.number.toLowerCase() === value.trim().toLowerCase());
+        if (inv) {
+          updated.invoiceId = inv.id;
+          updated.partnerId = inv.partnerId;
+          if (!prev.party) updated.party = inv.partner?.name || "";
+          if (!prev.amount) updated.amount = String(inv.amountDue != null ? inv.amountDue : (inv.grandTotal || ""));
+        }
+      }
+
       return updated;
     });
   };
@@ -144,23 +175,73 @@ function Payments() {
     e.preventDefault();
     setError("");
 
-    if (!form.invoiceId || !form.amount) {
-      setError("Please select an invoice and enter amount.");
+    let resolvedInvoiceId = form.invoiceId;
+    let resolvedPartnerId = form.partnerId;
+
+    if (!resolvedInvoiceId && form.documentNo) {
+      const matched = invoices.find(
+        (i) => i.number.toLowerCase() === form.documentNo.trim().toLowerCase()
+      );
+      if (matched) {
+        resolvedInvoiceId = matched.id;
+        resolvedPartnerId = matched.partnerId;
+      }
+    }
+
+    if (!resolvedPartnerId && form.party) {
+      // Find partner from existing invoices or fallback to contact search
+      const matchedByPartner = invoices.find(
+        (i) => i.partner?.name?.toLowerCase() === form.party.trim().toLowerCase()
+      );
+      if (matchedByPartner) {
+        resolvedPartnerId = matchedByPartner.partnerId;
+      }
+    }
+
+    if (!resolvedPartnerId) {
+      // Auto-resolve or create contact if missing
+      try {
+        const contactRes = await api.get(`/contacts?search=${encodeURIComponent(form.party.trim())}`);
+        const items = contactRes.data?.items || (Array.isArray(contactRes.data) ? contactRes.data : []);
+        const found = items.find((c) => c.name.toLowerCase() === form.party.trim().toLowerCase()) || items[0];
+        if (found) {
+          resolvedPartnerId = found.id;
+        } else {
+          const createContactRes = await api.post("/contacts", {
+            name: form.party.trim(),
+            type: form.type === "Received" ? "CUSTOMER" : "VENDOR",
+          });
+          resolvedPartnerId = createContactRes.data?.id;
+        }
+      } catch {
+        // Continue
+      }
+    }
+
+    if (!resolvedPartnerId) {
+      setError("Please specify a valid customer or vendor.");
       return;
     }
 
-    const targetJournal = journals.find((j) => j.type === form.paymentMethod) || journals[0];
+    if (!form.amount || Number(form.amount) <= 0) {
+      setError("Please enter a valid payment amount.");
+      return;
+    }
+
+    const methodEnum = form.account === "Bank" ? "BANK" : "CASH";
+    const targetJournal = journals.find((j) => j.type === methodEnum) || journals[0];
 
     try {
       await api.post("/payments", {
-        paymentType: form.paymentType,
-        partnerId: Number(form.partnerId),
-        invoiceId: Number(form.invoiceId),
-        paymentDate: form.paymentDate || new Date().toISOString(),
-        amount: Number(form.amount),
-        paymentMethod: form.paymentMethod,
-        journalId: targetJournal?.id || 1,
-        note: form.note || undefined,
+        type: form.type === "Paid" ? "SEND" : "RECEIVE",
+        contactId: Number(resolvedPartnerId),
+        invoiceIds: resolvedInvoiceId ? [Number(resolvedInvoiceId)] : undefined,
+        paymentDate: form.date || new Date().toISOString().split("T")[0],
+        amount: String(form.amount),
+        method: methodEnum,
+        journalId: Number(targetJournal?.id || (methodEnum === "BANK" ? 3 : 4)),
+        narration: form.notes || undefined,
+        reference: form.reference || undefined,
       });
 
       setShowNewPayment(false);
@@ -173,11 +254,17 @@ function Payments() {
 
   const handleConfirmPayment = async (paymentId) => {
     try {
-      await api.patch(`/payments/${paymentId}/confirm`, {}, {
-        headers: {
-          "Idempotency-Key": `pay-confirm-${paymentId}-${Date.now()}`,
-        },
-      });
+      const paymentObj = payments.find((p) => p.id === paymentId);
+      const invoiceIds = paymentObj?.invoiceId ? [paymentObj.invoiceId] : [];
+      await api.patch(
+        `/payments/${paymentId}/confirm`,
+        { invoiceIds },
+        {
+          headers: {
+            "Idempotency-Key": `pay-confirm-${paymentId}-${Date.now()}`,
+          },
+        }
+      );
       fetchData();
       if (selectedPayment) {
         setSelectedPayment((prev) => ({ ...prev, status: "Completed", rawStatus: "CONFIRMED" }));
@@ -655,6 +742,12 @@ function Payments() {
               className="space-y-5 p-6"
             >
 
+              {error && (
+                <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+                  {error}
+                </div>
+              )}
+
               {/* Payment Type */}
 
               <div>
@@ -720,6 +813,7 @@ function Payments() {
                     <input
                       type="text"
                       required
+                      list="payment-party-list"
                       value={form.party}
                       onChange={(e) =>
                         handleFormChange(
@@ -734,6 +828,20 @@ function Payments() {
                       }
                       className="w-full rounded-lg border border-[#d8d0c8] py-3 pl-10 pr-4 text-sm outline-none focus:border-[#5a4537]"
                     />
+                    <datalist id="payment-party-list">
+                      {invoices
+                        .filter((inv) =>
+                          form.type === "Received"
+                            ? inv.documentType === "CUSTOMER_INVOICE"
+                            : inv.documentType === "VENDOR_BILL"
+                        )
+                        .map((inv) => inv.partner?.name)
+                        .filter(Boolean)
+                        .filter((v, i, a) => a.indexOf(v) === i)
+                        .map((name) => (
+                          <option key={name} value={name} />
+                        ))}
+                    </datalist>
 
                   </div>
 
@@ -796,6 +904,7 @@ function Payments() {
                     <input
                       type="text"
                       required
+                      list="payment-invoice-list"
                       value={form.documentNo}
                       onChange={(e) =>
                         handleFormChange(
@@ -805,11 +914,26 @@ function Payments() {
                       }
                       placeholder={
                         form.documentType === "Invoice"
-                          ? "e.g. INV-001"
-                          : "e.g. BILL-001"
+                          ? "Select or type invoice #"
+                          : "Select or type bill #"
                       }
                       className="w-full rounded-lg border border-[#d8d0c8] py-3 pl-10 pr-4 text-sm outline-none focus:border-[#5a4537]"
                     />
+                    <datalist id="payment-invoice-list">
+                      {invoices
+                        .filter((inv) =>
+                          form.documentType === "Invoice"
+                            ? inv.documentType === "CUSTOMER_INVOICE"
+                            : inv.documentType === "VENDOR_BILL"
+                        )
+                        .map((inv) => (
+                          <option
+                            key={inv.id}
+                            value={inv.number}
+                            label={`${inv.partner?.name || ""} - Due ₹${inv.amountDue != null ? inv.amountDue : inv.grandTotal}`}
+                          />
+                        ))}
+                    </datalist>
 
                   </div>
 

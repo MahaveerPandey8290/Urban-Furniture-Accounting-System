@@ -79,6 +79,10 @@ function PurchaseOrders() {
     fetchData();
   }, []);
 
+  const getItemTotal = (item) => {
+    return Number(item.quantity || 0) * Number(item.rate || 0);
+  };
+
   const getSubtotal = (orderItems) => {
     return (orderItems || []).reduce(
       (total, item) =>

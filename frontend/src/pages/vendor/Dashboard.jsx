@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { FileText, CreditCard, ArrowRight } from "lucide-react";
 import api from "../../services/api";
 import { formatCurrency } from "../../utils/formatters";
+import { useAuth } from "../../context/AuthContext";
 
 function VendorDashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [poCount, setPoCount] = useState(0);
   const [pendingPayment, setPendingPayment] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -40,7 +42,9 @@ function VendorDashboard() {
     <div className="w-full space-y-6">
       <div className="flex items-center justify-between pb-4 border-b border-[#e7e3da]">
         <div>
-          <h2 className="text-2xl font-bold text-[#211D19]">Welcome back, Vendor</h2>
+          <h2 className="text-2xl font-bold text-[#211D19]">
+            Welcome back, {user?.contact?.name || user?.name || "Vendor"}
+          </h2>
           <p className="text-sm text-[#716B63] mt-1">Here is a summary of your account activity.</p>
         </div>
       </div>

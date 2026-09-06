@@ -190,19 +190,9 @@ function SidebarContent({ onNavigate, onLogout }) {
 
           {/* 2. SALES */}
           <div className="space-y-2">
-            <NavLink
-              to="/invoicing_user/bills"
-              onClick={onNavigate}
-              className={({ isActive }) =>
-                `px-3 text-[13px] font-bold tracking-[2px] uppercase flex items-center justify-between cursor-pointer transition ${
-                  isActive || isCurrent("/invoicing_user/sales") || isCurrent("/invoicing_user/bills")
-                    ? "text-amber-200"
-                    : "text-[#d8cbbf] hover:text-white"
-                }`
-              }
-            >
-              <span>SALES</span>
-            </NavLink>
+            <div className="px-3 text-[13px] font-bold text-[#d8cbbf] tracking-[2px] uppercase">
+              SALES
+            </div>
             <div className="space-y-1 pl-1">
               <NavLink
                 to="/invoicing_user/sales-orders"
@@ -224,22 +214,7 @@ function SidebarContent({ onNavigate, onLogout }) {
                 onClick={onNavigate}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2.5 rounded-xl text-[15.5px] transition ${
-                    isActive || isCurrent("/invoicing_user/invoices")
-                      ? "bg-[#3e3228] text-white font-semibold shadow-xs"
-                      : "text-white/80 hover:bg-white/10 hover:text-white font-medium"
-                  }`
-                }
-              >
-                <span className="w-2 h-2 rounded-full bg-current opacity-80" />
-                <span>Sale Invoice</span>
-              </NavLink>
-
-              <NavLink
-                to="/invoicing_user/customer-bills"
-                onClick={onNavigate}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2.5 rounded-xl text-[15.5px] transition ${
-                    isActive || isCurrent("/invoicing_user/invoices")
+                    isActive || isCurrent("/invoicing_user/invoices") || isCurrent("/invoicing_user/customer-bills")
                       ? "bg-[#3e3228] text-white font-semibold shadow-xs"
                       : "text-white/80 hover:bg-white/10 hover:text-white font-medium"
                   }`
@@ -379,6 +354,21 @@ function SidebarContent({ onNavigate, onLogout }) {
             </div>
             <div className="space-y-1 pl-1">
               <NavLink
+                to="/invoicing_user/reports"
+                onClick={onNavigate}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3 py-2.5 rounded-xl text-[15.5px] transition ${
+                    isActive
+                      ? "bg-[#3e3228] text-white font-semibold shadow-xs"
+                      : "text-white/80 hover:bg-white/10 hover:text-white font-medium"
+                  }`
+                }
+              >
+                <span className="w-2 h-2 rounded-full bg-current opacity-80" />
+                <span>Reports Overview</span>
+              </NavLink>
+
+              <NavLink
                 to="/invoicing_user/balance-sheet"
                 onClick={onNavigate}
                 className={({ isActive }) =>
@@ -413,7 +403,7 @@ function SidebarContent({ onNavigate, onLogout }) {
                 onClick={onNavigate}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2.5 rounded-xl text-[15.5px] transition ${
-                    isActive || isCurrent("/invoicing_user/reports")
+                    isActive
                       ? "bg-[#3e3228] text-white font-semibold shadow-xs"
                       : "text-white/80 hover:bg-white/10 hover:text-white font-medium"
                   }`

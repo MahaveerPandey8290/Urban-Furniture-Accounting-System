@@ -50,7 +50,11 @@ function ChartOfAccounts() {
     try {
       const res = await api.get("/accounts?limit=200");
       // Backend returns { items: [...] }
-      setAccounts(res.data.items || []);
+      const items = (res.data.items || []).map((a) => ({
+        ...a,
+        status: a.isArchived ? "Archived" : "Active",
+      }));
+      setAccounts(items);
     } catch {
       // Error toasted by api.js interceptor
     } finally {
@@ -156,33 +160,50 @@ function ChartOfAccounts() {
   // =========================
 
   const getTypeClass = (type) => {
-    switch (type) {
-      case "Asset":
+    switch (type?.toUpperCase()) {
+      case "ASSET":
         return "asset";
-
-      case "Liability":
+      case "LIABILITY":
         return "liability";
-
-      case "Bank":
+      case "BANK":
         return "bank";
-
-      case "Capital":
+      case "CAPITAL":
         return "capital";
-
-      case "Cash":
+      case "CASH":
         return "cash";
-
-      case "Income":
+      case "INCOME":
         return "income";
-
-      case "Expenses":
+      case "EXPENSE":
+      case "EXPENSES":
         return "expenses";
-
-      case "Other Expenses":
+      case "OTHER_EXPENSE":
+      case "OTHER EXPENSES":
         return "other-expenses";
-
       default:
         return "";
+    }
+  };
+
+  const formatTypeLabel = (type) => {
+    switch (type?.toUpperCase()) {
+      case "ASSET":
+        return "Asset";
+      case "LIABILITY":
+        return "Liability";
+      case "BANK":
+        return "Bank";
+      case "CAPITAL":
+        return "Capital";
+      case "CASH":
+        return "Cash";
+      case "INCOME":
+        return "Income";
+      case "EXPENSE":
+        return "Expenses";
+      case "OTHER_EXPENSE":
+        return "Other Expenses";
+      default:
+        return type || "General";
     }
   };
 
@@ -287,7 +308,7 @@ function ChartOfAccounts() {
                     account.type
                   )}`}
                 >
-                  {account.type}
+                  {formatTypeLabel(account.type)}
                 </span>
               </div>
 
